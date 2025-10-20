@@ -1,0 +1,60 @@
+.wrapper {
+  position: fixed;
+  top: 0; left: 0; width: 100%;
+  z-index: 1000;
+  display: flex; justify-content: center;
+  pointer-events: none; /* only shell handles events */
+}
+
+.shell {
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.25rem;
+  background: #fff;
+  color: #111827;
+  padding: .75rem 1rem;
+  margin: .5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,.06);
+  max-width: 1200px;
+  width: min(96%, 1100px);
+}
+
+.logo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; color: inherit; }
+.brand { font-weight: 600; letter-spacing: -0.01em; }
+
+.links {
+  display: inline-flex; align-items: center; gap: 1.25rem; justify-self: center;
+  a {
+    text-decoration: none; color: #1f2937; font-weight: 500;
+    border: 1px solid #e5e7eb; border-radius: 14px; padding: .5rem .9rem;
+    transition: color .2s, background .2s, border-color .2s;
+    &:hover { background: #f3f4f6; }
+  }
+}
+
+.active { color: #0ea5e9; border-color: #dbeafe; background: #f0f9ff; }
+.switcher { margin-left: auto; }
+
+@media (max-width: 768px) { .links { display: none; } }
+
+/* 👇 the floating logo "handle" shown when nav is hidden */
+.handle {
+  position: fixed;
+  top: 6px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  pointer-events: none; /* motion sets to auto when visible */
+}

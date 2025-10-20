@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_DATABASE_URL")
+}
+
+/**
+ * Minimal storage for the Home page hero.
+ * Singleton row via unique key.
+ */
+model HeroHome {
+  id          String   @id @default(cuid())
+  key         String   @unique @default("home")
+  imageSrc    String
+  title       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AboutUs {
+  id          String   @id @default(cuid())
+  key         String   @unique @default("about")
+  title       String
+  description String
+  bullets     String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactPage {
+  id             String   @id @default(cuid())
+  key            String   @unique @default("contact")
+  title          String
+  description    String
+  submitLabel    String
+  successMessage String
+  recipientEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

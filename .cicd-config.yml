@@ -1,0 +1,15 @@
+project_type: node
+slug: nocturnaagency
+port: 3000
+
+domains:
+  prod: nocturnaagency.com
+  admin: admin.nocturnaagency.com
+
+deploy_targets:
+  main-hetz: hetzner
+  dev: vercel
+  preview: vercel
+
+pgadmin_subdomain: dbui
+pgadmin_subdomain: db
