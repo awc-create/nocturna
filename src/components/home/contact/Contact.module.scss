@@ -1,0 +1,116 @@
+/* =========================
+   CONTACT — Seamless finale
+   ========================= */
+.section {
+  --ink: #fff;
+  --muted: rgba(255, 255, 255, 0.65);
+  --accent: #e7d7a7;
+
+  position: relative;
+  color: var(--ink);
+  background: transparent; /* no base fill */
+  text-align: center;
+  padding: clamp(80px, 12vw, 160px) 16px;
+  overflow: hidden;
+  margin-block: 0;
+}
+
+/* Stage glow that fades before reaching edges → no banding */
+// .section::before {
+//   content: '';
+//   position: absolute;
+//   inset: 0;
+//   pointer-events: none;
+//   background: radial-gradient(
+//     120% 80% at 50% 0%,
+//     rgba(255, 255, 255, 0.05),
+//     rgba(255, 255, 255, 0.02) 45%,
+//     rgba(0, 0, 0, 0) 70%
+//   );
+//   mask-image: radial-gradient(120% 80% at 50% 0%, #000 55%, transparent 85%);
+//   opacity: 0.9;
+// }
+
+.inner {
+  display: grid;
+  place-items: center;
+  gap: 16px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.kicker {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.touchLink {
+  position: relative;
+  font-size: clamp(38px, 6vw, 80px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  color: var(--ink);
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
+  z-index: 1;
+  &:hover {
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+}
+
+/* Hover orb */
+.orb {
+  position: absolute;
+  right: -48px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 70%);
+  box-shadow:
+    0 0 20px rgba(231, 215, 167, 0.5),
+    0 0 60px rgba(231, 215, 167, 0.3);
+  opacity: 0;
+  transform: scale(0.6) translateY(-50%);
+  transform-origin: center;
+  transition: all 0.35s ease;
+}
+.visible {
+  opacity: 1;
+  transform: scale(1) translateY(-50%);
+}
+
+.details {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 1rem;
+  svg {
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+}
+
+.socials {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 24px;
+  a {
+    color: var(--muted);
+    font-size: 1.25rem;
+    transition:
+      color 0.25s ease,
+      transform 0.25s ease;
+    &:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+  }
+}

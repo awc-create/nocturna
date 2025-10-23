@@ -1,120 +1,149 @@
 /* ======================= */
-/* 🌍 GLOBAL COLOR TOKENS  */
+/* 🌍 GLOBAL TOKENS        */
 /* ======================= */
 :root {
-  --color-bg: #ffffff;
-  --color-text: #333333;
-  --color-primary: #2c3e50;
+  --color-bg: transparent;    /* let the sky be the canvas */
+  --color-text: #f7f7f7;      /* soft white for body copy */
+  --color-primary: #e7d7a7;   /* gold pill */
   --color-accent: #007bff;
-  --color-bg-light: #fafafa;
-  --color-overlay: rgba(0, 0, 0, 0.35);
 
-  --navbar-height: 70px;
+  --nav-height: 70px;
+  --navbar-height: var(--nav-height);
+
   --max-content-width: 1200px;
   --gutter: 5%;
+
+  /* If JS hasn’t set it yet, keep a slightly navy mood by default */
+  --night-t: 0.20; /* 0 (navy) → 1 (black) */
 }
 
 /* ======================= */
-/* 🌐 GLOBAL RESET & BASE  */
+/* Reset & base            */
 /* ======================= */
 *,
 *::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+*::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-html,
+html {
+  width: 100%;
+  min-height: 100%;
+  background: #0b0b0b;       /* overscroll color only */
+  scroll-behavior: smooth;
+  scrollbar-width: none;      /* Firefox hide */
+}
+::-webkit-scrollbar { width: 0; height: 0; } /* Chrome/Safari hide */
+
+/* IMPORTANT: body is transparent so the sky shows through */
 body {
   width: 100%;
   min-height: 100vh;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  background: var(--color-bg);
+
+  background: var(--color-bg);   /* transparent */
   color: var(--color-text);
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background .3s ease, color .3s ease;
 
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  overscroll-behavior: none;
 }
 
-/* Ensure footer sticks to bottom */
-body > .page-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* Reserve space for sticky navbar everywhere */
-main {
-  flex: 1;
-  // padding-top: var(--navbar-height);
-  // min-height: calc(100dvh - var(--navbar-height));
-  // background: var(--color-bg);
-}
-
-/* Prevent first-child margin collapse */
-main > *:first-child {
-  margin-top: 0;
-}
-
-.needs-nav-offset {
-  --main-offset: var(--navbar-height);
-}
-
-/* ======================= */
-/* 🌟 SCROLLBAR STYLING    */
-/* ======================= */
-::-webkit-scrollbar {
-  width: 10px;
-}
-::-webkit-scrollbar-track {
-  background: var(--color-bg-light);
-}
-::-webkit-scrollbar-thumb {
-  background-color: var(--color-primary);
-  border-radius: 6px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-accent);
-}
-
-/* ======================= */
-/* 🖼️ WATERMARK            */
-/* ======================= */
-.background-wrapper {
+/* Soft top scrim to avoid white flashes above the navbar */
+body::before {
+  content: "";
   position: fixed;
-  inset: 0;
-  background: url("/assets/logo/logo-full.png") no-repeat center/500px;
-  opacity: 0.05;
+  top: 0; left: 0; right: 0;
+  height: 160px;
+  background: linear-gradient(#0b0b0b, rgba(11,11,11,0));
   pointer-events: none;
-  z-index: -1;
+  z-index: 1; /* same plane as grain; below content */
 }
 
-/* ======================= */
-/* 📦 CONTAINER            */
-/* ======================= */
-.container {
-  width: 100%;
-  max-width: var(--max-content-width);
-  margin: 0 auto;
-  padding: 0 var(--gutter);
-}
+/* Layout helpers */
+main { flex: 1; }
+main > *:first-child { margin-top: 0; }
+html, body { backface-visibility: hidden; } /* no transforms on roots */
 
 /* ======================= */
-/* ✨ ANIMATIONS           */
+/* Layering (Z planes)     */
 /* ======================= */
-.fade-in {
-  opacity: 0;
-  animation: fadeIn 0.6s ease forwards;
+/* Sky layers are z:0 (set in sky.module.scss) */
+.site-grain {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: 1;                      /* ABOVE sky, BELOW content */
+  opacity: .04;
+  mix-blend-mode: soft-light;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.012) 0 1px, transparent 1px 2px);
+}
+.app-shell { position: relative; z-index: 2; isolation: isolate; }
+
+/* ======================= */
+/* Utilities               */
+/* ======================= */
+.container { width: 100%; max-width: var(--max-content-width); margin: 0 auto; padding: 0 var(--gutter); }
+.text-muted { color: #bfbfbf; }
+
+.btn-gold {
+  --btn-bg: #e7d7a7; --btn-fg: #0b0b0b;
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 48px; padding: 0 20px; border-radius: 999px;
+  background: var(--btn-bg); color: var(--btn-fg);
+  font-weight: 900; letter-spacing: .02em; text-decoration: none;
+  border: 1px solid rgba(0,0,0,.08);
+  box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 -2px 0 rgba(0,0,0,.12);
+  transition: transform 150ms ease, filter 200ms ease;
+}
+.btn-gold:hover { transform: translateY(-1px); filter: brightness(1.04); }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 48px; padding: 0 20px; border-radius: 999px;
+  color: #ffffff; text-decoration: none; border: 1px solid rgba(255,255,255,.12);
+  transition: transform 150ms ease, background 200ms ease;
+}
+.btn-ghost:hover { background: rgba(255,255,255,.06); transform: translateY(-1px); }
+
+.panel--nocturna {
+  --line: rgba(255,255,255,.08); --edge: rgba(255,255,255,.06);
+  background:
+    linear-gradient(180deg,
+      rgba(16, 34, 60, 0.20) 0%,
+      rgba(16, 34, 60, 0.08) 40%,
+      rgba(16, 34, 60, 0.00) 80%),
+    rgba(0, 0, 0, 0.84); /* slightly lighter for more sky feel */
+  color: #f7f7f7;
+  border-radius: 28px;
+  box-shadow: 0 1px 0 var(--edge) inset, 0 -1px 0 rgba(255,255,255,.03) inset;
+  backdrop-filter: blur(2px);
 }
 
-@keyframes fadeIn {
-  to {
-    opacity: 1;
-  }
+/* Optional: debug visual to prove z-planes (commented in layout) */
+.__debug-proof {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(40% 30% at 50% 20%, rgba(255,0,0,.12), transparent 60%);
 }
+
+/* === Seamless page background: kill all section fills/overlays === */
+.seamless-section {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  position: relative;
+  margin-block: 0 !important;
+  padding-inline: clamp(16px, 4vw, 24px); /* keep your interior rhythm */
+}
+
+/* ensure no pseudo-element overlays/vignettes can render */
+.seamless-section::before,
+.seamless-section::after {
+  content: none !important;
+}
+
+/* keep sections stacked with no seams */
+section { margin-block: 0; }
+section + section { margin-top: 0; }

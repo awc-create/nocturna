@@ -1,0 +1,210 @@
+/* =========================
+   SERVICES — Seamless
+   ========================= */
+.section {
+  --night-blue: 16, 34, 60;
+
+  position: relative;
+  color: #fff;
+  margin-block: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(48px, 8vw, 120px) 24px clamp(64px, 10vw, 140px);
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+
+  /* soft overlay like About’s */
+  // &::before {
+  //   content: '';
+  //   position: absolute;
+  //   inset: 0;
+  //   pointer-events: none;
+  //   background: linear-gradient(
+  //     180deg,
+  //     rgba(var(--night-blue), 0.16) 0%,
+  //     rgba(var(--night-blue), 0.05) 45%,
+  //     rgba(var(--night-blue), 0) 85%
+  //   );
+  //   mask-image: radial-gradient(140% 90% at 50% 0%, #000 55%, transparent 90%);
+  //   opacity: 0.85;
+  // }
+}
+.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Head */
+.head {
+  max-width: 1160px;
+  margin: 0 auto 22px;
+
+  .kicker {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    color: #bfbfbf;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 14px;
+    border-radius: 999px;
+    backdrop-filter: blur(2px);
+  }
+  .title {
+    margin: 12px 0 8px;
+    font-size: clamp(28px, 5vw, 56px);
+    line-height: 1.04;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+  }
+  .lead {
+    color: #e7e7e7;
+    opacity: 0.9;
+    max-width: 700px;
+    font-size: clamp(14px, 1.35vw, 18px);
+    line-height: 1.6;
+  }
+}
+
+/* Grid */
+.grid {
+  max-width: 1160px;
+  margin: 18px auto 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2.5vw, 24px);
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  transform: perspective(1000px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  box-shadow:
+    0 30px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+.media {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  transform: translateZ(0);
+  filter: saturate(1.05) contrast(1.05);
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      140% 80% at var(--glowX, 50%) var(--glowY, 50%),
+      rgba(255, 255, 255, 0.22),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(0, 0, 0, 0.78) 85%,
+      rgba(0, 0, 0, 0.92) 100%
+    );
+  z-index: 1;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.info {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  padding: clamp(18px, 3.5vw, 28px);
+  align-content: end;
+  min-height: min(58vw, 420px);
+}
+.tag {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #111;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  width: fit-content;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+.cardTitle {
+  font-size: clamp(22px, 3.5vw, 40px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.blurb {
+  color: #efefef;
+  line-height: 1.65;
+  max-width: 60ch;
+  opacity: 0.95;
+}
+.actions { margin-top: 4px; }
+.cta {
+  --btn-bg: #e7d7a7;
+  --btn-fg: #0b0b0b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: var(--btn-fg);
+  background: var(--btn-bg);
+  text-decoration: none;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease;
+}
+.cta:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.cta:active { transform: translateY(0); }
+
+.footerRow {
+  max-width: 1160px;
+  margin: 14px auto 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.viewAll {
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 2px;
+  opacity: 0.9;
+}
+.viewAll:hover { opacity: 1; }
+
+/* No bottom vignette in seamless layout */
+.vignette { display: none; }
+
+/* Fully transparent variant still supported */
+.noPanel {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding-top: clamp(32px, 6vw, 56px);
+}
