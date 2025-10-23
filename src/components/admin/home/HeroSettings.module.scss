@@ -1,0 +1,54 @@
+// src/components/admin/home/HeroSettings.module.scss
+.section {
+  margin-bottom: 2rem;
+  h2 { margin-bottom: .25rem; font-size: 1.4rem; }
+  p { color: #555; margin-bottom: 1rem; }
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    font-weight: 500;
+
+    input, textarea {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: .55rem .75rem;
+      font-size: 1rem;
+      background: #fff;
+    }
+  }
+
+  .full { grid-column: 1 / -1; }
+
+  .actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: .5rem;
+  }
+
+  .save, .reset {
+    padding: .55rem 1rem;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: #fff;
+    cursor: pointer;
+  }
+  .save { background: #111; color: #fff; border-color: #111; }
+}
+
+/* append to src/components/admin/home/HeroSettings.module.scss */
+.uploaderRow {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  small { color: #6b7280; }
+}

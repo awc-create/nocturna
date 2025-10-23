@@ -1,118 +1,215 @@
+/* -----------------------------------------------------------
+   Hero — Full-bleed, true full-height, solid black base
+   ----------------------------------------------------------- */
+
 .hero {
   position: relative;
-  width: 100vw;
-  left: 50%;
-  margin-left: -50vw;
-  height: calc(100vh - var(--navbar-height));
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* Escape any parent horizontal padding/gutters so the hero is full-bleed */
+  margin-left: calc(var(--gutter, 0%) * -1);
+  width: calc(100% + (var(--gutter, 0%) * 2));
+
+  /* True viewport height (no iOS/macOS chrome gaps) */
+  height: 100vh;   /* fallback */
+  height: 100svh;  /* precise */
+  min-height: 560px;
+
+  display: grid;
+  place-items: center;
   overflow: hidden;
+  isolation: isolate;
+
+  /* Solid black hero slab (video will sit above this) */
+  background: #000;
+  z-index: 0;
 }
 
-.imageWrapper {
+.media {
   position: absolute;
   inset: 0;
 
-  img {
-    object-fit: cover;
+  /* While media loads, keep it black (prevents flashes) */
+  background-color: #000;
+
+  .video {
     width: 100%;
     height: 100%;
-    filter: brightness(50%) blur(2px);
-    transform: scale(1.05);
+    object-fit: cover;
+    transform: scale(1.02);
+    filter: saturate(1.05) contrast(1.05);
   }
 }
 
+/* When there’s no media yet, still render a pure black panel */
+.noMedia {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.fallbackBg {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+/* Overlay helps text legibility over future media.
+   On solid black, it’s visually subtle but harmless. */
 .overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.3);
   z-index: 1;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,.45) 0%, rgba(0,0,0,.5) 40%, rgba(0,0,0,.55) 100%),
+    radial-gradient(100% 60% at 50% 20%, rgba(0,0,0,.25), transparent 60%);
 }
+
+/* -----------------------------------------------------------
+   Content & spacing — tightened, consistent vertical rhythm
+   ----------------------------------------------------------- */
 
 .content {
   position: relative;
-  z-index: 2;
-  max-width: 700px;
-  margin: 0 auto;
+  z-index: 3;
+  color: #fff;
   text-align: center;
-  padding: 0 1rem;
-  color: #ffffff;
-  opacity: 0;
-  animation: fadeInUp 0.8s ease-out forwards;
 
-  h1,
-  p {
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  }
+  /* Use grid to control vertical rhythm precisely */
+  display: grid;
+  justify-items: center;
+  gap: clamp(10px, 1.8vw, 18px);
 
-  h1 {
-    font-size: 3rem;
-    margin-bottom: 0.75em;
-    line-height: 1.2;
-  }
+  /* side padding for small screens */
+  padding: 0 clamp(16px, 3vw, 40px);
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-  p {
-    font-size: 1.1rem;
-    margin-bottom: 1.5em;
-    line-height: 1.6;
+/* Big wordmark line with pill kicker on the left */
+.kicker {
+  margin: 0;                 /* reset default */
+  line-height: 1.1;
+  font-size: clamp(40px, 7vw, 88px);
+  letter-spacing: .04em;
+  font-weight: 800;
+
+  /* The pill */
+  .badge {
+    display: inline-block;
+    font-size: .38em;
+    font-weight: 900;
+    letter-spacing: .18em;
+    opacity: .95;
+    padding: .5em .9em;     /* slightly more breathing room */
+    margin-right: .35em;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px;
+    vertical-align: middle;
+    transform: translateY(-.1em);
+    line-height: 1;         /* keep pill height tidy */
   }
 }
 
+/* The small uppercase subtitle below the giant wordmark */
+.subtitle {
+  margin: 0; /* grid gap handles spacing */
+  font-size: clamp(14px, 2vw, 20px);
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  opacity: .95;
+}
+
+/* Body copy line (you already render this as cfg.description) */
+.tagline {
+  margin: 0; /* grid gap handles spacing */
+  max-width: min(92ch, 100%);
+  font-size: clamp(15px, 1.6vw, 18px);
+  line-height: 1.75;
+  color: #eaeaea;
+}
+
+/* CTA row */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 0; /* grid gap handles spacing */
+}
+
+.ctaPrimary {
+  --btn-bg: #e7d7a7;
+  --btn-fg: #0b0b0b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25), inset 0 -2px 0 rgba(0,0,0,.12);
+  border: 1px solid rgba(0,0,0,.08);
+  transition: transform .06s ease, filter .2s ease;
+}
+.ctaPrimary:hover { filter: brightness(1.04); }
+.ctaPrimary:active { transform: translateY(1px); }
+
+/* Scroll cue */
 .scrollDown {
   position: absolute;
-  bottom: 80px;
-  font-size: 2rem;
-  color: #fff;
-  opacity: 0.7;
+  bottom: clamp(28px, 7vh, 64px);
+  left: 50%;
+  translate: -50% 0;
   z-index: 3;
+  font-size: 1.75rem;
+  color: #fff;
+  opacity: .85;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
   animation: bounce 2s infinite;
 }
 
+/* Optional: if you want NO bottom fade over the solid black hero,
+   comment this out. Keeping it softer avoids a “gap” illusion. */
+.hero::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 48px; /* softer than 80px */
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,.35) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* -----------------------------------------------------------
+   Animations / responsive / a11y
+   ----------------------------------------------------------- */
+
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  0%,20%,50%,80%,100% { transform: translateY(0); }
   40% { transform: translateY(6px); }
   60% { transform: translateY(3px); }
 }
 
-@media (max-width: 1024px) {
-  .content {
-    h1 { font-size: 2.4rem; }
-    p  { font-size: 1rem; }
-  }
+/* Mobile tweaks */
+@media (max-width: 900px) {
+  .hero { min-height: 520px; }
+  .kicker .badge { display: block; margin: 0 auto .55em; transform: none; }
+  .content { gap: clamp(12px, 3.5vw, 16px); }
 }
 
-@media (max-width: 768px) {
-  .hero {
-    height: 100vh;
-    align-items: flex-start;
-  }
-
-  .content {
-    padding-top: 6rem;
-    padding-inline: 1.5rem;
-
-    h1 {
-      font-size: 2rem;
-    }
-
-    p {
-      font-size: 1rem;
-    }
-  }
-
-  .scrollDown {
-    bottom: 50px;
-  }
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .content { animation: none; }
+  .scrollDown { animation: none; }
 }

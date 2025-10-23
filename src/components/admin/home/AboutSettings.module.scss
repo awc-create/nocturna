@@ -1,0 +1,191 @@
+// src/components/admin/home/AboutSettings.module.scss
+:root {
+  --ink: #0b0b0b;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --soft: #f8fafc;
+  --card: #ffffff;
+  --shadow-1: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --blue: #2563eb;
+  --blue-press: #1e4fd1;
+  --dark: #111;
+  --radius: 14px;
+}
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  padding: 18px;
+  animation: fadeIn .18s ease both;
+  /* Ensure inner shadows don’t look “clipped” but card still contains content */
+  overflow: hidden;
+  box-sizing: border-box;
+
+  h2 { margin-bottom: .25rem; font-size: 1.25rem; letter-spacing: .2px; }
+  p  { color: var(--muted); margin: 0 0 1rem; font-size: .95rem; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: translateY(0) } }
+
+/* === GRID: use minmax(0, 1fr) to prevent overflow === */
+.form {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* ⬅️ key fix */
+
+  .full { grid-column: 1 / -1; }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    font-weight: 600;
+    color: var(--ink);
+
+    input, textarea {
+      width: 100%;                 /* ⬅️ force controls to the column width */
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .7rem .85rem;
+      background: #fff;
+      font-size: 1rem;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      box-sizing: border-box;      /* ⬅️ include padding in width calc */
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: color-mix(in srgb, var(--blue) 35%, transparent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 12%, transparent);
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 110px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+    }
+  }
+}
+
+/* === FIELDSET: same minmax trick + extra bottom padding for floating button === */
+.fieldset {
+  position: relative;
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 12px 60px;        /* ⬅️ room for + Add Fact */
+  background: var(--soft);
+
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* ⬅️ key fix */
+
+  legend {
+    padding: 0 6px;
+    color: #334155;
+    font-weight: 700;
+    font-size: .93rem;
+  }
+}
+
+/* Fact rows */
+.factRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; /* ⬅️ key fix */
+  gap: .9rem;
+  align-items: end;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: .7rem .85rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+  }
+}
+
+.factActions {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+
+  button {
+    height: 36px;
+    min-width: 36px;
+    padding: 0 .7rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    transition: transform .08s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
+
+    &:hover { transform: translateY(-1px); background: #f3f4f6; }
+    &:active { transform: translateY(0); }
+  }
+
+  button:nth-child(1),
+  button:nth-child(2) { background: var(--blue); color: #fff; border-color: transparent; }
+  button:nth-child(1):hover,
+  button:nth-child(2):hover { background: var(--blue-press); }
+}
+
+/* Floating add button in bottom-right of facts block */
+.addBtn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  border: 1px solid transparent;
+  background: var(--blue);
+  color: #fff;
+  border-radius: 999px;
+  padding: .6rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(37,99,235,.18);
+  transition: transform .08s ease, background .15s ease, box-shadow .15s ease;
+
+  &:hover { background: var(--blue-press); transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+}
+
+.actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: .6rem;
+  margin-top: .25rem;
+
+  .save {
+    padding: .7rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--dark);
+    background: var(--dark);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: transform .08s ease, filter .15s ease;
+    &:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    &:active { transform: translateY(0); }
+    &:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  }
+}
+
+/* responsive */
+@media (max-width: 880px) {
+  .form { grid-template-columns: 1fr; }
+  .fieldset { grid-template-columns: 1fr; padding-bottom: 64px; }
+  .factRow { grid-template-columns: 1fr 1fr; }
+}

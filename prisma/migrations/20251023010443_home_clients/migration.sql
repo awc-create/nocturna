@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "HomeClients" ALTER COLUMN "title" DROP NOT NULL,
+ALTER COLUMN "subtitle" DROP NOT NULL;

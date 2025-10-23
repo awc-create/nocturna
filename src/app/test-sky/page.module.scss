@@ -1,0 +1,57 @@
+.wrap { min-height: 100vh; }
+
+/* Keep this page neutral; we want the global sky visible */
+.header {
+  padding: 24px var(--gutter);
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  color: #fff;
+}
+.muted { color: #bfbfbf; }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0 6px;
+}
+.controls button {
+  appearance: none; border: 1px solid rgba(255,255,255,.2); color: #111; background: #e7d7a7;
+  border-radius: 999px; padding: 8px 14px; font-weight: 700; cursor: pointer;
+}
+.readout { color: #bfbfbf; }
+
+.diag {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff;
+}
+
+.panel {
+  --bg-alpha: 0.84;
+  --night-blue: 16, 34, 60;
+
+  max-width: var(--max-content-width);
+  margin: 28px auto;
+  padding: clamp(28px, 5vw, 48px);
+  color: #f7f7f7;
+
+  background:
+    linear-gradient(180deg,
+      rgba(var(--night-blue), 0.20) 0%,
+      rgba(var(--night-blue), 0.08) 40%,
+      rgba(var(--night-blue), 0.00) 80%),
+    rgba(0, 0, 0, var(--bg-alpha));
+
+  border-radius: 28px;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.06) inset,
+    0 -1px 0 rgba(255,255,255,.03) inset;
+}
+
+.footer {
+  max-width: var(--max-content-width);
+  margin: 40px auto;
+  padding: 20px var(--gutter) 80px;
+  color: #bfbfbf;
+}

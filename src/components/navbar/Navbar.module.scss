@@ -1,68 +1,112 @@
+// src/components/navbar/Navbar.module.scss
 :root {
-  --nav-radius: 24px;
-  --nav-height: 64px;
+  --nav-height: 70px;     /* taller pill */
+  --nav-radius: 26px;
+  --chip-min-w: 88px;     /* link spacing */
+  --static-w: 140px;
+  --min-w: 280px;
+  --max-w: 960px;
+  --logo-nudge: -7px;     /* optical vertical adjustment */
 }
 
-.wrapper {
+.topWrapper,
+.bottomWrapper {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-
-  display: flex;
-  justify-content: center;
-  pointer-events: none; /* only the pill gets events */
+  left: 0; width: 100%;
+  display: flex; justify-content: center;
+  pointer-events: none;
+  will-change: transform;
 }
+
+/* lifted position */
+.topWrapper    { top: 18px;    z-index: 1200; }
+.bottomWrapper { bottom: 24px; z-index: 1000; }
 
 .shell {
+  position: relative;
   pointer-events: auto;
+
   display: grid;
-  grid-template-columns: auto 1fr auto auto; /* logo | links | variant | burger */
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  gap: 1.25rem;
+  gap: .6rem;
 
   height: var(--nav-height);
-  padding: .5rem .75rem;
-  margin: .5rem;
+  padding: .55rem .9rem;
+  margin: .25rem;
+
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: var(--nav-radius);
-  box-shadow: 0 8px 24px rgba(0,0,0,.06);
-  width: min(92vw, 1100px);
+  box-shadow:
+    0 8px 22px rgba(0,0,0,.10),
+    0 2px 4px rgba(0,0,0,.03);
+
+  width: min(
+    max(
+      calc( var(--links-count, 3) * var(--chip-min-w) + var(--static-w) ),
+      var(--min-w)
+    ),
+    var(--max-w)
+  );
 }
 
-.logo {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
+.left, .right { width: 30px; height: 1px; }
+
+/* === TRUE CENTER STACK === */
+.centerStack {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 3rem);
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.logoLayer,
+.linksLayer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity .25s ease, transform .25s ease, filter .25s ease;
+  transform-origin: center;
+}
+
+.logoLink {
+  display: inline-block;
+  line-height: 0;
   text-decoration: none;
   color: inherit;
 }
+.logoLink img {
+  display: block;
+  height: auto;
+  transform: translateY(var(--logo-nudge));
+}
 
-.brand { font-weight: 600; letter-spacing: -0.01em; }
-
-.links {
+.linksLayer {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1.25rem;
+  gap: var(--gap, 16px);
+  pointer-events: auto;
+}
 
-  a {
-    text-decoration: none;
-    color: #111827;
-    font-weight: 500;
-    border-radius: 14px;
-    padding: .5rem .9rem;
-    border: 1px solid #e5e7eb;
-    transition: color .2s ease, background .2s ease, border-color .2s ease;
+.link {
+  text-decoration: none;
+  color: #111827;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: .5rem .8rem;
+  margin: 0 .25rem;
+  letter-spacing: var(--letter, 0.015em);
+  font-size: 0.95rem;
+  transition: color .18s, background .18s, border-color .18s;
 
-    &:hover { background: #f3f4f6; }
-  }
-
-  @media (max-width: 820px) {
-    display: none;
-  }
+  &:hover { background: #f3f4f6; }
 }
 
 .active {
@@ -70,61 +114,3 @@
   border-color: #dbeafe;
   background: #f0f9ff;
 }
-
-.hamburger {
-  display: none;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  border-radius: 12px;
-  padding: 6px;
-  cursor: pointer;
-
-  svg { width: 24px; height: 24px; color: #111827; }
-
-  @media (max-width: 820px) {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* Mobile dropdown panel – neatly anchored under the pill */
-.mobileMenu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: .75rem;
-  left: .75rem;
-
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.10);
-  padding: .75rem;
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-
-  opacity: 0;
-  transform: translateY(-6px);
-  pointer-events: none;
-  transition: opacity .18s ease, transform .18s ease;
-
-  a {
-    padding: .8rem 1rem;
-    border-radius: 12px;
-    color: #111827;
-    text-decoration: none;
-    &:hover { background: #f3f4f6; }
-  }
-}
-
-.open {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* helper when you want the switcher full width in the panel */
-.switcherFull { width: 100%; }
-
-.switcherAlignRight { margin-left: auto; }

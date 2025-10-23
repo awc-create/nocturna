@@ -1,24 +1,34 @@
 import '@/styles/Global.scss';
+import Navbar from '@/components/navbar/Navbar';
 import Footer from '@/components/footer/Footer';
-import AnimatedNavbarHost from '@/components/navbar/AnimatedNavbarHost';
-import { DEFAULT_NAV, type NavSlug } from '@/components/navbar/registry';
+import SkyOverlay from '@/components/theme/SkyOverlay';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const envSlug = process.env.NEXT_PUBLIC_NAV_VARIANT as NavSlug | undefined;
-  const initialSlug = envSlug || DEFAULT_NAV;
-
   return (
     <html lang="en">
       <body>
-        <AnimatedNavbarHost initialSlug={initialSlug} />
+        {/* SKY: fixed background layers */}
+        <SkyOverlay
+          mode="hybrid"
+          strength={1}
+          topPaddingPx={70}
+          starDensityPct={15} // ← 0..100. Try 10, 25, 40, etc.
+        />
 
-        {/* If your site scrolls inside main, this marks it as the scroll root for the observer */}
-        <main data-scroll-root>{children}</main>
+        {/* Subtle film grain ABOVE sky, BELOW content */}
+        <div className="site-grain" aria-hidden="true" />
 
-        {/* 1px sentinel right before the footer — triggers as soon as ANY footer pixel appears */}
-        <div id="footer-sentinel" aria-hidden="true" style={{ height: 1 }} />
+        {/* All page content */}
+        <div className="app-shell">
+          <Navbar />
+          <main>{children}</main>
+          <Footer />
+        </div>
 
-        <Footer />
+        {/* Optional: quick visual proof that z-planes are correct */}
+        {/*
+        <div className="__debug-proof" />
+        */}
       </body>
     </html>
   );
