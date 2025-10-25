@@ -1,27 +1,36 @@
-// src/components/navbar/Navbar.module.scss
 :root {
-  --nav-height: 70px;     /* taller pill */
+  --nav-height: 70px;
   --nav-radius: 26px;
-  --chip-min-w: 88px;     /* link spacing */
+  --chip-min-w: 88px;
   --static-w: 140px;
   --min-w: 280px;
   --max-w: 960px;
-  --logo-nudge: -7px;     /* optical vertical adjustment */
+  --logo-nudge: -7px;
+
+  --bg: rgba(13, 13, 13, 0.6);
+  --border: rgba(255, 255, 255, 0.10);
+  --inner: rgba(255, 255, 255, 0.06);
+  --text: #f5f5f4;
+  --muted: #d1d5db;
+  --accent: #e6d3ad;
+  --accent-ink: #1a1a1a;
+  --focus: rgba(230, 211, 173, 0.55);
 }
 
 .topWrapper,
 .bottomWrapper {
   position: fixed;
-  left: 0; width: 100%;
+  left: 0; right: 0; width: 100%;
   display: flex; justify-content: center;
   pointer-events: none;
+  transition: transform .12s ease;
   will-change: transform;
 }
 
-/* lifted position */
-.topWrapper    { top: 18px;    z-index: 1200; }
+.topWrapper { top: 18px; z-index: 1200; }
 .bottomWrapper { bottom: 24px; z-index: 1000; }
 
+/* ===== Desktop floating pill ===== */
 .shell {
   position: relative;
   pointer-events: auto;
@@ -35,82 +44,162 @@
   padding: .55rem .9rem;
   margin: .25rem;
 
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(180deg, var(--bg), rgba(13,13,13,0.45));
+  border: 1px solid var(--border);
   border-radius: var(--nav-radius);
+  backdrop-filter: saturate(160%) blur(10px);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+
   box-shadow:
-    0 8px 22px rgba(0,0,0,.10),
-    0 2px 4px rgba(0,0,0,.03);
+    inset 0 0 0 1px var(--inner),
+    0 10px 24px rgba(0,0,0,.35),
+    0 2px 5px rgba(0,0,0,.25);
 
   width: min(
-    max(
-      calc( var(--links-count, 3) * var(--chip-min-w) + var(--static-w) ),
-      var(--min-w)
-    ),
+    max(calc(var(--links-count, 3) * var(--chip-min-w) + var(--static-w)), var(--min-w)),
     var(--max-w)
   );
 }
 
 .left, .right { width: 30px; height: 1px; }
 
-/* === TRUE CENTER STACK === */
+/* === Center stack morph (desktop) === */
 .centerStack {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   width: calc(100% - 3rem);
-  max-width: 100%;
   pointer-events: none;
+
+  --m: 0;           /* 0 = links, 1 = logo */
+  --links-pe: auto;
 }
 
-.logoLayer,
-.linksLayer {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  transition: opacity .25s ease, transform .25s ease, filter .25s ease;
-  transform-origin: center;
+.logoLayer, .linksLayer {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  transition: opacity .1s linear, transform .1s linear, filter .1s linear;
 }
 
-.logoLink {
-  display: inline-block;
-  line-height: 0;
-  text-decoration: none;
-  color: inherit;
-}
-.logoLink img {
-  display: block;
-  height: auto;
-  transform: translateY(var(--logo-nudge));
-}
+.logoLink { line-height: 0; display: inline-block; }
+.logoLink img { transform: translateY(var(--logo-nudge)); }
 
 .linksLayer {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--gap, 16px);
-  pointer-events: auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: calc(16px * (1 - var(--m)));
+  pointer-events: var(--links-pe);
+  opacity: calc(1 - var(--m));
+  filter: blur(calc(2px * var(--m)));
+  transform: scale(calc(1 - (0.06 * var(--m))));
+  transition: gap .1s linear, opacity .1s linear, filter .1s linear, transform .1s linear;
 }
 
+.logoLayer {
+  opacity: var(--m);
+  transform: translateY(var(--logo-nudge)) scale(calc(0.9 + 0.1 * var(--m)));
+}
+
+/* link */
 .link {
-  text-decoration: none;
-  color: #111827;
-  font-weight: 500;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: .5rem .8rem;
-  margin: 0 .25rem;
-  letter-spacing: var(--letter, 0.015em);
-  font-size: 0.95rem;
-  transition: color .18s, background .18s, border-color .18s;
-
-  &:hover { background: #f3f4f6; }
+  text-decoration: none; color: var(--text); font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  border-radius: 18px; padding: .5rem .85rem; margin: 0 .25rem;
+  transition: color .18s, background .18s, border-color .18s, box-shadow .18s, transform .18s;
+  &:hover { background: rgba(255,255,255,0.06); }
+  &:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); }
+}
+.link:not(.active) { color: var(--muted); }
+.active {
+  color: var(--accent-ink); background: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 60%, #000 40%);
+  box-shadow: 0 6px 16px rgba(230, 211, 173, 0.35);
 }
 
-.active {
-  color: #0ea5e9;
-  border-color: #dbeafe;
-  background: #f0f9ff;
+/* ===== Mobile “Menu” pill ===== */
+.mobilePill {
+  display: none; pointer-events: auto; width: 100%;
+  padding: 0
+    calc(16px + env(safe-area-inset-right))
+    calc(10px + env(safe-area-inset-bottom))
+    calc(16px + env(safe-area-inset-left));
+  box-sizing: border-box;
+  --mm: 0; /* 0 = Menu, 1 = Logo */
+}
+
+.mobilePillBtn {
+  width: min(720px, calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  margin-left: auto; margin-right: auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 18px; border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(180deg, rgba(13,13,13,0.82), rgba(13,13,13,0.92));
+  color: var(--text);
+  box-shadow: 0 18px 34px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px) saturate(150%); -webkit-backdrop-filter: blur(12px) saturate(150%);
+  cursor: pointer;
+}
+
+.mobileLeft { display: inline-grid; grid-auto-flow: column; align-items: center; gap: 10px; }
+.mobilePillLabel { font-weight: 700; font-size: 1.05rem; letter-spacing: .02em; opacity: calc(1 - var(--mm)); transform: translateY(calc(2px * var(--mm))); transition: opacity .1s linear, transform .1s linear; }
+.mobilePillLogo  { display: inline-block; line-height: 0; opacity: var(--mm); transform: translateY(calc(-2px * (1 - var(--mm)))); transition: opacity .1s linear, transform .1s linear; img { display:block; height:auto; } }
+
+.mobilePillIcon { width: 28px; height: 22px; display: grid; place-items: center; line-height: 0; }
+.mobilePillIcon > span { height: 2px; width: 100%; background: var(--text); border-radius: 2px; }
+.mobilePillIcon > span:nth-child(2) { opacity: .9; }
+.mobilePillIcon > span:nth-child(3) { opacity: .8; }
+
+/* Mobile overlay */
+.mobileBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 1500; }
+.mobileBackdrop.show { opacity: 1; pointer-events: auto; }
+.mobilePanel { position: fixed; inset: 0; z-index: 1600; transform: translateY(8px); opacity: 0; pointer-events: none; transition: transform .22s ease, opacity .22s ease; display: grid; place-items: center; padding: 24px; }
+.mobilePanel.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.mobileInner { width: min(520px, 92vw); max-height: 86vh; background: linear-gradient(180deg, rgba(13,13,13,0.86), rgba(13,13,13,0.76)); border: 1px solid var(--border); border-radius: 18px; backdrop-filter: blur(10px) saturate(140%); -webkit-backdrop-filter: blur(10px) saturate(140%); box-shadow: 0 20px 48px rgba(0,0,0,.35); padding: 16px 14px 18px; }
+.mobileHeader { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 10px; }
+.mobileLogo { line-height: 0; display: inline-block; }
+.closeBtn { border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.06); color: var(--text); border-radius: 10px; padding: .35rem .55rem; cursor: pointer; transition: background .2s ease, border-color .2s ease; &:hover { background: rgba(255,255,255,0.12); } &:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); } }
+.mobileNav { display: grid; gap: 10px; padding: 10px 6px 6px; }
+.mobileLink { display: block; text-decoration: none; color: var(--text); font-weight: 700; letter-spacing: .02em; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); border-radius: 14px; padding: .9rem 1rem; transition: background .18s ease, border-color .18s ease, transform .18s ease; &:hover { background: rgba(255,255,255,0.10); transform: translateY(-1px); } &:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus); } }
+.activeMobile { color: var(--accent-ink); background: var(--accent); border-color: color-mix(in oklab, var(--accent) 60%, #000 40%); }
+
+/* ===== Mobile breakpoint ===== */
+@media (max-width: 768px) {
+  /* Mobile: NO top handoff at all */
+  .topWrapper { display: none !important; }
+
+  /* Bottom wrapper pinned; ignore transforms from JS */
+  .bottomWrapper {
+    bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 1400;
+    transform: none !important;
+  }
+
+  /* Show only the mobile pill in bottom wrapper by default */
+  .bottomWrapper .shell { display: none; }
+  .bottomWrapper .mobilePill { display: block; }
+
+  /* Hide the mobile pill when footer is reached */
+  .bottomWrapper.handoff .mobilePill { display: none; }
+
+  /* Desktop inline links not used on phones */
+  .linksLayer { display: none; }
+}
+
+/* motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .logoLayer, .linksLayer, .link,
+  .topWrapper, .bottomWrapper,
+  .mobilePillLabel, .mobilePillLogo { transition: none !important; }
+}
+
+/* Screen reader only */
+.srOnly {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
