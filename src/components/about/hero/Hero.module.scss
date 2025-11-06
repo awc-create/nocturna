@@ -1,0 +1,376 @@
+/* -----------------------------------------------------------
+   Hero — Full-bleed, true full-height, solid black base
+   ----------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  margin-left: calc(var(--gutter, 0%) * -1);
+  width: calc(100% + (var(--gutter, 0%) * 2));
+
+  height: 100vh;  /* fallback */
+  height: 100svh; /* precise on iOS/modern */
+  min-height: 560px;
+
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+
+  background: #000;
+  z-index: 0;
+}
+
+/* ------------------------------------ */
+/* Media layer (video/image)            */
+/* ------------------------------------ */
+.media {
+  position: absolute;
+  inset: 0;
+  background-color: #000;
+  z-index: 0;
+
+  /* safety fade to make wallpaper feel integrated */
+  opacity: 0.999;  /* fixes some GPU compositing banding */
+  will-change: opacity, filter;
+
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.02);
+    filter: saturate(1.05) contrast(1.05);
+  }
+
+  /* optional “live wallpaper” look when looping (toggle via React) */
+  .wallpaper {
+    filter: brightness(0.78) contrast(1.02) saturate(1.05);
+  }
+}
+
+/* When there’s no media yet, still render a pure black panel */
+.noMedia {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.fallbackBg {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+/* ------------------------------------ */
+/* Overlay: improves text legibility    */
+/* ------------------------------------ */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none; /* ← never block controls */
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.5) 40%,
+      rgba(0, 0, 0, 0.55) 100%
+    ),
+    radial-gradient(100% 60% at 50% 20%, rgba(0, 0, 0, 0.25), transparent 60%);
+}
+
+/* ------------------------------------ */
+/* Content                              */
+/* ------------------------------------ */
+.content {
+  position: relative;
+  z-index: 3; /* above media + overlay + poster */
+  color: #fff;
+  text-align: center;
+
+  display: grid;
+  justify-items: center;
+  gap: clamp(10px, 1.8vw, 18px);
+
+  padding: 0 clamp(16px, 3vw, 40px);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Big wordmark line with pill kicker on the left */
+.kicker {
+  margin: 0;
+  line-height: 1.1;
+  font-size: clamp(40px, 7vw, 88px);
+  letter-spacing: 0.04em;
+  font-weight: 800;
+
+  .badge {
+    display: inline-block;
+    font-size: 0.38em;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    opacity: 0.95;
+    padding: 0.5em 0.9em;
+    margin-right: 0.35em;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    vertical-align: middle;
+    transform: translateY(-0.1em);
+    line-height: 1;
+  }
+}
+
+/* The small uppercase subtitle below the giant wordmark */
+.subtitle {
+  margin: 0;
+  font-size: clamp(14px, 2vw, 20px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+/* Body copy line */
+.tagline {
+  margin: 0;
+  max-width: min(92ch, 100%);
+  font-size: clamp(15px, 1.6vw, 18px);
+  line-height: 1.75;
+  color: #eaeaea;
+}
+
+/* CTA row */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.ctaPrimary {
+  --btn-bg: #e7d7a7;
+  --btn-fg: #0b0b0b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: transform 0.06s ease, filter 0.2s ease;
+}
+.ctaPrimary:hover { filter: brightness(1.04); }
+.ctaPrimary:active { transform: translateY(1px); }
+
+/* Scroll cue */
+.scrollDown {
+  position: absolute;
+  bottom: clamp(28px, 7vh, 64px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 4;
+  font-size: 1.75rem;
+  color: #fff;
+  opacity: 0.85;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  animation: bounce 2s infinite;
+}
+
+/* Base bottom fade */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.35) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* -----------------------------------------------------------
+   Cinematic → Still handling & controls
+   ----------------------------------------------------------- */
+
+/* Poster still layer after cinematic end (first visit) */
+.posterLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* above <video>, below content */
+  pointer-events: none;
+}
+
+/* Controls deck spans the hero; children re-enable pointer events */
+.controlsDeck {
+  position: absolute;
+  inset: 0;
+  z-index: 5;       /* above content */
+  pointer-events: none;
+
+  /* any button inside must be clickable */
+  & > * { pointer-events: auto; }
+}
+
+/* Small replay pill (bottom-right) — sits above content */
+.replayBtn {
+  position: absolute;
+  right: clamp(12px, 3vw, 24px);
+  bottom: clamp(14px, 4vh, 28px);
+  z-index: 6; /* ensure above headings/content */
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.06s ease;
+}
+.replayBtn:hover { filter: brightness(1.1); }
+.replayBtn:active { transform: translateY(1px); }
+
+/* Center play button for returning users — bigger & lower */
+.playCenter {
+  position: absolute;
+  z-index: 7; /* above content */
+  left: 50%;
+  top: 62vh; /* moved away from headings */
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 14px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(10, 12, 18, 0.6);
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.06s ease, box-shadow 0.2s ease;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,.45),
+    inset 0 -2px 0 rgba(255,255,255,.08);
+
+  svg { flex: 0 0 auto; }
+  span { font-size: 0.95rem; text-transform: uppercase; }
+
+  &:hover { filter: brightness(1.08); }
+  &:active { transform: translate(-50%, -50%) translateY(1px); }
+}
+
+@media (max-width: 720px) {
+  .playCenter {
+    top: 58vh;
+    padding: 12px 16px;
+    span { font-size: 0.88rem; }
+  }
+}
+
+/* -----------------------------------------------------------
+   Animations / responsive / a11y
+   ----------------------------------------------------------- */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(6px); }
+  60% { transform: translateY(3px); }
+}
+
+/* Mobile tweaks */
+@media (max-width: 900px) {
+  .hero { min-height: 520px; }
+  .kicker .badge {
+    display: block;
+    margin: 0 auto 0.55em;
+    transform: none;
+  }
+  .content { gap: clamp(12px, 3.5vw, 16px); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .content { animation: none; }
+  .scrollDown { animation: none; }
+}
+
+/* --- Mobile polish ------------------------------------------------------ */
+@media (max-width: 720px) {
+  .hero { min-height: 500px; }
+
+  .content {
+    padding-block: clamp(12px, 4vh, 28px) max(16px, env(safe-area-inset-bottom));
+    padding-inline: clamp(16px, 5vw, 28px);
+    gap: clamp(10px, 3.2vw, 14px);
+    max-width: 640px;
+  }
+
+  .overlay {
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.58) 0%,
+        rgba(0, 0, 0, 0.62) 40%,
+        rgba(0, 0, 0, 0.68) 100%
+      ),
+      radial-gradient(100% 60% at 50% 20%, rgba(0, 0, 0, 0.35), transparent 60%);
+  }
+
+  .kicker { font-size: clamp(34px, 10vw, 56px); letter-spacing: 0.03em; }
+  .kicker .badge { font-size: 0.42em; padding: 0.45em 0.8em; border-width: 1px; margin: 0 auto 0.5em; }
+
+  .subtitle { font-size: clamp(12px, 3.2vw, 15px); letter-spacing: 0.12em; opacity: 0.95; }
+  .tagline  { max-width: 60ch; font-size: clamp(14px, 3.6vw, 16px); line-height: 1.75; }
+
+  .actions { margin-top: 2px; }
+
+  .ctaPrimary {
+    padding: 14px 20px;
+    font-size: clamp(13px, 3.4vw, 14px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28), inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  }
+}
+
+@media (max-width: 420px) {
+  .content { gap: 10px; }
+
+  .ctaPrimary { width: 100%; max-width: 360px; }
+
+  .tagline {
+    display: -webkit-box;
+    display: box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .scrollDown { bottom: max(24px, calc(env(safe-area-inset-bottom) + 18px)); }
+}
+
+/* Subtle text glow for contrast over busy video (kept tiny) */
+.content :where(.kicker, .subtitle, .tagline) {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}

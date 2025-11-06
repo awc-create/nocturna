@@ -89,15 +89,24 @@ model HomeClients {
   updatedAt DateTime @updatedAt
 }
 
-/* ========= Minimal About page content (your short model) ========= */
-model AboutUs {
-  id          String   @id @default(cuid())
-  key         String   @unique @default("about")
-  title       String
-  description String
-  bullets     String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model HeroAbout {
+  id                      String   @id @default(cuid())
+  key                     String   @unique @default("about")
+  mediaType               MediaType @default(VIDEO)
+  imageSrc                String   @default("/assets/about-hero.jpg")
+  videoSrc                String?
+  posterSrc               String?
+  loopVideoSrc            String?
+  loopStartSec            Float?   @default(4)
+  loopEndSec              Float?   @default(10)
+  startPausedForReturning Boolean  @default(true)
+  title                   String   @default("Alex & Alin — Who We Are")
+  description             String   @default("Nocturna curates DJs and live acts …")
+  ctaText                 String   @default("WORK WITH US")
+  ctaHref                 String   @default("/apply")
+  overlayDarkness         Float    @default(0.55)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
 
 model ContactPage {

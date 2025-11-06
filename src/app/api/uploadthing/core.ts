@@ -1,37 +1,40 @@
-import { createUploadthing, type FileRouter } from 'uploadthing/server';
+import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { prisma } from '@/lib/prisma';
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  mediaUploader: f({ image: { maxFileSize: '4MB' } }).onUploadComplete(async ({ file }) => {
+  mediaUploader: f({
+    video: { maxFileSize: '128MB' },
+    image: { maxFileSize: '16MB' },
+  }).onUploadComplete(async ({ file }) => {
+    // v9: prefer ufsUrl
+    const url = file.ufsUrl ?? file.url;
+
     try {
-      // avoid exact duplicates
-      const existing = await prisma.media.findFirst({ where: { url: file.url } });
+      const existing = await prisma.media.findFirst({ where: { url } });
       if (existing) {
-        console.warn('⚠️ File already exists in DB:', file.url);
-        return { success: true as const, skipped: true as const };
+        console.warn('⚠️ File already exists:', url);
+        return { url, skipped: true as const };
       }
 
-      const newEntry = await prisma.media.create({
+      const created = await prisma.media.create({
         data: {
           name: file.name ?? 'untitled',
-          url: file.url,
+          url,
           size: typeof file.size === 'number' ? file.size : Number(file.size) || 0,
           type: file.type ?? 'unknown',
         },
       });
 
-      // optional: keep only the latest by name
       await prisma.media.deleteMany({
-        where: { name: file.name ?? 'untitled', NOT: { id: newEntry.id } },
+        where: { name: created.name, NOT: { id: created.id } },
       });
 
-      console.warn(`[UPLOAD SUCCESS] ✅ Uploaded and cleaned duplicates for: ${file.name}`);
-      return { success: true as const, skipped: false as const };
-    } catch (err: unknown) {
+      return { url, skipped: false as const };
+    } catch (err) {
       console.error('❌ UploadThing DB error:', err);
-      return { success: false as const };
+      return { error: true as const };
     }
   }),
 } satisfies FileRouter;
