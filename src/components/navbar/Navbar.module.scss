@@ -6,7 +6,7 @@
   --static-w: 140px;
   --min-w: 280px;
   --max-w: 960px;
-  --logo-nudge: -7px;
+  --logo-nudge: -13px;
 
   --bg: rgba(13, 13, 13, 0.6);
   --border: rgba(255, 255, 255, 0.10);
@@ -81,7 +81,11 @@
 }
 
 .logoLink { line-height: 0; display: inline-block; }
-.logoLink img { transform: translateY(var(--logo-nudge)); }
+.logoLink img {
+  display: block;
+  transform: translateY(var(--logo-nudge));
+  height: auto;
+}
 
 .linksLayer {
   display: inline-flex; align-items: center; justify-content: center;

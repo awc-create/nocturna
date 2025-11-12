@@ -5,23 +5,31 @@ import { useEffect, useRef, useState } from 'react';
 import styles from './AboutSettings.module.scss';
 
 type QuickFact = { value: string; label: string };
+type ValueCard = { title: string; body: string };
 
 type AboutData = {
   eyebrow: string;
   title: string;
   lead: string;
+  blurb: string;
   bullets: string[];
   ctaPrimaryText: string;
   ctaPrimaryHref: string;
   ctaGhostText: string;
   ctaGhostHref: string;
   quickFacts: QuickFact[];
+  videoUrl: string;
+  videoPoster: string;
+  videoCaption: string;
+  values: ValueCard[];
 };
 
 const FALLBACK: AboutData = {
   eyebrow: 'ABOUT NOCTURNA',
   title: 'Bringing nightlife to life.',
   lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
+  blurb:
+    'A curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
   bullets: [
     'Curation over chaos — the right artist for the right room.',
     'Reliable bookings, clear comms, zero hidden costs.',
@@ -36,6 +44,19 @@ const FALLBACK: AboutData = {
     { value: 'UK-wide', label: 'Venue coverage' },
     { value: 'DJs & Musicians', label: 'Tailored rosters' },
   ],
+  videoUrl: '',
+  videoPoster: '',
+  videoCaption: '',
+  values: [
+    {
+      title: 'Curation over chaos',
+      body: 'Every brief matched to the right artist, not the nearest calendar gap.',
+    },
+    {
+      title: 'Artist-first',
+      body: 'Fair fees, clear comms, reliable logistics — because great work needs great conditions.',
+    },
+  ],
 };
 
 export default function AboutUsSettings() {
@@ -43,23 +64,21 @@ export default function AboutUsSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Draft text for the bullets textarea (keeps blank lines while typing)
+  // Draft text areas to preserve newlines while typing
   const [bulletsDraft, setBulletsDraft] = useState<string>(FALLBACK.bullets.join('\n'));
   const bulletsRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Auto-grow helper
+  // autosize helper
   const autoresize = (ta: HTMLTextAreaElement | null) => {
     if (!ta) return;
     ta.style.height = 'auto';
     ta.style.height = `${ta.scrollHeight}px`;
   };
-
-  // Resize when draft changes
   useEffect(() => {
     autoresize(bulletsRef.current);
   }, [bulletsDraft]);
 
-  // Load existing data
+  // Load
   useEffect(() => {
     (async () => {
       try {
@@ -71,9 +90,14 @@ export default function AboutUsSettings() {
             ...data,
             bullets: data.bullets ?? FALLBACK.bullets,
             quickFacts: data.quickFacts ?? FALLBACK.quickFacts,
+            values: data.values ?? FALLBACK.values,
+            videoUrl: data.videoUrl ?? '',
+            videoPoster: data.videoPoster ?? '',
+            videoCaption: data.videoCaption ?? '',
+            blurb: data.blurb ?? data.lead ?? FALLBACK.blurb,
           };
           setForm(merged);
-          setBulletsDraft((merged.bullets ?? []).join('\n')); // keep raw text in the textarea
+          setBulletsDraft((merged.bullets ?? []).join('\n'));
         }
       } finally {
         setLoading(false);
@@ -88,37 +112,32 @@ export default function AboutUsSettings() {
       setForm((f) => ({ ...f, [key]: val as AboutData[K] }));
     };
 
-  // Update only the draft while typing; parse to array on blur/save
+  // Bullets draft handlers
   const onBulletsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const val = typeof e?.target?.value === 'string' ? e.target.value : '';
-    setBulletsDraft(val);
+    setBulletsDraft(e.target.value ?? '');
   };
-
   const commitBullets = () => {
     const parsed = (bulletsDraft ?? '')
       .split('\n')
       .map((s) => s.trim())
-      .filter(Boolean); // remove empty lines on commit
+      .filter(Boolean);
     setForm((f) => ({ ...f, bullets: parsed }));
   };
 
-  // ---------- Quick Facts controls ----------
+  // Quick facts
   const addFact = () =>
     setForm((f) => ({ ...f, quickFacts: [...f.quickFacts, { value: '', label: '' }] }));
-
   const removeFact = (idx: number) =>
     setForm((f) => ({ ...f, quickFacts: f.quickFacts.filter((_, i) => i !== idx) }));
-
   const onFactChange =
     (idx: number, field: keyof QuickFact) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = typeof e?.target?.value === 'string' ? e.target.value : '';
+      const val = e.target.value ?? '';
       setForm((f) => {
         const next = [...f.quickFacts];
         next[idx] = { ...next[idx], [field]: val };
         return { ...f, quickFacts: next };
       });
     };
-
   const moveFact = (from: number, to: number) =>
     setForm((f) => {
       if (to < 0 || to >= f.quickFacts.length) return f;
@@ -128,8 +147,30 @@ export default function AboutUsSettings() {
       return { ...f, quickFacts: next };
     });
 
+  // Values editor
+  const addValue = () => setForm((f) => ({ ...f, values: [...f.values, { title: '', body: '' }] }));
+  const removeValue = (idx: number) =>
+    setForm((f) => ({ ...f, values: f.values.filter((_, i) => i !== idx) }));
+  const moveValue = (from: number, to: number) =>
+    setForm((f) => {
+      if (to < 0 || to >= f.values.length) return f;
+      const next = [...f.values];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return { ...f, values: next };
+    });
+  const onValueChange =
+    (idx: number, field: keyof ValueCard) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const val = e.target.value ?? '';
+      setForm((f) => {
+        const next = [...f.values];
+        next[idx] = { ...next[idx], [field]: val };
+        return { ...f, values: next };
+      });
+    };
+
   const save = async () => {
-    // ensure bullets array is up to date with the draft text
     commitBullets();
     setSaving(true);
     try {
@@ -178,6 +219,11 @@ export default function AboutUsSettings() {
         </label>
 
         <label className={styles.full}>
+          Blurb (short)
+          <textarea rows={3} value={form.blurb} onChange={onText('blurb')} />
+        </label>
+
+        <label className={styles.full}>
           Bullets (one per line)
           <textarea
             ref={bulletsRef}
@@ -187,13 +233,12 @@ export default function AboutUsSettings() {
             onBlur={commitBullets}
             onInput={(e) => autoresize(e.currentTarget)}
             onKeyDown={(e) => {
-              // Let Enter insert newline; just avoid bubbling to any parent key handlers
               if (e.key === 'Enter') e.stopPropagation();
             }}
           />
         </label>
 
-        {/* Dynamic Quick Facts */}
+        {/* Quick Facts */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Quick Facts</legend>
 
@@ -235,6 +280,71 @@ export default function AboutUsSettings() {
           </button>
         </fieldset>
 
+        {/* Video */}
+        <fieldset className={styles.fieldset}>
+          <legend>Video (optional)</legend>
+          <label>
+            Video URL (YouTube/Vimeo/MP4)
+            <input value={form.videoUrl} onChange={onText('videoUrl')} placeholder="https://…" />
+          </label>
+          <label>
+            Poster Image URL
+            <input
+              value={form.videoPoster}
+              onChange={onText('videoPoster')}
+              placeholder="/media/poster.jpg"
+            />
+          </label>
+          <label>
+            Caption
+            <input
+              value={form.videoCaption}
+              onChange={onText('videoCaption')}
+              placeholder="1-min overview"
+            />
+          </label>
+        </fieldset>
+
+        {/* Values */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Ethos & Values</legend>
+          {form.values.map((v, i) => (
+            <div key={i} className={styles.factRow}>
+              <label>
+                Title
+                <input
+                  value={v.title}
+                  onChange={onValueChange(i, 'title')}
+                  placeholder="e.g. Artist-first"
+                />
+              </label>
+              <label>
+                Body
+                <input
+                  value={v.body}
+                  onChange={onValueChange(i, 'body')}
+                  placeholder="Short supportive sentence…"
+                />
+              </label>
+              <div className={styles.factActions} aria-label="Value actions">
+                <button type="button" onClick={() => moveValue(i, i - 1)} title="Move up">
+                  ↑
+                </button>
+                <button type="button" onClick={() => moveValue(i, i + 1)} title="Move down">
+                  ↓
+                </button>
+                <button type="button" onClick={() => removeValue(i)} title="Remove">
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+          <button type="button" className={styles.addBtn} onClick={addValue}>
+            + Add Value
+          </button>
+        </fieldset>
+
+        {/* CTAs */}
         <fieldset className={styles.fieldset}>
           <legend>Primary CTA</legend>
           <label>

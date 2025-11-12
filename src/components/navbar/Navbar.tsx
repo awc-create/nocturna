@@ -1,4 +1,3 @@
-// src/components/navbar/Navbar.tsx
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -28,28 +27,22 @@ export default function Navbar() {
     typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${MOBILE_BP}px)`).matches : false
   );
 
-  // 0 = no handoff; 1 = handoff engaged (used on desktop + to hide mobile pill)
   const [handoff, setHandoff] = useState<0 | 1>(0);
   const handoffRef = useRef<0 | 1>(0);
 
   const [hover, setHover] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // desktop morph (links ⇄ logo)
   const m = useRef(0);
   const v = useRef(0);
-
-  // mobile pill morph (Menu ⇄ Logo) – keep at “Menu”
   const mm = useRef(0);
   const vm = useRef(0);
 
-  // desktop direction target (0 = links, 1 = logo)
   const dirTarget = useRef<0 | 1>(1);
   const lastY = useRef(0);
   const lastTime = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const raf = useRef<number | null>(null);
 
-  // media query listener
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP}px)`);
     const apply = () => setIsMobile(mq.matches);
@@ -58,7 +51,6 @@ export default function Navbar() {
     return () => mq.removeEventListener?.('change', apply);
   }, []);
 
-  // write --m to all desktop center stacks (top + bottom)
   const setM = (value: number) => {
     m.current = value;
     document.querySelectorAll<HTMLElement>(`.${styles.centerStack}`).forEach((el) => {
@@ -67,15 +59,13 @@ export default function Navbar() {
     });
   };
 
-  // write --mm to all mobile pills (top + bottom)
   const setMM = (value: number) => {
     mm.current = value;
     document.querySelectorAll<HTMLElement>(`.${styles.mobilePill}`).forEach((node) => {
-      node.style.setProperty('--mm', value.toFixed(4)); // 0 = Menu, 1 = Logo
+      node.style.setProperty('--mm', value.toFixed(4));
     });
   };
 
-  // critically damped spring
   const stepSpring = useCallback(
     (
       pos: React.MutableRefObject<number>,
@@ -102,7 +92,6 @@ export default function Navbar() {
     []
   );
 
-  // lock body scroll when overlay open
   useEffect(() => {
     const prev = document.body.style.overflow;
     if (menuOpen) document.body.style.overflow = 'hidden';
@@ -111,7 +100,6 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  // ESC closes overlay
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false);
@@ -120,7 +108,6 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // handoff with HYSTERESIS (no jitter/peek) + morph loop
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -129,10 +116,9 @@ export default function Navbar() {
       (document.querySelector('[role="contentinfo"]') as HTMLElement | null) ||
       document.querySelector('footer');
 
-    // thresholds relative to viewport bottom
-    const DEADZONE = isMobile ? 64 : 24; // px
-    const ACTIVATE_OFFSET = NAV_H + HANDOFF_SPAN + DEADZONE; // engage handoff when footer deeper in
-    const DEACTIVATE_OFFSET = 20; // disengage when footer far away
+    const DEADZONE = isMobile ? 64 : 24;
+    const ACTIVATE_OFFSET = NAV_H + HANDOFF_SPAN + DEADZONE;
+    const DEACTIVATE_OFFSET = 20;
 
     const updateHandoff = () => {
       if (!footer) {
@@ -142,7 +128,6 @@ export default function Navbar() {
       }
       const vh = window.innerHeight;
       const footerTop = footer.getBoundingClientRect().top;
-
       const activateAt = vh - ACTIVATE_OFFSET;
       const deactivateAt = vh - DEACTIVATE_OFFSET;
 
@@ -157,14 +142,11 @@ export default function Navbar() {
 
     const onScroll = () => {
       updateHandoff();
-
-      // desktop-only direction morph (ensure we didn't “remove” it)
       if (!isMobile) {
         const y = window.scrollY || 0;
         const dy = y - lastY.current;
-        if (dy > 0)
-          dirTarget.current = 1; // down → logo
-        else if (dy < 0) dirTarget.current = 0; // up   → links
+        if (dy > 0) dirTarget.current = 1;
+        else if (dy < 0) dirTarget.current = 0;
         lastY.current = y;
       }
     };
@@ -178,24 +160,19 @@ export default function Navbar() {
       lastTime.current = now;
       if (dt > MAX_DT) dt = MAX_DT;
 
-      // Desktop: morph based on scroll direction; hover/menu & handoff force links
       let desktopTarget = dirTarget.current;
-      if (hover || menuOpen) desktopTarget = 0; // links when hover/menu
-      if (!isMobile && handoffRef.current === 1) desktopTarget = 0; // links during desktop handoff
+      if (hover || menuOpen) desktopTarget = 0;
+      if (!isMobile && handoffRef.current === 1) desktopTarget = 0;
 
-      // Mobile: ALWAYS “Menu” (0)
       const mobileTarget = 0;
-
-      // apply
       if (!isMobile) stepSpring(m, v, desktopTarget, setM, dt);
       stepSpring(mm, vm, mobileTarget, setMM, dt);
 
       raf.current = requestAnimationFrame(loop);
     };
 
-    // init
-    setM(0); // desktop shows links on load
-    setMM(0); // mobile shows “Menu” on load
+    setM(0);
+    setMM(0);
     lastY.current = window.scrollY || 0;
     updateHandoff();
     lastTime.current = performance.now();
@@ -213,19 +190,15 @@ export default function Navbar() {
     };
   }, [hover, menuOpen, stepSpring, isMobile]);
 
-  // hover
   const onEnter = () => setHover(true);
   const onLeave = () => setHover(false);
 
-  // overlay controls
   const openMenu = () => setMenuOpen(true);
   const closeMenu = () => setMenuOpen(false);
 
-  // wrappers translate on desktop; mobile ignores transforms via CSS
   const HIDE_PX = NAV_H + HIDE_EXTRA;
   const topStyle = { transform: `translateY(${handoff ? 0 : -HIDE_PX}px)` };
   const bottomStyle = { transform: `translateY(${handoff ? HIDE_PX : 0}px)` };
-
   const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length };
 
   // Desktop pill (links ⇄ logo)
@@ -233,7 +206,7 @@ export default function Navbar() {
     <div className={styles.centerStack}>
       <div className={styles.logoLayer} aria-hidden={hover}>
         <Link href="/" className={styles.logoLink} aria-label="Home">
-          <Image src="/assets/footer-light.png" alt="Nocturna" width={45} height={45} priority />
+          <Image src="/assets/A_W.png" alt="Nocturna" width={34} height={48} priority />
         </Link>
       </div>
       <div className={styles.linksLayer}>
@@ -259,7 +232,6 @@ export default function Navbar() {
     </nav>
   );
 
-  // Mobile “Menu + burger” pill
   const MobileDock = () => (
     <div className={styles.mobilePill}>
       <button
@@ -274,7 +246,7 @@ export default function Navbar() {
         <span className={styles.mobileLeft}>
           <span className={styles.mobilePillLabel}>Menu</span>
           <span className={styles.mobilePillLogo} aria-hidden="true">
-            <Image src="/assets/footer-light.png" alt="" width={22} height={22} />
+            <Image src="/assets/A_W.png" alt="" width={17} height={24} />
           </span>
         </span>
         <span className={styles.mobilePillIcon} aria-hidden="true">
@@ -286,7 +258,6 @@ export default function Navbar() {
     </div>
   );
 
-  // overlay
   const MobileOverlay = () => (
     <>
       <div
@@ -303,7 +274,7 @@ export default function Navbar() {
         <div className={styles.mobileInner}>
           <div className={styles.mobileHeader}>
             <Link href="/" className={styles.mobileLogo} onClick={closeMenu} aria-label="Home">
-              <Image src="/assets/footer-light.png" alt="Nocturna" width={36} height={36} />
+              <Image src="/assets/A_W.png" alt="Nocturna" width={28} height={40} />
             </Link>
             <button
               type="button"
@@ -339,13 +310,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Desktop top morphing pill; hidden on mobile via CSS */}
       <div className={topClass} style={topStyle}>
         <Pill />
         <MobileDock />
       </div>
 
-      {/* Bottom wrapper: desktop pill + mobile pill */}
       <div className={bottomClass} style={bottomStyle}>
         <Pill />
         <MobileDock />

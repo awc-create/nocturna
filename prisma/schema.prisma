@@ -43,23 +43,30 @@ model HomeAbout {
   id              String   @id @default(cuid())
   key             String   @unique @default("about")
 
+  // v1 fields (kept)
   eyebrow         String   @default("ABOUT NOCTURNA")
   title           String
   lead            String
   bullets         String[]                 // 3–6 lines
 
-  // CTAs (as used by your component/admin UI)
   ctaPrimaryText  String   @default("Learn more")
   ctaPrimaryHref  String   @default("/about")
   ctaGhostText    String   @default("Enquire now")
   ctaGhostHref    String   @default("/enquire")
 
-  // Quick facts [{ value, label }, ...]
   quickFacts      Json     @default("[]")
+
+  // ===== v2 additions =====
+  blurb           String?                       // preferred over "lead" in v2 UI
+  videoUrl        String?
+  videoPoster     String?
+  videoCaption    String?
+  values          Json?     @default("[]")      // [{ title, body }, ...]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
 
 /* ========= Home: Services (grid of cards) ========= */
 model HomeServices {

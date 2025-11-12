@@ -1,4 +1,3 @@
-// src/components/home/hero/Hero.tsx
 'use client';
 
 import Head from 'next/head';
@@ -27,9 +26,9 @@ const FALLBACK: HeroConfig = {
   imageSrc: '',
   videoSrc: null,
   posterSrc: null,
-  title: 'Your Modern Website Starts Here',
+  title: 'Bringing nightlife to life.',
   description:
-    'Crafted with performance and style in mind. This is your launchpad for a fast, clean, and responsive online presence — proudly created with the Web Dev Wizard CLI.',
+    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
   ctaText: 'ENQUIRE NOW',
   ctaHref: '/apply',
   overlayDarkness: 0.5,
@@ -76,6 +75,8 @@ export default function Hero() {
       <Head>
         {cfg.posterSrc ? <link rel="preload" href={cfg.posterSrc} as="image" /> : null}
         {hasVideo ? <link rel="preload" href={cfg.videoSrc!} as="video" /> : null}
+        {/* Preload the Nocturna wordmark */}
+        <link rel="preload" href="/assets/NOCTURNA_W.png" as="image" />
       </Head>
 
       <header className={styles.hero} role="banner" aria-label="Homepage hero">
@@ -102,12 +103,11 @@ export default function Hero() {
               style={{ objectFit: 'cover' }}
             />
           ) : (
-            // no media → CSS-only background via .noMedia
             <div className={styles.fallbackBg} />
           )}
         </div>
 
-        {/* Adjustable overlay still applies to fallback */}
+        {/* Overlay */}
         <div
           className={styles.overlay}
           aria-hidden="true"
@@ -118,12 +118,24 @@ export default function Hero() {
           }}
         />
 
+        {/* Content */}
         <div className={styles.content}>
-          <h1 className={styles.kicker}>
-            <span className={styles.badge}>WELCOME TO</span> NOCTURNA
+          <h1 className={styles.kicker} aria-label="Welcome to Nocturna">
+            <span className={styles.badge}>WELCOME TO</span>
+            <span className={styles.wordmark}>
+              <Image
+                src="/assets/NOCTURNA_W.png"
+                alt="Nocturna"
+                fill
+                priority
+                sizes="(max-width: 900px) 90vw, 980px"
+              />
+            </span>
           </h1>
+
           <p className={styles.subtitle}>{cfg.title}</p>
           <p className={styles.tagline}>{cfg.description}</p>
+
           <div className={styles.actions}>
             <Link href={cfg.ctaHref} className={styles.ctaPrimary}>
               {cfg.ctaText}

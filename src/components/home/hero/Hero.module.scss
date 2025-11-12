@@ -92,29 +92,59 @@
 }
 
 /* Big wordmark line with pill kicker on the left */
-.kicker {
-  margin: 0; /* reset default */
-  line-height: 1.1;
-  font-size: clamp(40px, 7vw, 88px);
-  letter-spacing: 0.04em;
-  font-weight: 800;
+/* ===============================
+   Wordmark integration
+   =============================== */
 
-  /* The pill */
-  .badge {
-    display: inline-block;
-    font-size: 0.38em;
-    font-weight: 900;
-    letter-spacing: 0.18em;
-    opacity: 0.95;
-    padding: 0.5em 0.9em; /* slightly more breathing room */
-    margin-right: 0.35em;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 999px;
-    vertical-align: middle;
-    transform: translateY(-0.1em);
-    line-height: 1; /* keep pill height tidy */
+/* Outer H1 wrapper */
+.kicker {
+  margin: 0;
+  line-height: 1.1;
+  text-align: center;
+  font-weight: 800;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6em;
+}
+
+/* Small pill above the wordmark */
+.kicker .badge {
+  display: inline-block;
+  font-size: clamp(12px, 1.4vw, 14px);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  opacity: 0.95;
+  padding: 0.5em 1em;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  vertical-align: middle;
+  line-height: 1;
+  color: #fff;
+}
+
+/* The Nocturna wordmark image */
+.wordmark {
+  position: relative;
+  display: block;
+  width: min(90vw, 980px);
+  height: clamp(46px, 8vw, 110px);
+}
+
+.wordmark :global(img) {
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Mobile adjustments */
+@media (max-width: 720px) {
+  .wordmark {
+    width: min(94vw, 640px);
+    height: clamp(50px, 12vw, 84px);
   }
 }
+
 
 /* The small uppercase subtitle below the giant wordmark */
 .subtitle {
