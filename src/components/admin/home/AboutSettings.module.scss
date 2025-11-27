@@ -1,191 +1,388 @@
-// src/components/admin/home/AboutSettings.module.scss
-:root {
-  --ink: #0b0b0b;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --soft: #f8fafc;
-  --card: #ffffff;
-  --shadow-1: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --blue: #2563eb;
-  --blue-press: #1e4fd1;
-  --dark: #111;
-  --radius: 14px;
-}
+/* Dark / Nocturna-aligned styling for About Us admin */
 
 .section {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-  padding: 18px;
-  animation: fadeIn .18s ease both;
-  /* Ensure inner shadows don’t look “clipped” but card still contains content */
-  overflow: hidden;
-  box-sizing: border-box;
+  margin-bottom: 2rem;
+  animation: fadeIn 0.25s ease both;
 
-  h2 { margin-bottom: .25rem; font-size: 1.25rem; letter-spacing: .2px; }
-  p  { color: var(--muted); margin: 0 0 1rem; font-size: .95rem; }
+  h2 {
+    margin-bottom: 0.25rem;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    color: #f9fafb;
+  }
+
+  p {
+    color: var(--muted);
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+  }
 }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: translateY(0) } }
-
-/* === GRID: use minmax(0, 1fr) to prevent overflow === */
+/* === MAIN FORM WRAPPER === */
 .form {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* ⬅️ key fix */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.25rem;
+  padding: 16px 16px 18px;
+  border-radius: 16px;
 
-  .full { grid-column: 1 / -1; }
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow:
+    inset 0 0 18px rgba(15, 23, 42, 0.9),
+    0 18px 40px rgba(0, 0, 0, 0.5);
 
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: .4rem;
-    font-weight: 600;
-    color: var(--ink);
-
-    input, textarea {
-      width: 100%;                 /* ⬅️ force controls to the column width */
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: .7rem .85rem;
-      background: #fff;
-      font-size: 1rem;
-      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-      box-sizing: border-box;      /* ⬅️ include padding in width calc */
-    }
-
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: color-mix(in srgb, var(--blue) 35%, transparent);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 12%, transparent);
-      background: #fff;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 110px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
-    }
-  }
+  box-sizing: border-box;
 }
 
-/* === FIELDSET: same minmax trick + extra bottom padding for floating button === */
+.full {
+  grid-column: 1 / -1;
+}
+
+/* labels + inputs scoped to .form */
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.form label input,
+.form label textarea {
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+
+  box-sizing: border-box;
+}
+
+.form label input:focus,
+.form label textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(229, 193, 122, 0.4);
+  background: rgba(15, 23, 42, 1);
+}
+
+.form label textarea {
+  resize: vertical;
+  min-height: 110px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans';
+  line-height: 1.4;
+}
+
+.form label small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* === FIELDSET BLOCKS (Quick facts, Video, CTAs) === */
 .fieldset {
   position: relative;
   grid-column: 1 / -1;
-  border: 1px solid var(--line);
+
+  border: 1px solid rgba(148, 163, 184, 0.6);
   border-radius: 12px;
-  padding: 12px 12px 60px;        /* ⬅️ room for + Add Fact */
-  background: var(--soft);
+  padding: 12px 12px 54px;
+  background: rgba(15, 23, 42, 0.8);
 
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* ⬅️ key fix */
-
-  legend {
-    padding: 0 6px;
-    color: #334155;
-    font-weight: 700;
-    font-size: .93rem;
-  }
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-/* Fact rows */
+.fieldset legend {
+  padding: 0 6px;
+  color: #e5e7eb;
+  font-weight: 700;
+  font-size: 0.93rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.fieldset label {
+  color: var(--muted);
+}
+
+/* === QUICK FACT ROWS === */
 .factRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; /* ⬅️ key fix */
-  gap: .9rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.9rem;
   align-items: end;
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: .4rem;
-    input {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: .7rem .85rem;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-  }
 }
 
+.factRow label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+/* Reuse same input styling inside factRow (scoped) */
+.factRow label input,
+.factRow label textarea {
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.95);
+  color: #e5e7eb;
+
+  box-sizing: border-box;
+}
+
+.factRow label input:focus,
+.factRow label textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(229, 193, 122, 0.4);
+  background: rgba(15, 23, 42, 1);
+}
+
+/* === QUICK FACT ACTION BUTTONS === */
 .factActions {
   display: flex;
   align-items: center;
-  gap: .45rem;
-
-  button {
-    height: 36px;
-    min-width: 36px;
-    padding: 0 .7rem;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background: #fff;
-    color: var(--ink);
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    transition: transform .08s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
-
-    &:hover { transform: translateY(-1px); background: #f3f4f6; }
-    &:active { transform: translateY(0); }
-  }
-
-  button:nth-child(1),
-  button:nth-child(2) { background: var(--blue); color: #fff; border-color: transparent; }
-  button:nth-child(1):hover,
-  button:nth-child(2):hover { background: var(--blue-press); }
+  gap: 0.45rem;
 }
 
-/* Floating add button in bottom-right of facts block */
+.factActions button {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.8rem;
+
+  cursor: pointer;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.4);
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.factActions button:hover {
+  transform: translateY(-1px);
+  background: rgba(15, 23, 42, 1);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.factActions button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.7);
+}
+
+/* Up / Down arrows: subtle highlight */
+.factActions button:nth-child(1),
+.factActions button:nth-child(2) {
+  border-color: rgba(229, 193, 122, 0.4);
+}
+
+/* === ADD FACT / ADD VALUE BUTTON === */
 .addBtn {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  border: 1px solid transparent;
-  background: var(--blue);
-  color: #fff;
-  border-radius: 999px;
-  padding: .6rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(37,99,235,.18);
-  transition: transform .08s ease, background .15s ease, box-shadow .15s ease;
 
-  &:hover { background: var(--blue-press); transform: translateY(-1px); }
-  &:active { transform: translateY(0); }
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--accent-hover, #f0d79a) 0%,
+    var(--accent, #e5c17a) 40%,
+    #b38a45 100%
+  );
+  color: #111827;
+
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.03em;
+
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.9);
+
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
+.addBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 1);
+}
+
+.addBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.9);
+}
+
+/* === SAVE BUTTON ROW === */
 .actions {
   grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
-  gap: .6rem;
-  margin-top: .25rem;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.save {
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--accent-hover, #f0d79a) 0%,
+    var(--accent, #e5c17a) 40%,
+    #b38a45 100%
+  );
+  color: #111827;
+
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  font-size: 0.9rem;
+
+  cursor: pointer;
+
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.9);
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.save:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 1);
+}
+
+.save:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.9);
+}
+
+.save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* === UPLOADER ROW (Video / Poster) === */
+.uploaderRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.uploaderRow small {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Video preview */
+.previewVideo {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+/* Poster preview */
+.posterPreview {
+  width: min(260px, 60%);
+  border-radius: 12px;
+  margin-top: 8px;
+  display: block;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.9);
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 880px) {
+  .form {
+    grid-template-columns: 1fr;
+    padding: 14px 12px 12px;
+    gap: 0.9rem;
+  }
+
+  .fieldset {
+    grid-template-columns: 1fr;
+    padding-bottom: 60px;
+  }
+
+  .factRow {
+    grid-template-columns: 1fr;
+  }
+
+  .factActions {
+    justify-content: flex-start;
+  }
+
+  .addBtn {
+    position: static;
+    width: 100%;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    background: linear-gradient(
+      to top,
+      rgba(2, 6, 23, 0.96),
+      rgba(2, 6, 23, 0)
+    );
+    justify-content: stretch;
+  }
 
   .save {
-    padding: .7rem 1.1rem;
-    border-radius: 999px;
-    border: 1px solid var(--dark);
-    background: var(--dark);
-    color: #fff;
-    font-weight: 800;
-    letter-spacing: .02em;
-    cursor: pointer;
-    transition: transform .08s ease, filter .15s ease;
-    &:hover { transform: translateY(-1px); filter: brightness(1.05); }
-    &:active { transform: translateY(0); }
-    &:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    width: 100%;
+    text-align: center;
   }
 }
 
-/* responsive */
-@media (max-width: 880px) {
-  .form { grid-template-columns: 1fr; }
-  .fieldset { grid-template-columns: 1fr; padding-bottom: 64px; }
-  .factRow { grid-template-columns: 1fr 1fr; }
+/* Slight entrance animation for the section card */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

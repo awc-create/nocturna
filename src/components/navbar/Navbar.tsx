@@ -1,7 +1,7 @@
-// src/components/navbar/Navbar.tsx
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -22,34 +22,34 @@ type CSSVars = React.CSSProperties & { [key: `--${string}`]: string | number };
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${MOBILE_BP}px)`).matches : false
   );
 
-  // 0 = no handoff; 1 = handoff engaged (used on desktop + to hide mobile pill)
   const [handoff, setHandoff] = useState<0 | 1>(0);
   const handoffRef = useRef<0 | 1>(0);
 
   const [hover, setHover] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // desktop morph (links ⇄ logo)
+  // springs
   const m = useRef(0);
   const v = useRef(0);
-
-  // mobile pill morph (Menu ⇄ Logo) – keep at “Menu”
   const mm = useRef(0);
   const vm = useRef(0);
 
-  // desktop direction target (0 = links, 1 = logo)
   const dirTarget = useRef<0 | 1>(1);
   const lastY = useRef(0);
   const lastTime = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const raf = useRef<number | null>(null);
 
-  // media query listener
+  // === ACTIVE SECTION STATE (for home page) ===
+  const [activeSection, setActiveSection] = useState<string>('top');
+  const activeRef = useRef<string>('top');
+  const sectionIds = NAV_LINKS.map((l) => l.id);
+
+  // mobile breakpoint
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP}px)`);
     const apply = () => setIsMobile(mq.matches);
@@ -58,24 +58,23 @@ export default function Navbar() {
     return () => mq.removeEventListener?.('change', apply);
   }, []);
 
-  // write --m to all desktop center stacks (top + bottom)
   const setM = (value: number) => {
     m.current = value;
-    document.querySelectorAll<HTMLElement>(`.${styles.centerStack}`).forEach((el) => {
-      el.style.setProperty('--m', value.toFixed(4));
-      el.style.setProperty('--links-pe', value > 0.6 ? 'none' : 'auto');
-    });
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--nav-m', value.toFixed(4));
+      root.style.setProperty('--nav-links-pe', value > 0.6 ? 'none' : 'auto');
+    }
   };
 
-  // write --mm to all mobile pills (top + bottom)
   const setMM = (value: number) => {
     mm.current = value;
-    document.querySelectorAll<HTMLElement>(`.${styles.mobilePill}`).forEach((node) => {
-      node.style.setProperty('--mm', value.toFixed(4)); // 0 = Menu, 1 = Logo
-    });
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--nav-mm', value.toFixed(4));
+    }
   };
 
-  // critically damped spring
   const stepSpring = useCallback(
     (
       pos: React.MutableRefObject<number>,
@@ -102,7 +101,7 @@ export default function Navbar() {
     []
   );
 
-  // lock body scroll when overlay open
+  // lock body when mobile menu open
   useEffect(() => {
     const prev = document.body.style.overflow;
     if (menuOpen) document.body.style.overflow = 'hidden';
@@ -111,7 +110,7 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
-  // ESC closes overlay
+  // ESC closes menu
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false);
@@ -120,7 +119,7 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // handoff with HYSTERESIS (no jitter/peek) + morph loop
+  // scroll-based handoff + springs
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -129,10 +128,9 @@ export default function Navbar() {
       (document.querySelector('[role="contentinfo"]') as HTMLElement | null) ||
       document.querySelector('footer');
 
-    // thresholds relative to viewport bottom
-    const DEADZONE = isMobile ? 64 : 24; // px
-    const ACTIVATE_OFFSET = NAV_H + HANDOFF_SPAN + DEADZONE; // engage handoff when footer deeper in
-    const DEACTIVATE_OFFSET = 20; // disengage when footer far away
+    const DEADZONE = isMobile ? 64 : 24;
+    const ACTIVATE_OFFSET = NAV_H + HANDOFF_SPAN + DEADZONE;
+    const DEACTIVATE_OFFSET = 20;
 
     const updateHandoff = () => {
       if (!footer) {
@@ -142,7 +140,6 @@ export default function Navbar() {
       }
       const vh = window.innerHeight;
       const footerTop = footer.getBoundingClientRect().top;
-
       const activateAt = vh - ACTIVATE_OFFSET;
       const deactivateAt = vh - DEACTIVATE_OFFSET;
 
@@ -158,13 +155,16 @@ export default function Navbar() {
     const onScroll = () => {
       updateHandoff();
 
-      // desktop-only direction morph (ensure we didn't “remove” it)
       if (!isMobile) {
         const y = window.scrollY || 0;
         const dy = y - lastY.current;
-        if (dy > 0)
-          dirTarget.current = 1; // down → logo
-        else if (dy < 0) dirTarget.current = 0; // up   → links
+
+        if (dy > 0) {
+          dirTarget.current = 1; // scrolling down → logo mode
+        } else if (dy < 0) {
+          dirTarget.current = 0; // scrolling up → links mode
+        }
+
         lastY.current = y;
       }
     };
@@ -178,30 +178,25 @@ export default function Navbar() {
       lastTime.current = now;
       if (dt > MAX_DT) dt = MAX_DT;
 
-      // Desktop: morph based on scroll direction; hover/menu & handoff force links
       let desktopTarget = dirTarget.current;
-      if (hover || menuOpen) desktopTarget = 0; // links when hover/menu
-      if (!isMobile && handoffRef.current === 1) desktopTarget = 0; // links during desktop handoff
+      if (hover || menuOpen) desktopTarget = 0;
+      if (!isMobile && handoffRef.current === 1) desktopTarget = 0;
 
-      // Mobile: ALWAYS “Menu” (0)
       const mobileTarget = 0;
-
-      // apply
       if (!isMobile) stepSpring(m, v, desktopTarget, setM, dt);
       stepSpring(mm, vm, mobileTarget, setMM, dt);
 
       raf.current = requestAnimationFrame(loop);
     };
 
-    // init
-    setM(0); // desktop shows links on load
-    setMM(0); // mobile shows “Menu” on load
+    setM(0);
+    setMM(0);
     lastY.current = window.scrollY || 0;
     updateHandoff();
     lastTime.current = performance.now();
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onOrient);
     raf.current = requestAnimationFrame(loop);
 
@@ -213,40 +208,122 @@ export default function Navbar() {
     };
   }, [hover, menuOpen, stepSpring, isMobile]);
 
-  // hover
+  // === ACTIVE SECTION TRACKING (home only) ===
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pathname !== '/') return; // only track sections on home
+
+    const handle = () => {
+      const y = window.scrollY || 0;
+
+      // very top of page => Home
+      if (y < 200) {
+        if (activeRef.current !== 'top') {
+          activeRef.current = 'top';
+          setActiveSection('top');
+        }
+        return;
+      }
+
+      const viewportOffset = 100; // approx nav height
+      let bestId = 'top';
+      let bestDelta = Infinity;
+
+      sectionIds.forEach((id) => {
+        if (id === 'top') return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const top = rect.top + window.scrollY;
+        const delta = Math.abs(top - (y + viewportOffset));
+
+        if (delta < bestDelta && rect.bottom > viewportOffset + 40) {
+          bestDelta = delta;
+          bestId = id;
+        }
+      });
+
+      if (bestId && activeRef.current !== bestId) {
+        activeRef.current = bestId;
+        setActiveSection(bestId);
+      }
+    };
+
+    handle(); // run once on mount
+    window.addEventListener('scroll', handle, { passive: true });
+    window.addEventListener('resize', handle);
+    return () => {
+      window.removeEventListener('scroll', handle);
+      window.removeEventListener('resize', handle);
+    };
+  }, [pathname, sectionIds]);
+
   const onEnter = () => setHover(true);
   const onLeave = () => setHover(false);
 
-  // overlay controls
   const openMenu = () => setMenuOpen(true);
   const closeMenu = () => setMenuOpen(false);
 
-  // wrappers translate on desktop; mobile ignores transforms via CSS
   const HIDE_PX = NAV_H + HIDE_EXTRA;
   const topStyle = { transform: `translateY(${handoff ? 0 : -HIDE_PX}px)` };
   const bottomStyle = { transform: `translateY(${handoff ? HIDE_PX : 0}px)` };
+  const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length as number };
 
-  const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length };
+  // smooth scroll to sections (home only)
+  const handleNavClick =
+    (id: string) => (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+      if (pathname !== '/') {
+        // if you ever add other pages with same nav, let Next.js route normally
+        return;
+      }
+
+      e.preventDefault();
+
+      if (id === 'top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeMenu();
+        return;
+      }
+
+      const target = document.getElementById(id);
+      if (!target) {
+        closeMenu();
+        return;
+      }
+
+      const y = target.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+      closeMenu();
+    };
+
+  const isLinkActive = (id: string) => {
+    if (pathname !== '/') return false;
+    return activeSection === id;
+  };
 
   // Desktop pill (links ⇄ logo)
   const CenterMorph = () => (
     <div className={styles.centerStack}>
       <div className={styles.logoLayer} aria-hidden={hover}>
         <Link href="/" className={styles.logoLink} aria-label="Home">
-          <Image src="/assets/footer-light.png" alt="Nocturna" width={45} height={45} priority />
+          <Image src="/assets/A_W.png" alt="Nocturna" width={34} height={48} priority />
         </Link>
       </div>
       <div className={styles.linksLayer}>
-        {NAV_LINKS.map(({ slug, label }) => (
-          <Link
-            key={slug}
-            href={`/${slug}`}
-            className={`${styles.link} ${isActive(`/${slug}`) ? styles.active : ''}`}
-            aria-current={isActive(`/${slug}`) ? 'page' : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+        {NAV_LINKS.map(({ id, label }) => {
+          const href = id === 'top' ? '#top' : `#${id}`;
+          return (
+            <Link
+              key={id}
+              href={href}
+              className={`${styles.link} ${isLinkActive(id) ? styles.active : ''}`}
+              aria-current={isLinkActive(id) ? 'page' : undefined}
+              onClick={handleNavClick(id)}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -259,7 +336,6 @@ export default function Navbar() {
     </nav>
   );
 
-  // Mobile “Menu + burger” pill
   const MobileDock = () => (
     <div className={styles.mobilePill}>
       <button
@@ -274,7 +350,7 @@ export default function Navbar() {
         <span className={styles.mobileLeft}>
           <span className={styles.mobilePillLabel}>Menu</span>
           <span className={styles.mobilePillLogo} aria-hidden="true">
-            <Image src="/assets/footer-light.png" alt="" width={22} height={22} />
+            <Image src="/assets/A_W.png" alt="" width={17} height={24} />
           </span>
         </span>
         <span className={styles.mobilePillIcon} aria-hidden="true">
@@ -286,7 +362,6 @@ export default function Navbar() {
     </div>
   );
 
-  // overlay
   const MobileOverlay = () => (
     <>
       <div
@@ -303,7 +378,7 @@ export default function Navbar() {
         <div className={styles.mobileInner}>
           <div className={styles.mobileHeader}>
             <Link href="/" className={styles.mobileLogo} onClick={closeMenu} aria-label="Home">
-              <Image src="/assets/footer-light.png" alt="Nocturna" width={36} height={36} />
+              <Image src="/assets/A_W.png" alt="Nocturna" width={28} height={40} />
             </Link>
             <button
               type="button"
@@ -318,16 +393,19 @@ export default function Navbar() {
             Navigation
           </h2>
           <nav className={styles.mobileNav}>
-            {NAV_LINKS.map(({ slug, label }) => (
-              <Link
-                key={slug}
-                href={`/${slug}`}
-                className={`${styles.mobileLink} ${isActive(`/${slug}`) ? styles.activeMobile : ''}`}
-                onClick={closeMenu}
-              >
-                {label}
-              </Link>
-            ))}
+            {NAV_LINKS.map(({ id, label }) => {
+              const href = id === 'top' ? '#top' : `#${id}`;
+              return (
+                <Link
+                  key={id}
+                  href={href}
+                  className={`${styles.mobileLink} ${isLinkActive(id) ? styles.activeMobile : ''}`}
+                  onClick={handleNavClick(id)}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
@@ -337,15 +415,36 @@ export default function Navbar() {
   const topClass = `${styles.topWrapper} ${handoff ? styles.handoff : ''}`;
   const bottomClass = `${styles.bottomWrapper} ${handoff ? styles.handoff : ''}`;
 
+  const isHome = pathname === '/';
+
+  // 🔹 Non-home: simple sticky bar with Back to home
+  if (!isHome) {
+    return (
+      <header className={styles.secondaryBar}>
+        <div className={styles.secondaryInner}>
+          <Link href="/" className={styles.secondaryBrand} aria-label="Back to home">
+            <span className={styles.secondaryLogo}>
+              <Image src="/assets/NOCTURNA_W.png" alt="Nocturna" width={120} height={28} priority />
+            </span>
+          </Link>
+
+          <Link href="/" className={styles.secondaryBack}>
+            <span className={styles.secondaryBackArrow}>←</span>
+            <span>Back to home</span>
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
+  // 🔹 Home: full floating morph pill + mobile dock
   return (
     <>
-      {/* Desktop top morphing pill; hidden on mobile via CSS */}
       <div className={topClass} style={topStyle}>
         <Pill />
         <MobileDock />
       </div>
 
-      {/* Bottom wrapper: desktop pill + mobile pill */}
       <div className={bottomClass} style={bottomStyle}>
         <Pill />
         <MobileDock />

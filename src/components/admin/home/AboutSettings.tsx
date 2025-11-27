@@ -1,10 +1,13 @@
-// src/components/admin/home/AboutSettings.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type React from 'react';
 import styles from './AboutSettings.module.scss';
+import { UploadButton } from '@uploadthing/react';
+import type { OurFileRouter } from '@/app/api/uploadthing/core';
 
 type QuickFact = { value: string; label: string };
+type ValueCard = { title: string; body: string };
 
 type AboutData = {
   eyebrow: string;
@@ -16,6 +19,10 @@ type AboutData = {
   ctaGhostText: string;
   ctaGhostHref: string;
   quickFacts: QuickFact[];
+  values: ValueCard[];
+  videoUrl?: string | null;
+  videoPoster?: string | null;
+  videoCaption?: string | null;
 };
 
 const FALLBACK: AboutData = {
@@ -36,6 +43,47 @@ const FALLBACK: AboutData = {
     { value: 'UK-wide', label: 'Venue coverage' },
     { value: 'DJs & Musicians', label: 'Tailored rosters' },
   ],
+  values: [
+    {
+      title: 'Curation over chaos',
+      body: 'Every brief matched to the right artist, not the nearest calendar gap.',
+    },
+    {
+      title: 'Artist-first',
+      body: 'Fair fees, clear comms, reliable logistics — because great work needs great conditions.',
+    },
+    {
+      title: 'Venue-ready',
+      body: 'Professionalism on arrival, compact setups, and volume discipline for premium hospitality.',
+    },
+    {
+      title: 'Zero surprises',
+      body: 'Transparent pricing, tidy invoicing, and dedicated point of contact from enquiry to encore.',
+    },
+    {
+      title: 'Brand-fit sound',
+      body: 'Programming that respects brand tone and guest profile at every touchpoint.',
+    },
+    {
+      title: 'Reliable rosters',
+      body: 'Depth of talent to cover multi-site schedules and last-minute changes.',
+    },
+    {
+      title: 'Tech-ready',
+      body: 'Clear specs, tidy setups, and no drama with in-house teams or residents.',
+    },
+    {
+      title: 'Guest-first',
+      body: 'Read-the-room sets that build energy without overwhelming the space.',
+    },
+    {
+      title: 'Feedback loops',
+      body: 'We learn every week to refine the policy and roster for your venue.',
+    },
+  ],
+  videoUrl: null,
+  videoPoster: null,
+  videoCaption: null,
 };
 
 export default function AboutUsSettings() {
@@ -43,23 +91,19 @@ export default function AboutUsSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Draft text for the bullets textarea (keeps blank lines while typing)
   const [bulletsDraft, setBulletsDraft] = useState<string>(FALLBACK.bullets.join('\n'));
   const bulletsRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Auto-grow helper
   const autoresize = (ta: HTMLTextAreaElement | null) => {
     if (!ta) return;
     ta.style.height = 'auto';
     ta.style.height = `${ta.scrollHeight}px`;
   };
 
-  // Resize when draft changes
   useEffect(() => {
     autoresize(bulletsRef.current);
   }, [bulletsDraft]);
 
-  // Load existing data
   useEffect(() => {
     (async () => {
       try {
@@ -71,9 +115,10 @@ export default function AboutUsSettings() {
             ...data,
             bullets: data.bullets ?? FALLBACK.bullets,
             quickFacts: data.quickFacts ?? FALLBACK.quickFacts,
+            values: data.values ?? FALLBACK.values,
           };
           setForm(merged);
-          setBulletsDraft((merged.bullets ?? []).join('\n')); // keep raw text in the textarea
+          setBulletsDraft((merged.bullets ?? []).join('\n'));
         }
       } finally {
         setLoading(false);
@@ -88,7 +133,6 @@ export default function AboutUsSettings() {
       setForm((f) => ({ ...f, [key]: val as AboutData[K] }));
     };
 
-  // Update only the draft while typing; parse to array on blur/save
   const onBulletsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = typeof e?.target?.value === 'string' ? e.target.value : '';
     setBulletsDraft(val);
@@ -98,16 +142,22 @@ export default function AboutUsSettings() {
     const parsed = (bulletsDraft ?? '')
       .split('\n')
       .map((s) => s.trim())
-      .filter(Boolean); // remove empty lines on commit
+      .filter(Boolean);
     setForm((f) => ({ ...f, bullets: parsed }));
   };
 
-  // ---------- Quick Facts controls ----------
+  // Quick facts
   const addFact = () =>
-    setForm((f) => ({ ...f, quickFacts: [...f.quickFacts, { value: '', label: '' }] }));
+    setForm((f) => ({
+      ...f,
+      quickFacts: [...f.quickFacts, { value: '', label: '' }],
+    }));
 
   const removeFact = (idx: number) =>
-    setForm((f) => ({ ...f, quickFacts: f.quickFacts.filter((_, i) => i !== idx) }));
+    setForm((f) => ({
+      ...f,
+      quickFacts: f.quickFacts.filter((_, i) => i !== idx),
+    }));
 
   const onFactChange =
     (idx: number, field: keyof QuickFact) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,8 +178,40 @@ export default function AboutUsSettings() {
       return { ...f, quickFacts: next };
     });
 
+  // Values
+  const addValue = () =>
+    setForm((f) => ({
+      ...f,
+      values: [...f.values, { title: '', body: '' }],
+    }));
+
+  const removeValue = (idx: number) =>
+    setForm((f) => ({
+      ...f,
+      values: f.values.filter((_, i) => i !== idx),
+    }));
+
+  const onValueChange =
+    (idx: number, field: keyof ValueCard) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const val = typeof e?.target?.value === 'string' ? e.target.value : '';
+      setForm((f) => {
+        const next = [...f.values];
+        next[idx] = { ...next[idx], [field]: val };
+        return { ...f, values: next };
+      });
+    };
+
+  const moveValue = (from: number, to: number) =>
+    setForm((f) => {
+      if (to < 0 || to >= f.values.length) return f;
+      const next = [...f.values];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return { ...f, values: next };
+    });
+
   const save = async () => {
-    // ensure bullets array is up to date with the draft text
     commitBullets();
     setSaving(true);
     try {
@@ -138,10 +220,15 @@ export default function AboutUsSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error('Failed to save');
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Save /api/home/about failed:', res.status, text);
+        throw new Error('Failed to save');
+      }
       alert('About updated! Refresh Home to see changes.');
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Network error saving About.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Network error saving About.';
+      alert(msg);
     } finally {
       setSaving(false);
     }
@@ -162,19 +249,20 @@ export default function AboutUsSettings() {
       <p>Update the mini About block under the hero.</p>
 
       <div className={styles.form}>
+        {/* Copy */}
         <label>
           Eyebrow
-          <input value={form.eyebrow} onChange={onText('eyebrow')} />
+          <input value={form.eyebrow ?? ''} onChange={onText('eyebrow')} />
         </label>
 
         <label className={styles.full}>
           Title
-          <input value={form.title} onChange={onText('title')} />
+          <input value={form.title ?? ''} onChange={onText('title')} />
         </label>
 
         <label className={styles.full}>
           Lead Paragraph
-          <textarea rows={4} value={form.lead} onChange={onText('lead')} />
+          <textarea rows={4} value={form.lead ?? ''} onChange={onText('lead')} />
         </label>
 
         <label className={styles.full}>
@@ -187,13 +275,13 @@ export default function AboutUsSettings() {
             onBlur={commitBullets}
             onInput={(e) => autoresize(e.currentTarget)}
             onKeyDown={(e) => {
-              // Let Enter insert newline; just avoid bubbling to any parent key handlers
               if (e.key === 'Enter') e.stopPropagation();
             }}
           />
+          <small>Each line becomes a bullet point under the About text.</small>
         </label>
 
-        {/* Dynamic Quick Facts */}
+        {/* Quick Facts */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Quick Facts</legend>
 
@@ -235,6 +323,152 @@ export default function AboutUsSettings() {
           </button>
         </fieldset>
 
+        {/* Values */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Ethos &amp; values</legend>
+
+          {form.values.map((val, i) => (
+            <div key={i} className={styles.factRow}>
+              <label>
+                Title
+                <input
+                  placeholder="e.g. Artist-first"
+                  value={val.title}
+                  onChange={onValueChange(i, 'title')}
+                />
+              </label>
+              <label className={styles.full}>
+                Body
+                <textarea
+                  rows={2}
+                  placeholder="Short line describing the value…"
+                  value={val.body}
+                  onChange={onValueChange(i, 'body')}
+                />
+              </label>
+
+              <div className={styles.factActions} aria-label="Value actions">
+                <button type="button" onClick={() => moveValue(i, i - 1)} title="Move up">
+                  ↑
+                </button>
+                <button type="button" onClick={() => moveValue(i, i + 1)} title="Move down">
+                  ↓
+                </button>
+                <button type="button" onClick={() => removeValue(i)} title="Remove">
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+
+          <button type="button" className={styles.addBtn} onClick={addValue}>
+            + Add value
+          </button>
+        </fieldset>
+
+        {/* VIDEO ONLY */}
+        <fieldset className={styles.fieldset}>
+          <legend>About Video</legend>
+
+          <label className={styles.full}>
+            Video URL
+            <input
+              placeholder="Paste a YouTube link or leave empty and upload below…"
+              value={form.videoUrl ?? ''}
+              onChange={onText('videoUrl')}
+            />
+            <small>
+              Option 1: paste a YouTube URL (Unlisted is fine). Option 2: upload a video file and
+              we&apos;ll store its URL here.
+            </small>
+          </label>
+
+          <label className={styles.full}>
+            Upload video file (optional)
+            <div className={styles.uploaderRow}>
+              <UploadButton<OurFileRouter, 'mediaUploader'>
+                endpoint="mediaUploader"
+                onClientUploadComplete={(res) => {
+                  const u = res?.[0]?.ufsUrl ?? res?.[0]?.url;
+                  if (u) {
+                    setForm((prev) => ({ ...prev, videoUrl: u }));
+                  }
+                }}
+                onUploadError={(err) => {
+                  const msg = err instanceof Error ? err.message : 'Upload failed';
+                  alert(msg);
+                }}
+              />
+              <small>
+                MP4 / MOV, up to ~128MB. For long, high-quality cuts, YouTube is usually better.
+              </small>
+            </div>
+          </label>
+
+          <label>
+            Caption (optional)
+            <input
+              placeholder="1-minute overview"
+              value={form.videoCaption ?? ''}
+              onChange={onText('videoCaption')}
+            />
+          </label>
+
+          {form.videoUrl ? (
+            <video
+              src={form.videoUrl}
+              poster={form.videoPoster ?? undefined}
+              controls
+              className={styles.previewVideo}
+            />
+          ) : null}
+        </fieldset>
+
+        {/* POSTER IMAGE ONLY */}
+        <fieldset className={styles.fieldset}>
+          <legend>Poster Image</legend>
+
+          <label className={styles.full}>
+            Poster Image URL
+            <input
+              placeholder="/assets/about-poster.jpg"
+              value={form.videoPoster ?? ''}
+              onChange={onText('videoPoster')}
+            />
+            <small>Used as the thumbnail on the About section before the video opens.</small>
+          </label>
+
+          <label className={styles.full}>
+            Upload poster image (optional)
+            <div className={styles.uploaderRow}>
+              <UploadButton<OurFileRouter, 'mediaUploader'>
+                endpoint="mediaUploader"
+                onClientUploadComplete={(res) => {
+                  const u = res?.[0]?.ufsUrl ?? res?.[0]?.url;
+                  if (u) {
+                    setForm((prev) => ({ ...prev, videoPoster: u }));
+                  }
+                }}
+                onUploadError={(err) => {
+                  const msg = err instanceof Error ? err.message : 'Upload failed';
+                  alert(msg);
+                }}
+              />
+              <small>JPG / PNG; up to ~16MB.</small>
+            </div>
+          </label>
+
+          {form.videoPoster ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={form.videoPoster}
+              alt="About section poster preview"
+              className={styles.posterPreview}
+            />
+          ) : null}
+        </fieldset>
+
+        {/* CTAs */}
         <fieldset className={styles.fieldset}>
           <legend>Primary CTA</legend>
           <label>

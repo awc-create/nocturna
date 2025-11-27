@@ -1,7 +1,6 @@
-// src/components/admin/home/HeroSettings.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import styles from './HeroSettings.module.scss';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
@@ -25,11 +24,11 @@ const DEFAULTS: HeroForm = {
   imageSrc: '/assets/hero.png',
   videoSrc: '/assets/hero.mp4',
   posterSrc: '/assets/hero-poster.jpg',
-  title: 'Your Modern Website Starts Here',
+  title: 'Bringing nightlife to life.',
   description:
-    'Crafted with performance and style in mind. This is your launchpad for a fast, clean, and responsive online presence — proudly created with the Web Dev Wizard CLI.',
-  ctaText: 'APPLY FOR MEMBERSHIP',
-  ctaHref: '/apply',
+    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
+  ctaText: 'ENQUIRE NOW',
+  ctaHref: '#enquire',
   overlayDarkness: 0.5,
 };
 
@@ -46,28 +45,35 @@ export default function HeroSettings() {
         const data = (await res.json()) as Partial<HeroForm>;
         setForm({ ...DEFAULTS, ...data });
       } catch {
-        /* keep defaults */
+        // keep defaults
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
+  /** SAFE helpers – read value before calling setForm so we don’t close over the event */
   const onText =
     <K extends keyof HeroForm>(key: K) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((f) => ({ ...f, [key]: e.currentTarget.value as HeroForm[K] }));
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.currentTarget.value as HeroForm[K];
+      setForm((f) => ({ ...f, [key]: value }));
     };
 
   const onSelect =
     <K extends keyof HeroForm>(key: K) =>
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setForm((f) => ({ ...f, [key]: e.currentTarget.value as HeroForm[K] }));
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      const value = e.currentTarget.value as HeroForm[K];
+      setForm((f) => ({ ...f, [key]: value }));
     };
 
-  const onOverlay = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const n = Number(e.currentTarget.value);
-    setForm((f) => ({ ...f, overlayDarkness: Math.max(0, Math.min(1, n)) }));
+  const onOverlay = (e: ChangeEvent<HTMLInputElement>) => {
+    const raw = Number(e.currentTarget.value);
+    const n = Number.isNaN(raw) ? 0 : raw;
+    setForm((f) => ({
+      ...f,
+      overlayDarkness: Math.max(0, Math.min(1, n)),
+    }));
   };
 
   const save = async () => {
@@ -100,136 +106,177 @@ export default function HeroSettings() {
   return (
     <section className={styles.section}>
       <h2>Home Hero</h2>
-      <p>Update the home page hero media and text.</p>
+      <p>Update the home page hero media, overlay and text.</p>
 
       <div className={styles.form}>
-        {/* Media type */}
-        <label>
-          Media Type
-          <select value={form.mediaType} onChange={onSelect('mediaType')}>
-            <option value="VIDEO">Video</option>
-            <option value="IMAGE">Image</option>
-          </select>
-        </label>
+        {/* ========= QUICK CONTROLS ========= */}
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <h3>Hero basics</h3>
+            <p>Choose your media type and how dark the overlay should be.</p>
+          </div>
 
-        {/* Title / Description */}
-        <label>
-          Heading (subtitle under kicker)
-          <input value={form.title} onChange={onText('title')} />
-        </label>
+          <div className={styles.groupGrid}>
+            <label>
+              Media Type
+              <select value={form.mediaType} onChange={onSelect('mediaType')}>
+                <option value="VIDEO">Video</option>
+                <option value="IMAGE">Image</option>
+              </select>
+              <small>Video works best for 10–15s loops.</small>
+            </label>
 
-        <label className={styles.full}>
-          Paragraph
-          <textarea rows={4} value={form.description} onChange={onText('description')} />
-        </label>
-
-        {/* CTA */}
-        <label>
-          CTA Text
-          <input value={form.ctaText} onChange={onText('ctaText')} />
-        </label>
-        <label>
-          CTA Link
-          <input value={form.ctaHref} onChange={onText('ctaHref')} />
-        </label>
-
-        {/* Media-specific */}
-        {form.mediaType === 'VIDEO' ? (
-          <>
-            <label className={styles.full}>
-              Video URL
+            <label>
+              Overlay Darkness ({form.overlayDarkness.toFixed(2)})
               <input
-                placeholder="/assets/hero.mp4"
-                value={form.videoSrc || ''}
-                onChange={onText('videoSrc')}
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={form.overlayDarkness}
+                onChange={onOverlay}
               />
-              <div className={styles.uploaderRow}>
-                <UploadButton<OurFileRouter, 'mediaUploader'>
-                  endpoint="mediaUploader"
-                  onClientUploadComplete={(res) => {
-                    // Use CDN url supplied by UploadThing
-                    const u = res?.[0]?.url;
-                    if (u) setForm((prev) => ({ ...prev, videoSrc: u }));
-                  }}
-                  onUploadError={(err) => {
-                    const msg = err instanceof Error ? err.message : 'Upload failed';
-                    alert(msg);
-                  }}
-                />
-                <small>Upload .mp4 (10–15s loop recommended)</small>
-              </div>
+              <small>0 = no overlay (bright), 1 = fully dark (text very strong).</small>
+            </label>
+          </div>
+        </div>
+
+        {/* ========= TEXT CONTENT ========= */}
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <h3>Headline & copy</h3>
+            <p>Keep it short and punchy. This is what visitors read first.</p>
+          </div>
+
+          <div className={styles.groupGrid}>
+            <label className={styles.full}>
+              Heading (subtitle under kicker)
+              <input
+                value={form.title}
+                onChange={onText('title')}
+                placeholder="Bringing nightlife to life."
+              />
             </label>
 
             <label className={styles.full}>
-              Poster Image URL (optional)
-              <input
-                placeholder="/assets/hero-poster.jpg"
-                value={form.posterSrc || ''}
-                onChange={onText('posterSrc')}
-              />
-              <div className={styles.uploaderRow}>
-                <UploadButton<OurFileRouter, 'mediaUploader'>
-                  endpoint="mediaUploader"
-                  onClientUploadComplete={(res) => {
-                    const u = res?.[0]?.url;
-                    if (u) setForm((prev) => ({ ...prev, posterSrc: u }));
-                  }}
-                  onUploadError={(err) => {
-                    const msg = err instanceof Error ? err.message : 'Upload failed';
-                    alert(msg);
-                  }}
-                />
-                <small>Upload poster image</small>
-              </div>
+              Paragraph
+              <textarea rows={4} value={form.description} onChange={onText('description')} />
             </label>
-          </>
-        ) : (
-          <label className={styles.full}>
-            Image URL
-            <input
-              placeholder="/assets/hero.png"
-              value={form.imageSrc}
-              onChange={onText('imageSrc')}
-            />
-            <div className={styles.uploaderRow}>
-              <UploadButton<OurFileRouter, 'mediaUploader'>
-                endpoint="mediaUploader"
-                onClientUploadComplete={(res) => {
-                  const u = res?.[0]?.url;
-                  if (u) setForm((prev) => ({ ...prev, imageSrc: u }));
-                }}
-                onUploadError={(err) => {
-                  const msg = err instanceof Error ? err.message : 'Upload failed';
-                  alert(msg);
-                }}
-              />
-              <small>Upload hero image</small>
+          </div>
+        </div>
+
+        {/* ========= CTA ========= */}
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <h3>Call to action</h3>
+            <p>Where do you want people to go from the hero?</p>
+          </div>
+
+          <div className={styles.groupGrid}>
+            <label>
+              CTA Text
+              <input value={form.ctaText} onChange={onText('ctaText')} placeholder="ENQUIRE NOW" />
+            </label>
+            <label>
+              CTA Link
+              <input value={form.ctaHref} onChange={onText('ctaHref')} placeholder="#enquire" />
+              <small>Use a section ID (e.g. #enquire) or full URL.</small>
+            </label>
+          </div>
+        </div>
+
+        {/* ========= MEDIA ========= */}
+        <div className={styles.group}>
+          <div className={styles.groupHeader}>
+            <h3>Media files</h3>
+            <p>Upload once and reuse. We&apos;ll pull from the media library automatically.</p>
+          </div>
+
+          {form.mediaType === 'VIDEO' ? (
+            <div className={styles.groupGrid}>
+              <label className={styles.full}>
+                Video URL
+                <input
+                  placeholder="/assets/hero.mp4"
+                  value={form.videoSrc || ''}
+                  onChange={onText('videoSrc')}
+                />
+                <div className={styles.uploaderRow}>
+                  <UploadButton<OurFileRouter, 'mediaUploader'>
+                    endpoint="mediaUploader"
+                    onClientUploadComplete={(res) => {
+                      const u = res?.[0]?.url;
+                      if (u) setForm((prev) => ({ ...prev, videoSrc: u }));
+                    }}
+                    onUploadError={(err) => {
+                      const msg = err instanceof Error ? err.message : 'Upload failed';
+                      alert(msg);
+                    }}
+                  />
+                  <small>Upload .mp4 (10–15s loop recommended)</small>
+                </div>
+              </label>
+
+              <label className={styles.full}>
+                Poster Image URL (optional)
+                <input
+                  placeholder="/assets/hero-poster.jpg"
+                  value={form.posterSrc || ''}
+                  onChange={onText('posterSrc')}
+                />
+                <div className={styles.uploaderRow}>
+                  <UploadButton<OurFileRouter, 'mediaUploader'>
+                    endpoint="mediaUploader"
+                    onClientUploadComplete={(res) => {
+                      const u = res?.[0]?.url;
+                      if (u) setForm((prev) => ({ ...prev, posterSrc: u }));
+                    }}
+                    onUploadError={(err) => {
+                      const msg = err instanceof Error ? err.message : 'Upload failed';
+                      alert(msg);
+                    }}
+                  />
+                  <small>Shown before the video loads, and on slower connections.</small>
+                </div>
+              </label>
             </div>
-          </label>
-        )}
+          ) : (
+            <div className={styles.groupGrid}>
+              <label className={styles.full}>
+                Image URL
+                <input
+                  placeholder="/assets/hero.png"
+                  value={form.imageSrc}
+                  onChange={onText('imageSrc')}
+                />
+                <div className={styles.uploaderRow}>
+                  <UploadButton<OurFileRouter, 'mediaUploader'>
+                    endpoint="mediaUploader"
+                    onClientUploadComplete={(res) => {
+                      const u = res?.[0]?.url;
+                      if (u) setForm((prev) => ({ ...prev, imageSrc: u }));
+                    }}
+                    onUploadError={(err) => {
+                      const msg = err instanceof Error ? err.message : 'Upload failed';
+                      alert(msg);
+                    }}
+                  />
+                  <small>Upload a high-contrast hero image.</small>
+                </div>
+              </label>
+            </div>
+          )}
+        </div>
 
-        {/* Overlay */}
-        <label>
-          Overlay Darkness ({form.overlayDarkness.toFixed(2)})
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={form.overlayDarkness}
-            onChange={onOverlay}
-          />
-        </label>
-
-        {/* Actions */}
+        {/* ========= ACTIONS (sticky on mobile) ========= */}
         <div className={styles.actions}>
           <button className={styles.save} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save hero'}
           </button>
         </div>
       </div>
 
-      <p style={{ marginTop: 10, color: '#6b7280', fontSize: '.9rem' }}>
+      <p className={styles.tip}>
         Tip: after saving, refresh the Home page to see changes instantly.
       </p>
     </section>

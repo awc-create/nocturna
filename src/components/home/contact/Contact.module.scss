@@ -1,43 +1,27 @@
 /* =========================
-   CONTACT — Seamless finale
+   CONTACT — Clean CTA
    ========================= */
+
 .section {
-  --ink: #fff;
+  --ink: #ffffff;
   --muted: rgba(255, 255, 255, 0.65);
   --accent: #e7d7a7;
 
   position: relative;
   color: var(--ink);
-  background: transparent; /* no base fill */
+  background: transparent;
   text-align: center;
   padding: clamp(80px, 12vw, 160px) 16px;
-  overflow: hidden;
-  margin-block: 0;
 }
-
-/* Stage glow that fades before reaching edges → no banding */
-// .section::before {
-//   content: '';
-//   position: absolute;
-//   inset: 0;
-//   pointer-events: none;
-//   background: radial-gradient(
-//     120% 80% at 50% 0%,
-//     rgba(255, 255, 255, 0.05),
-//     rgba(255, 255, 255, 0.02) 45%,
-//     rgba(0, 0, 0, 0) 70%
-//   );
-//   mask-image: radial-gradient(120% 80% at 50% 0%, #000 55%, transparent 85%);
-//   opacity: 0.9;
-// }
 
 .inner {
+  max-width: 1160px;
+  margin: 0 auto;
   display: grid;
   place-items: center;
-  gap: 16px;
-  max-width: 800px;
-  margin: 0 auto;
+  gap: 28px;
 }
+
 .kicker {
   font-size: 0.9rem;
   text-transform: uppercase;
@@ -45,72 +29,273 @@
   color: var(--muted);
 }
 
-.touchLink {
-  position: relative;
-  font-size: clamp(38px, 6vw, 80px);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-  text-decoration: none;
+/* =========================
+   CTA — Text + Orb + Rail
+   ========================= */
+
+.cta {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+
   color: var(--ink);
-  transition:
-    color 0.3s ease,
-    transform 0.3s ease;
-  z-index: 1;
-  &:hover {
-    color: var(--accent);
-    transform: translateY(-2px);
-  }
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
-/* Hover orb */
+.labelWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* GET IN TOUCH — gold heartbeat / DJ beat */
+.ctaLabel {
+  font-size: clamp(40px, 6vw, 80px);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  position: relative;
+  z-index: 2;
+
+  /* idle pulse */
+  animation: goldBeat 2.8s ease-out infinite;
+}
+
+/* Underline (visible but subtle idle) */
+.ctaRail {
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 58px; /* stops before orb */
+  height: 2px;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    rgba(231, 215, 167, 0),
+    rgba(231, 215, 167, 0.9),
+    rgba(231, 215, 167, 0)
+  );
+
+  opacity: 0.25;
+  transform: scaleX(0.45);
+  transform-origin: left;
+
+  transition:
+    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.6s ease;
+}
+
+/* =========================
+   Orb — synced to the beat
+   ========================= */
+
+.orbWrap {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  margin-left: 18px;
+}
+
 .orb {
   position: absolute;
-  right: -48px;
-  top: 50%;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 70%);
+  inset: 0;
+  margin: auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+
+  background: radial-gradient(circle at 30% 30%, #fffbe8, #f3dca0 45%, #b8924a 100%);
   box-shadow:
-    0 0 20px rgba(231, 215, 167, 0.5),
-    0 0 60px rgba(231, 215, 167, 0.3);
-  opacity: 0;
-  transform: scale(0.6) translateY(-50%);
-  transform-origin: center;
-  transition: all 0.35s ease;
-}
-.visible {
-  opacity: 1;
-  transform: scale(1) translateY(-50%);
+    0 0 36px rgba(231, 215, 167, 0.7),
+    0 0 120px rgba(231, 215, 167, 0.4);
+
+  transform: translateX(2px) scale(0.9);
+  transition: transform 0.45s ease, box-shadow 0.45s ease;
+
+  /* DJ-beat style thump, synced with text */
+  animation: orbBeat 2.8s ease-out infinite;
 }
 
+/* =========================
+   Hover State — layered on top of beat
+   ========================= */
+
+.cta:hover,
+.cta:focus-visible {
+  transform: translateY(-2px);
+}
+
+/* On hover:
+   - stop the idle pulse
+   - go solid gold
+   - add stronger glow */
+.cta:hover .ctaLabel,
+.cta:focus-visible .ctaLabel {
+  animation: none; /* << stop goldBeat while hovered */
+  color: var(--accent);
+  text-shadow:
+    0 0 20px rgba(231, 215, 167, 0.8),
+    0 0 40px rgba(231, 215, 167, 0.5);
+}
+
+/* Rail grows fully + brightens */
+.cta:hover .ctaRail,
+.cta:focus-visible .ctaRail {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* Orb brightens and shifts further;
+   also stop the beat animation while hovered */
+.cta:hover .orb,
+.cta:focus-visible .orb {
+  animation: none; /* << stop orbBeat while hovered */
+  transform: translateX(7px) scale(1);
+  box-shadow:
+    0 0 60px rgba(231, 215, 167, 1),
+    0 0 220px rgba(231, 215, 167, 0.65);
+}
+
+/* Sub label */
+.ctaSub {
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.85);
+}
+
+/* =========================
+   Contact Details + Socials
+   ========================= */
+
 .details {
-  margin-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   color: var(--muted);
   font-size: 1rem;
-  svg {
-    margin-right: 6px;
-    vertical-align: middle;
+
+  p {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--accent);
   }
 }
 
 .socials {
   display: flex;
   justify-content: center;
-  gap: 14px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 22px;
+
   a {
     color: var(--muted);
     font-size: 1.25rem;
-    transition:
-      color 0.25s ease,
-      transform 0.25s ease;
-    &:hover {
-      color: var(--accent);
-      transform: translateY(-2px);
-    }
+    transition: color 0.25s ease, transform 0.25s ease;
+  }
+
+  a:hover {
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+}
+
+/* =========================
+   Keyframes — DJ gold beat
+   ========================= */
+
+/* Gold heartbeat / DJ beat for text */
+@keyframes goldBeat {
+  0%,
+  40%,
+  100% {
+    color: var(--ink);
+    text-shadow:
+      0 0 0px rgba(231, 215, 167, 0),
+      0 0 0px rgba(231, 215, 167, 0);
+  }
+
+  /* Main hit */
+  16% {
+    color: #fffef7;
+    text-shadow:
+      0 0 18px rgba(231, 215, 167, 0.6),
+      0 0 32px rgba(231, 215, 167, 0.35);
+  }
+
+  /* Small echo */
+  24% {
+    color: #fdfaf0;
+    text-shadow:
+      0 0 10px rgba(231, 215, 167, 0.35),
+      0 0 20px rgba(231, 215, 167, 0.2);
+  }
+}
+
+/* Orb thump – synced with same beat timing */
+@keyframes orbBeat {
+  0%,
+  40%,
+  100% {
+    transform: translateX(2px) scale(0.9);
+    box-shadow:
+      0 0 36px rgba(231, 215, 167, 0.6),
+      0 0 120px rgba(231, 215, 167, 0.35);
+  }
+
+  16% {
+    transform: translateX(3px) scale(0.98);
+    box-shadow:
+      0 0 52px rgba(231, 215, 167, 0.9),
+      0 0 160px rgba(231, 215, 167, 0.55);
+  }
+
+  24% {
+    transform: translateX(3px) scale(0.94);
+    box-shadow:
+      0 0 44px rgba(231, 215, 167, 0.7),
+      0 0 140px rgba(231, 215, 167, 0.45);
+  }
+}
+
+/* =========================
+   Mobile Adjustments
+   ========================= */
+
+@media (max-width: 640px) {
+  .orbWrap {
+    width: 42px;
+    height: 42px;
+    margin-left: 12px;
+  }
+
+  .orb {
+    width: 30px;
+    height: 30px;
+  }
+
+  .ctaLabel {
+    font-size: clamp(28px, 7vw, 38px);
+  }
+
+  .ctaRail {
+    bottom: -6px;
+    right: 46px;
   }
 }

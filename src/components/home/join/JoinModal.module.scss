@@ -1,0 +1,217 @@
+/* src/components/home/join/JoinModal.module.scss */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: radial-gradient(circle at top, rgba(15, 23, 42, 0.92), rgba(0, 0, 0, 0.9));
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.panel {
+  width: min(760px, 100%);
+  max-height: min(92vh, 780px);
+  border-radius: 26px;
+  background: radial-gradient(circle at top left, #05060b, #020308);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  box-shadow:
+    0 26px 80px rgba(0, 0, 0, 0.85),
+    0 0 0 1px rgba(15, 23, 42, 0.9);
+  color: #fff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: riseIn 0.22s ease-out;
+}
+
+/* pinned X button */
+.close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.2), rgba(15, 23, 42, 0.9));
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  width: 32px;
+  height: 32px;
+  color: #e5e7eb;
+  cursor: pointer;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  font-size: 0.9rem;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.9);
+    background: radial-gradient(circle at 0 0, rgba(248, 250, 252, 0.26), rgba(15, 23, 42, 0.95));
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.8);
+  }
+}
+
+/* scrollable content area */
+.scrollArea {
+  padding: 26px 24px 28px;
+  padding-top: 38px; /* space under X */
+  overflow-y: auto;
+}
+
+/* header text */
+.kicker {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.title {
+  margin-top: 8px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  font-size: 0.96rem;
+  color: rgba(226, 232, 240, 0.78);
+}
+
+/* form layout */
+.form {
+  display: grid;
+  gap: 20px;
+}
+
+.grid {
+  display: grid;
+  gap: 14px 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
+}
+
+.labelText {
+  display: block;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 10px 11px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 0 0, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  color: #f9fafb;
+  font-size: 0.9rem;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+
+  &::placeholder {
+    color: rgba(148, 163, 184, 0.9);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: #e7d7a7;
+    box-shadow: 0 0 0 1px rgba(231, 215, 167, 0.6);
+    background: radial-gradient(circle at 0 0, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.98));
+  }
+}
+
+.field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+/* submit + messages */
+.submit {
+  margin-top: 6px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: none;
+  background: radial-gradient(circle at 0 0, #f0d79a 0%, #e5c17a 40%, #b38a45 100%);
+  color: #0b0b0b;
+  font-weight: 900;
+  font-size: 0.9rem;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.95);
+  transition:
+    transform 0.12s ease,
+    filter 0.18s ease,
+    box-shadow 0.18s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.success {
+  margin-top: 10px;
+  color: #e7d7a7;
+  font-size: 0.85rem;
+}
+
+.error {
+  margin-top: 10px;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+
+/* entrance animation */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

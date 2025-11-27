@@ -1,4 +1,3 @@
-// src/app/api/home/hero/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
@@ -12,11 +11,11 @@ const DEFAULTS = {
   imageSrc: '', // no media picked yet
   videoSrc: null as string | null,
   posterSrc: null as string | null,
-  title: 'Your Modern Website Starts Here',
+  title: 'Bringing nightlife to life.',
   description:
-    'Crafted with performance and style in mind. This is your launchpad for a fast, clean, and responsive online presence — proudly created with the Web Dev Wizard CLI.',
-  ctaText: 'APPLY FOR MEMBERSHIP',
-  ctaHref: '/apply',
+    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
+  ctaText: 'ENQUIRE NOW',
+  ctaHref: '#enquire', // ⬅ scroll to enquire section on home
   overlayDarkness: 0.5,
 };
 

@@ -1,23 +1,23 @@
+// src/app/admin/AdminClient.tsx
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import styles from './AdminClient.module.scss';
+
 import HomeSettings from '@/components/admin/home/HomeSettings';
-import AboutUsSettings from '@/components/admin/about/AboutUsSettings';
-import ContactSettings from '@/components/admin/contact/ContactSettings';
+
+/* CLEAR, OBVIOUS ICONS */
 import {
-  PanelsTopLeft,
-  Home,
-  FileText,
-  Mail,
+  LayoutDashboard, // Top-left "Admin"
+  Home, // Home page
   Command,
   Menu,
   X,
   LogOut,
-  Sparkles,
+  PanelsTopLeft, // Sidebar "Sections" header
 } from 'lucide-react';
 
-type SectionKey = 'home' | 'about' | 'contact';
+type SectionKey = 'home';
 
 const SECTIONS: {
   key: SectionKey;
@@ -25,9 +25,12 @@ const SECTIONS: {
   hint: string;
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
 }[] = [
-  { key: 'home', label: 'Home', hint: 'Hero, About & Services', icon: Home },
-  { key: 'about', label: 'About', hint: 'Mini about block', icon: FileText },
-  { key: 'contact', label: 'Contact', hint: 'Contact details', icon: Mail },
+  {
+    key: 'home',
+    label: 'Home',
+    hint: 'Hero, About & Services',
+    icon: Home,
+  },
 ];
 
 export default function AdminClient() {
@@ -52,13 +55,8 @@ export default function AdminClient() {
   const render = () => {
     switch (active) {
       case 'home':
-        return <HomeSettings />;
-      case 'about':
-        return <AboutUsSettings />;
-      case 'contact':
-        return <ContactSettings />;
       default:
-        return null;
+        return <HomeSettings />;
     }
   };
 
@@ -75,7 +73,7 @@ export default function AdminClient() {
             {railOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
           <div className={styles.brand}>
-            <PanelsTopLeft size={18} />
+            <LayoutDashboard size={18} />
             <span>Admin</span>
             <span className={styles.sep}>/</span>
             <span className={styles.crumb}>{activeMeta.label}</span>
@@ -85,7 +83,7 @@ export default function AdminClient() {
         <div className={styles.topCenter}>
           <button className={styles.kbdBtn} onClick={() => setCmdOpen(true)} title="⌘/Ctrl + K">
             <Command size={16} />
-            Quick switch
+            <span className={styles.kbdLabel}>Quick switch</span>
             <kbd>⌘K</kbd>
           </button>
         </div>
@@ -109,7 +107,7 @@ export default function AdminClient() {
         {/* Icon rail (collapsible) */}
         <aside className={`${styles.rail} ${railOpen ? styles.railOpen : ''}`}>
           <div className={styles.railHead}>
-            <Sparkles size={18} />
+            <PanelsTopLeft size={18} />
             {railOpen && <span>Sections</span>}
           </div>
 
@@ -166,6 +164,7 @@ export default function AdminClient() {
               <Command size={16} />
               Switch section
             </div>
+
             <div className={styles.cmdList} role="menu">
               {SECTIONS.map((s) => (
                 <button

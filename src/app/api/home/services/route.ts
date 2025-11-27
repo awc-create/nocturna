@@ -1,3 +1,4 @@
+// src/app/api/home/services/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
@@ -14,13 +15,8 @@ export interface ServiceItem {
   href: string;
   image: string;
   tag: string;
-}
-
-interface ServicesPayload {
-  kicker?: string;
-  title?: string;
-  lead?: string;
-  items?: unknown;
+  backImage?: string;
+  detail?: string;
 }
 
 const DEFAULTS = {
@@ -33,18 +29,24 @@ const DEFAULTS = {
       title: 'DJs',
       blurb:
         'Signature selectors for restaurants, bars and late-night venues. Floor-filling sets matched to brand, guest profile, and time of day.',
-      href: '/services/djs',
+      href: '#enquire',
       image: '/assets/services/djs.jpg',
+      backImage: '/assets/services/djs-back.jpg',
       tag: 'Nightlife energy',
+      detail:
+        'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
     },
     {
       key: 'musician',
       title: 'Musicians',
       blurb:
         'Acoustic duos, sax, strings, vocalists — atmosphere-first performances curated for intimate dining and premium hospitality.',
-      href: '/services/musicians',
+      href: '#enquire',
       image: '/assets/services/musicians.jpg',
+      backImage: '/assets/services/musicians-back.jpg',
       tag: 'Live atmosphere',
+      detail:
+        'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
     },
   ] as ServiceItem[],
 };
@@ -53,20 +55,31 @@ const sanitize = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
 
 function parseItems(input: unknown): ServiceItem[] {
   if (!Array.isArray(input)) return DEFAULTS.items;
-  const cleaned: ServiceItem[] = input
-    .map((raw): ServiceItem | null => {
+
+  const cleaned = input
+    .map((raw) => {
       if (typeof raw !== 'object' || raw === null) return null;
+
       const r = raw as Record<string, unknown>;
+
       const title = sanitize(r.title);
       const blurb = sanitize(r.blurb);
-      const href = sanitize(r.href);
-      const image = sanitize(r.image);
-      const tag = sanitize(r.tag);
-      const key = sanitize(r.key) || title.toLowerCase().replace(/\s+/g, '-');
-      return { key, title, blurb, href, image, tag };
+      if (!title || !blurb) return null;
+
+      return {
+        key: sanitize(r.key) || title.toLowerCase().replace(/\s+/g, '-'),
+        title,
+        blurb,
+        href: sanitize(r.href) || '#enquire',
+        image: sanitize(r.image),
+        tag: sanitize(r.tag),
+        backImage: sanitize(r.backImage),
+        detail: sanitize(r.detail),
+      } as ServiceItem;
     })
-    .filter((v): v is ServiceItem => !!v)
+    .filter((i): i is ServiceItem => !!i)
     .slice(0, 12);
+
   return cleaned.length ? cleaned : DEFAULTS.items;
 }
 
@@ -75,39 +88,28 @@ export async function GET() {
     const row = await prisma.homeServices.findUnique({ where: { key: KEY } });
     if (!row) return NextResponse.json(DEFAULTS);
 
-    const items = parseItems(row.items as unknown);
     return NextResponse.json({
       kicker: row.kicker ?? DEFAULTS.kicker,
       title: row.title ?? DEFAULTS.title,
       lead: row.lead ?? DEFAULTS.lead,
-      items,
+      items: parseItems(row.items as unknown),
     });
   } catch (e) {
     console.error('GET /api/home/services failed:', e);
-    return NextResponse.json({ error: 'Server error (GET services).' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body: ServicesPayload = await req.json();
-
-    const itemsArray = parseItems(body.items);
-    const itemsJson: Prisma.JsonArray = itemsArray as unknown as Prisma.JsonArray;
-
+    const body = await req.json();
+    const items = parseItems(body.items);
     const data = {
       kicker: sanitize(body.kicker) || DEFAULTS.kicker,
       title: sanitize(body.title) || DEFAULTS.title,
       lead: sanitize(body.lead) || DEFAULTS.lead,
-      items: itemsJson,
+      items: items as unknown as Prisma.JsonArray,
     };
-
-    if (itemsArray.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one service card is required.' },
-        { status: 400 }
-      );
-    }
 
     await prisma.homeServices.upsert({
       where: { key: KEY },
@@ -119,6 +121,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error('POST /api/home/services failed:', e);
-    return NextResponse.json({ error: 'Server error (POST services).' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -1,4 +1,3 @@
-// src/components/shared/Footer.tsx
 'use client';
 
 import Link from 'next/link';
@@ -15,28 +14,43 @@ const Footer: React.FC = () => {
     <footer id="site-footer" role="contentinfo" className={styles.footer}>
       <div className={styles.container}>
         {/* Mobile Site Menu */}
-        <nav className={styles.mobileMenu} aria-label="Main site navigation">
-          <h2 className="srOnly">Site navigation</h2>
-          <ul className={styles.menuList}>
-            {NAV_LINKS.map(({ slug, label }) => {
-              const href = `/${slug}`;
-              const active = isActive(href);
-              return (
-                <li key={slug}>
-                  <Link
-                    href={href}
-                    className={`${styles.menuItem} ${active ? styles.menuItemActive : ''}`}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        {pathname === '/' ? (
+          <nav className={styles.mobileMenu} aria-label="Main site navigation">
+            <h2 className={styles.srOnly}>Site navigation</h2>
+            <ul className={styles.menuList}>
+              {NAV_LINKS.map(({ id, label }) => {
+                // Home section is id = "top"
+                const href = id === 'top' ? '/' : `#${id}`;
+                return (
+                  <li key={id}>
+                    <Link
+                      href={href}
+                      className={`${styles.menuItem} ${
+                        isActive(href) ? styles.menuItemActive : ''
+                      }`}
+                      aria-current={isActive(href) ? 'page' : undefined}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : (
+          <nav className={styles.mobileMenu} aria-label="Back to home">
+            <h2 className={styles.srOnly}>Back to home</h2>
+            <ul className={styles.menuList}>
+              <li>
+                <Link href="/" className={styles.menuItem}>
+                  ← Back to home
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        )}
 
-        {/* Footer links */}
+        {/* Footer Links */}
         <nav className={styles.footerLinks} aria-label="Legal and info">
           <Link href="/privacy-policy" className={styles.footerLink}>
             Privacy Policy
@@ -44,11 +58,11 @@ const Footer: React.FC = () => {
           <Link href="/terms-of-service" className={styles.footerLink}>
             Terms of Service
           </Link>
+          <Link href="/cookies" className={styles.footerLink}>
+            Cookies
+          </Link>
           <Link href="/faq" className={styles.footerLink}>
             FAQs
-          </Link>
-          <Link href="/contact" className={styles.footerLink}>
-            Contact
           </Link>
         </nav>
 
@@ -68,9 +82,9 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Copy + credit */}
+        {/* Copy */}
         <p className={styles.copy}>
-          &copy; {new Date().getFullYear()} YourSite. All rights reserved.
+          &copy; {new Date().getFullYear()} Nocturna. All rights reserved.
         </p>
         <p className={styles.credit}>
           Website created by{' '}

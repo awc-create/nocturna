@@ -1,29 +1,46 @@
 :root {
-  --bg: #f7f9fc;
-  --bg2: #ffffff;
-  --card: #ffffff;
-  --ink: #0f172a;
-  --muted: #6b7280;
-  --line: #e3e7ef;
-  --accent: #0a66ff;
-  --accent-ink: #0a2e6f;
+  /* === Nocturna Admin Theme Tokens === */
+
+  /* Backgrounds */
+  --bg: #020617;
+  --bg2: #020617;
+  --card: rgba(15, 23, 42, 0.88);
+
+  /* Text */
+  --ink: #f1f5f9;
+  --muted: #94a3b8;
+
+  /* Lines */
+  --line: rgba(148, 163, 184, 0.35);
+
+  /* Accent gold */
+  --accent: #e5c17a;
+  --accent-hover: #f0d79a;
+  --accent-ink: #fff9e8;
+
+  /* Radius & Shadows */
   --radius: 14px;
-  --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-2: 0 12px 24px rgba(15, 23, 42, 0.08);
+  --shadow-1: 0 10px 30px rgba(15, 23, 42, 0.7);
+  --shadow-2: 0 22px 60px rgba(0, 0, 0, 0.8);
 }
 
 /* ======================================= */
-/* LAYOUT                                  */
+/* LAYOUT */
 /* ======================================= */
+
 .app {
   min-height: 100dvh;
-  background: var(--bg);
   color: var(--ink);
   display: grid;
   grid-template-rows: 60px 1fr;
+  background:
+    radial-gradient(circle at top, #0b1020 0%, #020617 55%, #000000 100%);
 }
 
-/* ---------- TOPBAR ---------- */
+/* ======================================= */
+/* TOPBAR */
+/* ======================================= */
+
 .topbar {
   position: sticky;
   top: 0;
@@ -31,11 +48,14 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
+
   padding: 0 clamp(14px, 3.6vw, 32px);
-  background: #ffffffcc;
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(8px) saturate(140%);
+  background: rgba(3, 7, 18, 0.9);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+
+  backdrop-filter: blur(14px) saturate(140%);
 }
+
 .topLeft,
 .topCenter,
 .topRight {
@@ -43,36 +63,51 @@
   align-items: center;
   gap: 12px;
 }
+
 .topLeft {
   justify-self: start;
 }
+
 .topCenter {
   justify-self: center;
 }
+
 .topRight {
   justify-self: end;
 }
 
+/* === Icon buttons (hamburger, logout) === */
 .iconBtn {
   all: unset;
   cursor: pointer;
   display: grid;
   place-items: center;
+
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid var(--line);
-  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+
+  background: radial-gradient(circle at 0% 0%, #111827 0%, #020617 80%);
+  color: var(--ink);
+
   box-shadow: var(--shadow-1);
-  transition: transform 0.06s ease, filter 0.15s ease;
+
+  transition:
+    transform 0.06s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+
   &:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.12);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
   }
   &:active {
     transform: translateY(1px);
   }
 }
 
+/* === Top-left brand === */
 .brand {
   display: flex;
   align-items: center;
@@ -80,85 +115,136 @@
   font-weight: 800;
   letter-spacing: 0.2px;
 }
+
+.brand svg {
+  stroke: var(--accent);
+}
+
 .sep {
   opacity: 0.4;
 }
+
 .crumb {
   color: var(--muted);
   font-weight: 700;
 }
 
+/* === Quick Switch Button === */
 .kbdBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px dashed var(--line);
-  background: #fff;
+
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  background: rgba(2, 6, 23, 0.75);
   color: var(--muted);
+
   padding: 8px 12px;
   border-radius: 999px;
   font-weight: 700;
-  box-shadow: var(--shadow-1);
+
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
   cursor: pointer;
+
+  transition: all 0.15s ease;
+
   &:hover {
     color: var(--ink);
+    border-style: solid;
   }
+
+  svg {
+    stroke: var(--accent);
+  }
+
   kbd {
     margin-left: 6px;
     font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-    border: 1px solid var(--line);
+
+    border: 1px solid rgba(148, 163, 184, 0.6);
     border-radius: 6px;
+
     padding: 3px 6px;
-    background: #f3f4f7;
+
+    background: rgba(15, 23, 42, 0.9);
+    color: #e5e7eb;
   }
 }
 
+/* Allows us to hide the label on mobile cleanly */
+.kbdLabel {
+  white-space: nowrap;
+}
+
+/* === User badge === */
 .badge {
   display: flex;
   align-items: center;
   gap: 10px;
+
   padding: 4px 8px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 999px;
-  background: #fff;
+
+  background: radial-gradient(circle at 0% 0%, #0f172a 0%, #020617 85%);
   box-shadow: var(--shadow-1);
 }
+
 .avatar {
   width: 28px;
   height: 28px;
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: linear-gradient(180deg, var(--accent), #1b4ed8);
-  color: #fff;
+
+  background: radial-gradient(
+    circle at 30% 0%,
+    var(--accent) 0%,
+    #b38a45 55%,
+    #78350f 100%
+  );
+  color: #111827;
+
   font-weight: 800;
 }
+
 .meta small {
   color: var(--muted);
 }
 
-/* ---------- BODY ---------- */
+/* ======================================= */
+/* BODY GRID */
+/* ======================================= */
+
 .body {
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
   gap: 18px;
+
   padding: 18px clamp(14px, 3.6vw, 32px) 28px;
 }
 
-/* ---------- SIDEBAR ---------- */
+/* ======================================= */
+/* SIDEBAR */
+/* ======================================= */
+
 .rail {
   position: sticky;
   top: calc(60px + 12px);
   align-self: start;
+
   display: grid;
   grid-template-rows: auto 1fr;
+
   width: 76px;
   transition: width 0.18s ease;
 }
+
 .railOpen {
   width: 260px;
 }
 
+/* === Sidebar heading === */
 .railHead {
   display: flex;
   align-items: center;
@@ -168,142 +254,242 @@
   padding: 8px 10px;
 }
 
+.railHead svg {
+  stroke: var(--accent);
+}
+
+/* === Nav panel === */
 .railNav {
-  background: #fff;
-  border: 1px solid var(--line);
+  background: rgba(2, 6, 23, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
+
+  box-shadow: var(--shadow-2);
+
   padding: 8px;
   display: grid;
   gap: 6px;
 }
+
+/* === Sidebar items === */
 .railItem {
   all: unset;
+
   cursor: pointer;
   display: grid;
   grid-template-columns: 24px 1fr;
   gap: 10px;
   align-items: center;
+
   padding: 10px;
   border-radius: 12px;
   border: 1px solid transparent;
+
   color: var(--ink);
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
   &:hover {
-    background: #f7f9fc;
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(148, 163, 184, 0.7);
+  }
+
+  svg {
+    stroke: var(--muted);
+    transition: stroke 0.15s ease;
   }
 }
-.railText {
-  display: grid;
-  gap: 2px;
-}
-.railText small {
-  color: var(--muted);
-  font-size: 12px;
-}
+
+/* === Active sidebar item === */
 .active {
-  background: #eef4ff;
+  background: radial-gradient(
+    circle at 0% 0%,
+    rgba(248, 250, 252, 0.12) 0%,
+    rgba(15, 23, 42, 0.95) 60%
+  );
   border-color: var(--accent);
+
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.95);
+
+  svg {
+    stroke: var(--accent);
+  }
+
   .railText strong {
     color: var(--accent-ink);
   }
 }
 
-/* ---------- MAIN CONTENT ---------- */
+.railText {
+  display: grid;
+  gap: 2px;
+}
+
+.railText small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ======================================= */
+/* MAIN CONTENT */
+/* ======================================= */
+
 .main {
   min-width: 0;
 }
 
+/* === Section header card === */
 .sectionHero {
-  background: #fff;
-  border: 1px solid var(--line);
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      rgba(248, 250, 252, 0.08) 0%,
+      rgba(15, 23, 42, 0.96) 55%
+    ),
+    linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
+
+  border: 1px solid rgba(148, 163, 184, 0.55);
   border-radius: 20px;
+
   box-shadow: var(--shadow-2);
+
   padding: 22px 18px 20px;
   margin-bottom: 14px;
 }
+
 .sectionBadge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #eef4ff;
-  color: var(--accent-ink);
-  border: 1px solid var(--accent);
+
+  background: rgba(24, 24, 27, 0.9);
+  color: var(--accent);
+
+  border: 1px solid rgba(234, 179, 8, 0.4);
   padding: 6px 12px;
   border-radius: 999px;
+
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
 }
+
 .sectionHero h1 {
   margin: 10px 0 6px;
   font-size: 1.35rem;
+  color: #f9fafb;
 }
+
 .sectionHero p {
   margin: 0;
   color: var(--muted);
 }
 
+/* === Content panel === */
 .panel {
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(148, 163, 184, 0.4);
   border-radius: 16px;
+
   box-shadow: var(--shadow-2);
+
   padding: 18px;
   animation: fadeIn 0.18s ease both;
 }
 
-/* ---------- COMMAND PALETTE ---------- */
+/* ======================================= */
+/* COMMAND PALETTE */
+/* ======================================= */
+
 .cmdOverlay {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(0, 0, 0, 0.35);
+
+  background: rgba(0, 0, 0, 0.6);
+
   display: grid;
   place-items: start center;
+
   padding-top: 10vh;
 }
+
 .cmd {
   width: min(760px, 92vw);
-  background: #fff;
-  border: 1px solid var(--line);
+
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(148, 163, 184, 0.6);
   border-radius: 16px;
-  box-shadow: var(--shadow-2);
+
+  box-shadow: 0 26px 70px rgba(15, 23, 42, 1);
   overflow: hidden;
 }
+
 .cmdHead {
   display: flex;
   align-items: center;
   gap: 8px;
+
   padding: 12px 14px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.6);
+
   font-weight: 800;
   letter-spacing: 0.2px;
+
+  svg {
+    stroke: var(--accent);
+  }
 }
+
 .cmdList {
   display: grid;
   padding: 6px;
+
   max-height: 60vh;
   overflow: auto;
 }
+
 .cmdItem {
   all: unset;
   cursor: pointer;
+
   display: grid;
   grid-template-columns: 20px 1fr;
   gap: 10px;
+
   padding: 10px;
   border-radius: 12px;
+
+  color: #e5e7eb;
+
+  transition: background 0.15s ease;
+
   &:hover {
-    background: #f7f9fc;
+    background: rgba(15, 23, 42, 0.9);
+  }
+
+  svg {
+    stroke: var(--muted);
   }
 }
+
 .cmdText {
   display: grid;
   gap: 2px;
 }
+
 .cmdText small {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* ======================================= */
+/* ANIMATIONS */
+/* ======================================= */
 
 @keyframes fadeIn {
   from {
@@ -312,6 +498,111 @@
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
+  }
+}
+
+/* ======================================= */
+/* MOBILE TWEAKS */
+/* ======================================= */
+
+@media (max-width: 768px) {
+  .topbar {
+    grid-template-columns: auto 1fr;
+    column-gap: 8px;
+    padding-inline: 12px;
+  }
+
+  /* Hide centre quick-switch on small screens to declutter */
+  .topCenter {
+    display: none;
+  }
+
+  .topRight {
+    gap: 8px;
+  }
+
+  .badge {
+    padding: 2px 6px;
+  }
+
+  /* Hide the "Dr. Odera / Owner" text, keep avatar only */
+  .badge .meta {
+    display: none;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    padding: 14px 12px 80px; /* extra bottom space for mobile rail */
+    gap: 12px;
+  }
+
+  /* Turn sidebar into a bottom sheet controlled by railOpen */
+  .rail {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    top: auto;
+    width: auto;
+    z-index: 45;
+    grid-template-rows: 1fr;
+
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      transform 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  .railOpen {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .railHead {
+    display: none;
+  }
+
+  .railNav {
+    display: flex;
+    padding: 6px;
+    border-radius: 999px;
+    backdrop-filter: blur(14px);
+  }
+
+  .railItem {
+    flex: 1;
+    grid-template-columns: auto;
+    justify-content: center;
+    padding-block: 10px;
+  }
+
+  .railText {
+    display: none;
+  }
+
+  .sectionHero {
+    border-radius: 16px;
+    padding: 16px 14px;
+  }
+
+  .sectionHero h1 {
+    font-size: 1.15rem;
+  }
+
+  .panel {
+    padding: 14px 12px 16px;
+    border-radius: 14px;
+  }
+
+  .cmdOverlay {
+    padding-top: 20vh;
+  }
+
+  .cmd {
+    width: 92vw;
   }
 }

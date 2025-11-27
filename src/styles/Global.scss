@@ -147,3 +147,40 @@ html, body { backface-visibility: hidden; } /* no transforms on roots */
 /* keep sections stacked with no seams */
 section { margin-block: 0; }
 section + section { margin-top: 0; }
+
+html {
+  width: 100%;
+  max-width: 100vw;   /* 🚫 never wider than the viewport */
+}
+
+body {
+  width: 100%;
+  max-width: 100vw;   /* 🚫 clamp horizontally */
+  overflow-x: hidden; /* already set, but keep it here with the clamp */
+}
+
+/* The app shell that wraps your pages */
+.app-shell {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Extra safety for the seamless layout sections */
+.seamless-section {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Containers: avoid any weird width + padding combos */
+.container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
