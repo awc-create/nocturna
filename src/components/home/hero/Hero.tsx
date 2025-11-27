@@ -30,7 +30,8 @@ const FALLBACK: HeroConfig = {
   description:
     'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
   ctaText: 'ENQUIRE NOW',
-  ctaHref: '/apply',
+  // ⬇️ now scrolls down the home page
+  ctaHref: '#enquire',
   overlayDarkness: 0.5,
 };
 
@@ -70,12 +71,22 @@ export default function Hero() {
   const hasImage = cfg.mediaType === 'IMAGE' && !!cfg.imageSrc;
   const hasMedia = hasVideo || hasImage;
 
+  // ⬇️ smooth scroll when href is a hash (#enquire, #join, etc.)
+  const handleCtaClick = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    const href = cfg.ctaHref;
+    if (!href?.startsWith('#')) return; // let normal navigation happen
+    e.preventDefault();
+    const target = document.querySelector(href) as HTMLElement | null;
+    if (!target) return;
+    const y = target.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  };
+
   return (
     <>
       <Head>
         {cfg.posterSrc ? <link rel="preload" href={cfg.posterSrc} as="image" /> : null}
         {hasVideo ? <link rel="preload" href={cfg.videoSrc!} as="video" /> : null}
-        {/* Preload the Nocturna wordmark */}
         <link rel="preload" href="/assets/NOCTURNA_W.png" as="image" />
       </Head>
 
@@ -107,18 +118,23 @@ export default function Hero() {
           )}
         </div>
 
-        {/* Overlay */}
         <div
           className={styles.overlay}
           aria-hidden="true"
           style={{
             background:
-              `linear-gradient(to bottom, rgba(0,0,0,${darkness * 0.9}) 0%, rgba(0,0,0,${darkness}) 40%, rgba(0,0,0,${Math.min(1, darkness + 0.05)}) 100%),` +
-              `radial-gradient(100% 60% at 50% 20%, rgba(0,0,0,${darkness * 0.6}), transparent 60%)`,
+              `linear-gradient(to bottom, rgba(0,0,0,${
+                darkness * 0.9
+              }) 0%, rgba(0,0,0,${darkness}) 40%, rgba(0,0,0,${Math.min(
+                1,
+                darkness + 0.05
+              )}) 100%),` +
+              `radial-gradient(100% 60% at 50% 20%, rgba(0,0,0,${
+                darkness * 0.6
+              }), transparent 60%)`,
           }}
         />
 
-        {/* Content */}
         <div className={styles.content}>
           <h1 className={styles.kicker} aria-label="Welcome to Nocturna">
             <span className={styles.badge}>WELCOME TO</span>
@@ -137,7 +153,12 @@ export default function Hero() {
           <p className={styles.tagline}>{cfg.description}</p>
 
           <div className={styles.actions}>
-            <Link href={cfg.ctaHref} className={styles.ctaPrimary}>
+            <Link
+              href={cfg.ctaHref}
+              scroll={false}
+              className={styles.ctaPrimary}
+              onClick={handleCtaClick}
+            >
               {cfg.ctaText}
             </Link>
           </div>

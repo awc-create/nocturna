@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import { FaEnvelope, FaPhoneAlt } from 'react-icons/fa';
 import {
   FaInstagram,
@@ -11,56 +9,78 @@ import {
   FaXTwitter,
   FaFacebook,
 } from 'react-icons/fa6';
+import { useModals } from '../modals/ModalContext';
+import ContactModal from './ContactModal';
 import styles from './Contact.module.scss';
 
 export default function Contact() {
-  const [hovered, setHovered] = useState(false);
+  const { openContact } = useModals();
 
   return (
-    <section className={styles.section} id="contact">
-      <div className={styles.inner}>
-        <p className={styles.kicker}>Let’s Connect</p>
+    <>
+      <section className={styles.section} id="contact">
+        <div className={styles.inner}>
+          <p className={styles.kicker}>LET&apos;S CONNECT</p>
 
-        <Link
-          href="/contact"
-          className={styles.touchLink}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-        >
-          GET IN TOUCH
-          <span className={`${styles.orb} ${hovered ? styles.visible : ''}`} aria-hidden="true" />
-        </Link>
+          {/* CTA – text + orb + animated rail */}
+          <button
+            type="button"
+            className={styles.cta}
+            onClick={openContact}
+            aria-label="Open contact form"
+          >
+            <div className={styles.labelWrap}>
+              <span className={styles.ctaLabel}>GET IN TOUCH</span>
 
-        <div className={styles.details}>
-          <p>
-            <FaEnvelope /> hello@nocturna.com
-          </p>
-          <p>
-            <FaPhoneAlt /> 03303 112 112
-          </p>
+              {/* animated underline */}
+              <span className={styles.ctaRail} aria-hidden="true" />
+
+              {/* orb on the right */}
+              <span className={styles.orbWrap} aria-hidden="true">
+                <span className={styles.orb} />
+              </span>
+            </div>
+
+            <span className={styles.ctaSub}>GENERAL ENQUIRIES</span>
+          </button>
+
+          {/* contact details */}
+          <div className={styles.details}>
+            <p>
+              <FaEnvelope />
+              <a href="mailto:hello@nocturna.com">hello@nocturna.com</a>
+            </p>
+            <p>
+              <FaPhoneAlt />
+              <a href="tel:03303112112">03303 112 112</a>
+            </p>
+          </div>
+
+          {/* socials */}
+          <div className={styles.socials}>
+            <a href="https://facebook.com" target="_blank" rel="noreferrer">
+              <FaFacebook />
+            </a>
+            <a href="https://twitter.com" target="_blank" rel="noreferrer">
+              <FaXTwitter />
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer">
+              <FaInstagram />
+            </a>
+            <a href="https://youtube.com" target="_blank" rel="noreferrer">
+              <FaYoutube />
+            </a>
+            <a href="https://tiktok.com" target="_blank" rel="noreferrer">
+              <FaTiktok />
+            </a>
+            <a href="https://linkedin.com" target="_blank" rel="noreferrer">
+              <FaLinkedin />
+            </a>
+          </div>
         </div>
+      </section>
 
-        <div className={styles.socials}>
-          <a href="#" aria-label="Facebook">
-            <FaFacebook />
-          </a>
-          <a href="#" aria-label="X / Twitter">
-            <FaXTwitter />
-          </a>
-          <a href="#" aria-label="Instagram">
-            <FaInstagram />
-          </a>
-          <a href="#" aria-label="YouTube">
-            <FaYoutube />
-          </a>
-          <a href="#" aria-label="TikTok">
-            <FaTiktok />
-          </a>
-          <a href="#" aria-label="LinkedIn">
-            <FaLinkedin />
-          </a>
-        </div>
-      </div>
-    </section>
+      <ContactModal />
+    </>
   );
 }

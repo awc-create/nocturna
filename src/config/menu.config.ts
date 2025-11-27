@@ -1,7 +1,16 @@
-export type NavLink = { slug: string; label: string };
+// src/config/menu.config.ts
+
+export type NavLink = {
+  id: string; // matches <section id="...">
+  label: string; // text in the navbar
+};
 
 export const NAV_LINKS: NavLink[] = [
-  { slug: '', label: 'Home' },
-  { slug: 'about', label: 'About' },
-  { slug: 'contact', label: 'Contact' },
+  { id: 'top', label: 'Home' },
+  { id: 'about', label: 'About' },
+  { id: 'services', label: 'Services' },
+  { id: 'clients', label: 'Clients' },
+  { id: 'enquire', label: 'Enquire' },
+  { id: 'join', label: 'Join' },
+  { id: 'contact', label: 'Contact' },
 ];

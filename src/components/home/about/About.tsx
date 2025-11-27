@@ -1,3 +1,4 @@
+// src/components/home/about/About.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -9,7 +10,7 @@ type ValueCard = { title: string; body: string };
 type AboutData = {
   eyebrow: string;
   title: string;
-  blurb: string;
+  lead: string;
   quickFacts: QuickFact[];
   videoUrl?: string;
   videoPoster?: string;
@@ -20,8 +21,7 @@ type AboutData = {
 const FALLBACK: AboutData = {
   eyebrow: 'ABOUT NOCTURNA',
   title: 'Bringing nightlife to life.',
-  blurb:
-    'A curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
+  lead: 'A curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
   quickFacts: [
     { value: '200+', label: 'Gigs curated' },
     { value: 'UK-wide', label: 'Venue coverage' },
@@ -106,12 +106,12 @@ export default function About() {
     return () => io.disconnect();
   }, []);
 
-  // (Optional) API hydrate
+  // API hydrate from unified /api/home/about
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const res = await fetch('/api/home/about-2', { cache: 'no-store' });
+        const res = await fetch('/api/home/about', { cache: 'no-store' });
         if (!res.ok) return;
         const json = (await res.json()) as Partial<AboutData>;
         if (mounted) {
@@ -122,7 +122,9 @@ export default function About() {
             values: json.values ?? FALLBACK.values,
           });
         }
-      } catch {}
+      } catch {
+        // ignore – fallback remains
+      }
     })();
     return () => {
       mounted = false;
@@ -205,7 +207,7 @@ export default function About() {
             ) : null}
           </button>
 
-          <p className={styles.blurb}>{data.blurb}</p>
+          <p className={styles.blurb}>{data.lead}</p>
 
           {data.quickFacts?.length ? (
             <div className={styles.statsRow}>

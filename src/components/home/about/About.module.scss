@@ -78,23 +78,31 @@
     0 26px 66px rgba(0, 0, 0, 0.5),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
+
+/* === FIXED POSTER LAYERING — final correct order === */
 .videoThumb img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 1;   /* poster on top of fallback */
 }
+
 .thumbFallback {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, #0b0f16, #111827);
+  z-index: 0;   /* behind poster */
 }
+
 .thumbVignette {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.45));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.45));
+  z-index: 2;   /* gentle overlay above poster */
 }
+/* === END FIX === */
 
 .playBadge {
   position: absolute;
@@ -132,6 +140,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(10px, 2vw, 18px);
+
   @media (max-width: 720px) {
     grid-template-columns: 1fr 1fr;
   }
@@ -185,32 +194,30 @@
   color: var(--ink);
   cursor: pointer;
 
-  /* Typographic presence */
   font-size: clamp(26px, 3.8vw, 42px);
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1.05;
 
-  /* Soft “rail” behind the text so it reads as a control */
   padding: 10px 14px 12px;
   border-radius: 14px;
   isolation: isolate;
 
-  /* glow rail */
   &::before {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
     background:
-      radial-gradient(80% 140% at 0% 60%, var(--rail) 0%, transparent 70%) ,
+      radial-gradient(80% 140% at 0% 60%, var(--rail) 0%, transparent 70%),
       radial-gradient(80% 140% at 100% 40%, var(--rail) 0%, transparent 70%);
-    opacity: .8;
-    transition: opacity .25s ease, background .25s ease;
+    opacity: 0.8;
+    transition:
+      opacity 0.25s ease,
+      background 0.25s ease;
     z-index: -1;
   }
 
-  /* keyboard focus */
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 55%, #000 45%);
@@ -224,7 +231,7 @@
   &:hover::before,
   &.active::before {
     background:
-      radial-gradient(80% 140% at 0% 60%, var(--rail-strong) 0%, transparent 70%) ,
+      radial-gradient(80% 140% at 0% 60%, var(--rail-strong) 0%, transparent 70%),
       radial-gradient(80% 140% at 100% 40%, var(--rail-strong) 0%, transparent 70%);
   }
 }
@@ -233,6 +240,7 @@
   color: var(--accent);
   transform: translateY(-2px);
 }
+
 .orb {
   position: absolute;
   right: -40px;
@@ -272,8 +280,13 @@
   height: 2px;
   width: 0%;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(231,215,167,0), var(--accent), rgba(231,215,167,0));
-  transition: width .4s ease;
+  background: linear-gradient(
+    90deg,
+    rgba(231, 215, 167, 0),
+    var(--accent),
+    rgba(231, 215, 167, 0)
+  );
+  transition: width 0.4s ease;
 }
 .bigLink:hover .underline::after,
 .bigLink.active .underline::after {
@@ -282,35 +295,40 @@
 
 .subnote {
   font-size: clamp(11px, 1.2vw, 12px);
-  letter-spacing: .18em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #bdbdbd;
-  opacity: .85;
+  opacity: 0.85;
 }
 
-/* Chevron: subtle nudge to the right */
 .chev {
   display: inline-grid;
   place-items: center;
   transform: translateX(0);
-  transition: transform .25s ease, color .25s ease;
+  transition:
+    transform 0.25s ease,
+    color 0.25s ease;
 }
 .bigLink:hover .chev,
 .bigLink.active .chev {
   transform: translateX(4px);
 }
 
-/* Orb: confident pop */
+/* Orb again for clarity */
 .orb {
   width: 26px;
   height: 26px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 70%);
-  box-shadow: 0 0 20px rgba(231, 215, 167, 0.5), 0 0 60px rgba(231, 215, 167, 0.3);
+  box-shadow:
+    0 0 20px rgba(231, 215, 167, 0.5),
+    0 0 60px rgba(231, 215, 167, 0.3);
   opacity: 0;
   transform: scale(0.6);
   transform-origin: center;
-  transition: opacity .35s ease, transform .35s ease;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
 }
 .bigLink:hover .orb,
 .bigLink.active .orb {
@@ -327,7 +345,6 @@
   will-change: max-height;
 }
 
-/* Ensures scrollHeight includes breathing room */
 .valuesInner {
   padding: 6px 0 18px;
 }
@@ -360,7 +377,11 @@
 .valueCard {
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.015)
+  );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   padding: 14px 16px;
   transform: translateY(8px);
@@ -404,7 +425,7 @@
   animation: popInKey 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Progressive disclosure inside the values reveal */
+/* Progressive disclosure */
 .valueCard.extra {
   opacity: 0;
   transform: translateY(10px);
@@ -544,5 +565,80 @@
   }
   .valueCard {
     scroll-snap-align: start;
+  }
+}
+
+/* === Extra mobile polish === */
+@media (max-width: 640px) {
+  .inner {
+    padding-inline: 16px;
+  }
+
+  .blurb {
+    font-size: 0.94rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .bigLink {
+    font-size: 1.6rem;
+    padding-inline: 12px;
+  }
+}
+
+/* ============================================================
+   MOBILE — Equal-size slider cards for Ethos & Values
+   ============================================================ */
+@media (max-width: 640px) {
+  .valuesGrid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 12px;
+    gap: 12px;
+
+    padding: 6px 0 14px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .valueCard {
+    flex: 0 0 82vw;
+    max-width: 360px;
+    scroll-snap-align: start;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .valuesMore {
+    display: none !important;
+  }
+
+  .valuesTitle {
+    margin-bottom: 16px;
+  }
+}
+
+/* MOBILE — Swipe hint */
+.swipeHint {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.9;
+  text-align: center;
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .swipeHint {
+    display: block;
   }
 }

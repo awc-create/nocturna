@@ -1,6 +1,7 @@
 /* =========================
-   SERVICES — Seamless
+   SERVICES — Seamless + Hover/Tap Flip
    ========================= */
+
 .section {
   --night-blue: 16, 34, 60;
 
@@ -16,23 +17,8 @@
   transition:
     opacity 0.7s ease,
     transform 0.7s ease;
-
-  /* soft overlay like About’s */
-  // &::before {
-  //   content: '';
-  //   position: absolute;
-  //   inset: 0;
-  //   pointer-events: none;
-  //   background: linear-gradient(
-  //     180deg,
-  //     rgba(var(--night-blue), 0.16) 0%,
-  //     rgba(var(--night-blue), 0.05) 45%,
-  //     rgba(var(--night-blue), 0) 85%
-  //   );
-  //   mask-image: radial-gradient(140% 90% at 50% 0%, #000 55%, transparent 90%);
-  //   opacity: 0.85;
-  // }
 }
+
 .visible {
   opacity: 1;
   transform: translateY(0);
@@ -42,34 +28,56 @@
 .head {
   max-width: 1160px;
   margin: 0 auto 22px;
+}
 
-  .kicker {
-    display: inline-block;
-    font-size: 12px;
-    letter-spacing: 0.22em;
-    color: #bfbfbf;
-    text-transform: uppercase;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 8px 14px;
-    border-radius: 999px;
-    backdrop-filter: blur(2px);
-  }
-  .title {
-    margin: 12px 0 8px;
-    font-size: clamp(28px, 5vw, 56px);
-    line-height: 1.04;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    text-wrap: balance;
-    text-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
-  }
-  .lead {
-    color: #e7e7e7;
-    opacity: 0.9;
-    max-width: 700px;
-    font-size: clamp(14px, 1.35vw, 18px);
-    line-height: 1.6;
-  }
+.kicker {
+  display: inline-block;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  color: #bfbfbf;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 14px;
+  border-radius: 999px;
+  backdrop-filter: blur(2px);
+}
+
+.title {
+  margin: 12px 0 8px;
+  font-size: clamp(28px, 5vw, 56px);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  text-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+}
+
+.lead {
+  color: #e7e7e7;
+  opacity: 0.9;
+  max-width: 700px;
+  font-size: clamp(14px, 1.35vw, 18px);
+  line-height: 1.6;
+}
+
+/* Hint row (Tap vs Hover text) */
+.mobileHint {
+  max-width: 1160px;
+  margin: 6px auto 4px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(226, 232, 240, 0.82);
+  opacity: 0.85;
+  display: none; /* enabled on small / desktop differently below */
+}
+
+.mobileHintTap {
+  display: inline;
+}
+
+.mobileHintHover {
+  display: none;
 }
 
 /* Grid */
@@ -79,25 +87,93 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(14px, 2.5vw, 24px);
+
   @media (max-width: 900px) {
     grid-template-columns: 1fr;
   }
 }
 
+/* Card with tilt + state-driven face swap */
 .card {
   position: relative;
   border-radius: 24px;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
-  transform: perspective(1000px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
+  perspective: 1200px;
+  transform: rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
     filter 0.2s ease;
-  box-shadow:
-    0 30px 60px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
+
+/* Inner wrapper */
+/* Stronger card outline + glow */
+.cardInner {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: min(58vw, 420px);
+
+  /* NEW — Stronger perimeter outline */
+  border: 1.5px solid rgba(255, 255, 255, 0.10);
+
+  /* NEW — Outer glow to lift the card visually from the background */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),     /* crisp edge */
+    0 12px 30px rgba(0, 0, 0, 0.65),         /* existing depth */
+    0 0 20px rgba(229, 215, 167, 0.06);      /* soft warm outer glow */
+}
+
+/* On hover or active flip highlight even more */
+.card:hover .cardInner,
+.cardInnerActive {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 16px 40px rgba(0, 0, 0, 0.75),
+    0 0 26px rgba(229, 215, 167, 0.10);
+}
+
+
+/* Faces stack on top */
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+/* Front: visible by default */
+.front {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Back: hidden by default */
+.back {
+  pointer-events: none;
+}
+
+/* ACTIVE STATE – applied by React (hover on desktop / tap on mobile) */
+.cardInnerActive .front {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  pointer-events: none;
+}
+
+.cardInnerActive .back {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Media + scrims shared */
 .media {
   position: absolute;
   inset: 0;
@@ -106,6 +182,7 @@
   transform: translateZ(0);
   filter: saturate(1.05) contrast(1.05);
 }
+
 .scrim {
   position: absolute;
   inset: 0;
@@ -125,6 +202,27 @@
   mix-blend-mode: screen;
   pointer-events: none;
 }
+
+/* slightly different vibe for the back */
+.scrimBack {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      130% 80% at 50% 0%,
+      rgba(231, 215, 167, 0.26),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 20, 0.6) 0%,
+      rgba(5, 9, 20, 0.96) 90%
+    );
+  z-index: 1;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
 .info {
   position: relative;
   z-index: 2;
@@ -132,8 +230,8 @@
   gap: 10px;
   padding: clamp(18px, 3.5vw, 28px);
   align-content: end;
-  min-height: min(58vw, 420px);
 }
+
 .tag {
   display: inline-block;
   font-size: 11px;
@@ -146,21 +244,45 @@
   width: fit-content;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
+
 .cardTitle {
   font-size: clamp(22px, 3.5vw, 40px);
   font-weight: 900;
   line-height: 1.1;
 }
+
 .blurb {
   color: #efefef;
   line-height: 1.65;
   max-width: 60ch;
   opacity: 0.95;
 }
-.actions { margin-top: 4px; }
-.cta {
-  --btn-bg: #e7d7a7;
-  --btn-fg: #0b0b0b;
+
+.actions {
+  margin-top: 4px;
+}
+
+/* Flip hints (Tap vs Hover) */
+.flipHint {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.78);
+  opacity: 0.9;
+}
+
+.flipHintTap {
+  display: inline;
+}
+
+.flipHintHover {
+  display: none;
+}
+
+/* Buttons */
+.cta,
+.ctaSecondary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -169,8 +291,6 @@
   border-radius: 999px;
   font-weight: 900;
   letter-spacing: 0.02em;
-  color: var(--btn-fg);
-  background: var(--btn-bg);
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow:
@@ -180,15 +300,40 @@
     transform 0.08s ease,
     filter 0.15s ease;
 }
-.cta:hover { filter: brightness(1.04); transform: translateY(-1px); }
-.cta:active { transform: translateY(0); }
 
+.cta {
+  background: #e7d7a7;
+  color: #0b0b0b;
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+}
+
+.cta:hover,
+.ctaSecondary:hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.cta:active,
+.ctaSecondary:active {
+  transform: translateY(0);
+}
+
+/* Footer */
 .footerRow {
   max-width: 1160px;
   margin: 14px auto 0;
   display: flex;
   justify-content: flex-end;
 }
+
 .viewAll {
   color: #fff;
   text-decoration: none;
@@ -196,15 +341,70 @@
   padding-bottom: 2px;
   opacity: 0.9;
 }
-.viewAll:hover { opacity: 1; }
+
+.viewAll:hover {
+  opacity: 1;
+}
 
 /* No bottom vignette in seamless layout */
-.vignette { display: none; }
+.vignette {
+  display: none;
+}
 
-/* Fully transparent variant still supported */
 .noPanel {
   background: transparent;
   box-shadow: none;
   border-radius: 0;
   padding-top: clamp(32px, 6vw, 56px);
+}
+
+/* =========================
+   Responsive polish
+   ========================= */
+
+@media (max-width: 900px) {
+  .section {
+    padding-inline: 16px;
+  }
+
+  .head {
+    margin-bottom: 16px;
+  }
+
+  .mobileHint {
+    display: block;
+  }
+
+  .cardInner {
+    min-height: 360px;
+  }
+
+  .flipHint {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+}
+
+/* Desktop: show hover copy instead of tap */
+@media (min-width: 901px) {
+  .mobileHint {
+    display: block;
+    text-align: right;
+  }
+
+  .mobileHintTap {
+    display: none;
+  }
+
+  .mobileHintHover {
+    display: inline;
+  }
+
+  .flipHintTap {
+    display: none;
+  }
+
+  .flipHintHover {
+    display: inline;
+  }
 }

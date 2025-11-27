@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import type { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,12 +10,26 @@ const KEY = 'about';
 type QuickFact = { value: string; label: string };
 type ValueCard = { title: string; body: string };
 
-const DEFAULTS = {
+type AboutPayload = {
+  eyebrow: string;
+  title: string;
+  lead: string;
+  bullets: string[];
+  ctaPrimaryText: string;
+  ctaPrimaryHref: string;
+  ctaGhostText: string;
+  ctaGhostHref: string;
+  quickFacts: QuickFact[];
+  values: ValueCard[];
+  videoUrl?: string | null;
+  videoPoster?: string | null;
+  videoCaption?: string | null;
+};
+
+const DEFAULTS: AboutPayload = {
   eyebrow: 'ABOUT NOCTURNA',
   title: 'Bringing nightlife to life.',
   lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
-  blurb:
-    'A curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
   bullets: [
     'Curation over chaos — the right artist for the right room.',
     'Reliable bookings, clear comms, zero hidden costs.',
@@ -30,10 +43,7 @@ const DEFAULTS = {
     { value: '200+', label: 'Gigs curated' },
     { value: 'UK-wide', label: 'Venue coverage' },
     { value: 'DJs & Musicians', label: 'Tailored rosters' },
-  ] as QuickFact[],
-  videoUrl: '' as string,
-  videoPoster: '' as string,
-  videoCaption: '' as string,
+  ],
   values: [
     {
       title: 'Curation over chaos',
@@ -49,73 +59,60 @@ const DEFAULTS = {
     },
     {
       title: 'Zero surprises',
-      body: 'Transparent pricing, tidy invoicing, and a single point of contact.',
+      body: 'Transparent pricing, tidy invoicing, and dedicated point of contact from enquiry to encore.',
     },
-  ] as ValueCard[],
+    {
+      title: 'Brand-fit sound',
+      body: 'Programming that respects brand tone and guest profile at every touchpoint.',
+    },
+    {
+      title: 'Reliable rosters',
+      body: 'Depth of talent to cover multi-site schedules and last-minute changes.',
+    },
+    {
+      title: 'Tech-ready',
+      body: 'Clear specs, tidy setups, and no drama with in-house teams or residents.',
+    },
+    {
+      title: 'Guest-first',
+      body: 'Read-the-room sets that build energy without overwhelming the space.',
+    },
+    {
+      title: 'Feedback loops',
+      body: 'We learn every week to refine the policy and roster for your venue.',
+    },
+  ],
+  videoUrl: null,
+  videoPoster: null,
+  videoCaption: null,
 };
 
-const s = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
-
-function parseStringArray(input: unknown): string[] {
-  if (!Array.isArray(input)) return [];
-  return input.map((v) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
-}
+const sanitize = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
 
 function parseFacts(input: unknown): QuickFact[] {
   if (!Array.isArray(input)) return DEFAULTS.quickFacts;
-  const out: QuickFact[] = [];
-  for (const item of input) {
-    if (typeof item === 'object' && item !== null) {
-      const rec = item as Record<string, unknown>;
-      const value = s(rec.value);
-      const label = s(rec.label);
-      if (value && label) out.push({ value, label });
-    }
-  }
-  return out.length ? out : DEFAULTS.quickFacts;
+  return input
+    .map((raw): QuickFact | null => {
+      if (typeof raw !== 'object' || raw === null) return null;
+      const r = raw as Record<string, unknown>;
+      const value = sanitize(r.value);
+      const label = sanitize(r.label);
+      return value && label ? { value, label } : null;
+    })
+    .filter((x): x is QuickFact => !!x);
 }
 
 function parseValues(input: unknown): ValueCard[] {
   if (!Array.isArray(input)) return DEFAULTS.values;
-  const out: ValueCard[] = [];
-  for (const item of input) {
-    if (typeof item === 'object' && item !== null) {
-      const rec = item as Record<string, unknown>;
-      const title = s(rec.title);
-      const body = s(rec.body);
-      if (title && body) out.push({ title, body });
-    }
-  }
-  return out.length ? out : DEFAULTS.values;
-}
-
-/** Safely get a possibly-nonexistent string column from a Prisma row. */
-function getRowString(row: unknown, key: string): string {
-  if (typeof row === 'object' && row !== null) {
-    const rec = row as Record<string, unknown>;
-    return s(rec[key]);
-  }
-  return '';
-}
-
-/** Safely get a JSON field (Prisma.JsonValue) from a Prisma row. */
-function getRowJson(row: unknown, key: string): Prisma.JsonValue | null {
-  if (typeof row === 'object' && row !== null) {
-    const rec = row as Record<string, unknown>;
-    const val = rec[key] as unknown;
-    // Allow arrays/objects/strings/numbers/bools/null (valid JsonValue)
-    if (
-      val === null ||
-      typeof val === 'string' ||
-      typeof val === 'number' ||
-      typeof val === 'boolean' ||
-      Array.isArray(val) ||
-      (typeof val === 'object' && val !== null)
-    ) {
-      return val as Prisma.JsonValue;
-    }
-  }
-  return null;
+  return input
+    .map((raw): ValueCard | null => {
+      if (typeof raw !== 'object' || raw === null) return null;
+      const r = raw as Record<string, unknown>;
+      const title = sanitize(r.title);
+      const body = sanitize(r.body);
+      return title && body ? { title, body } : null;
+    })
+    .filter((x): x is ValueCard => !!x);
 }
 
 export async function GET() {
@@ -123,43 +120,25 @@ export async function GET() {
     const row = await prisma.homeAbout.findUnique({ where: { key: KEY } });
     if (!row) return NextResponse.json(DEFAULTS);
 
-    // Existing columns
-    const eyebrow = row.eyebrow ?? DEFAULTS.eyebrow;
-    const title = row.title ?? DEFAULTS.title;
-    const lead = row.lead ?? DEFAULTS.lead;
-    const bullets = row.bullets?.length ? row.bullets : DEFAULTS.bullets;
-    const ctaPrimaryText = row.ctaPrimaryText ?? DEFAULTS.ctaPrimaryText;
-    const ctaPrimaryHref = row.ctaPrimaryHref ?? DEFAULTS.ctaPrimaryHref;
-    const ctaGhostText = row.ctaGhostText ?? DEFAULTS.ctaGhostText;
-    const ctaGhostHref = row.ctaGhostHref ?? DEFAULTS.ctaGhostHref;
-
-    // JSON fields (present in older schema too)
-    const quickFacts = parseFacts(getRowJson(row, 'quickFacts') ?? []);
-
-    // New optional columns (safe even if not yet in generated types)
-    const blurb = getRowString(row, 'blurb') || lead || DEFAULTS.blurb;
-    const videoUrl = getRowString(row, 'videoUrl');
-    const videoPoster = getRowString(row, 'videoPoster');
-    const videoCaption = getRowString(row, 'videoCaption');
-    const values = parseValues(getRowJson(row, 'values') ?? []);
+    const facts = parseFacts(row.quickFacts as unknown);
+    const values = parseValues(row.values as unknown);
 
     return NextResponse.json({
-      eyebrow,
-      title,
-      lead,
-      blurb,
-      bullets,
-      ctaPrimaryText,
-      ctaPrimaryHref,
-      ctaGhostText,
-      ctaGhostHref,
-      quickFacts,
-      videoUrl,
-      videoPoster,
-      videoCaption,
-      values,
-    });
-  } catch (e) {
+      eyebrow: row.eyebrow ?? DEFAULTS.eyebrow,
+      title: row.title ?? DEFAULTS.title,
+      lead: row.lead ?? DEFAULTS.lead,
+      bullets: row.bullets?.length ? row.bullets : DEFAULTS.bullets,
+      ctaPrimaryText: row.ctaPrimaryText ?? DEFAULTS.ctaPrimaryText,
+      ctaPrimaryHref: row.ctaPrimaryHref ?? DEFAULTS.ctaPrimaryHref,
+      ctaGhostText: row.ctaGhostText ?? DEFAULTS.ctaGhostText,
+      ctaGhostHref: row.ctaGhostHref ?? DEFAULTS.ctaGhostHref,
+      quickFacts: facts.length ? facts : DEFAULTS.quickFacts,
+      values: values.length ? values : DEFAULTS.values,
+      videoUrl: row.videoUrl ?? null,
+      videoPoster: row.videoPoster ?? null,
+      videoCaption: row.videoCaption ?? null,
+    } satisfies AboutPayload);
+  } catch (e: unknown) {
     console.error('GET /api/home/about failed:', e);
     return NextResponse.json({ error: 'Server error (GET about).' }, { status: 500 });
   }
@@ -167,40 +146,51 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as Partial<typeof DEFAULTS> & {
-      quickFacts?: unknown;
-      values?: unknown;
-      bullets?: unknown;
-    };
+    const body = (await req.json()) as Partial<AboutPayload>;
+
+    const prev = await prisma.homeAbout.findUnique({ where: { key: KEY } });
+
+    const incomingVideoUrl = sanitize(body.videoUrl);
+    const incomingPoster = sanitize(body.videoPoster);
+    const incomingCaption = sanitize(body.videoCaption);
 
     const data = {
-      eyebrow: s(body.eyebrow) || DEFAULTS.eyebrow,
-      title: s(body.title) || DEFAULTS.title,
-      lead: s(body.lead) || DEFAULTS.lead,
-      blurb: s(body.blurb) || s(body.lead) || DEFAULTS.blurb,
-      bullets: parseStringArray(body.bullets).length
-        ? parseStringArray(body.bullets)
-        : DEFAULTS.bullets,
-      ctaPrimaryText: s(body.ctaPrimaryText) || DEFAULTS.ctaPrimaryText,
-      ctaPrimaryHref: s(body.ctaPrimaryHref) || DEFAULTS.ctaPrimaryHref,
-      ctaGhostText: s(body.ctaGhostText) || DEFAULTS.ctaGhostText,
-      ctaGhostHref: s(body.ctaGhostHref) || DEFAULTS.ctaGhostHref,
+      eyebrow: sanitize(body.eyebrow) || DEFAULTS.eyebrow,
+      title: sanitize(body.title) || DEFAULTS.title,
+      lead: sanitize(body.lead) || DEFAULTS.lead,
+      bullets: Array.isArray(body.bullets) && body.bullets.length ? body.bullets : DEFAULTS.bullets,
+      ctaPrimaryText: sanitize(body.ctaPrimaryText) || DEFAULTS.ctaPrimaryText,
+      ctaPrimaryHref: sanitize(body.ctaPrimaryHref) || DEFAULTS.ctaPrimaryHref,
+      ctaGhostText: sanitize(body.ctaGhostText) || DEFAULTS.ctaGhostText,
+      ctaGhostHref: sanitize(body.ctaGhostHref) || DEFAULTS.ctaGhostHref,
       quickFacts: parseFacts(body.quickFacts),
-      videoUrl: s(body.videoUrl),
-      videoPoster: s(body.videoPoster),
-      videoCaption: s(body.videoCaption),
       values: parseValues(body.values),
+      videoUrl: incomingVideoUrl || null,
+      videoPoster: incomingPoster || null,
+      videoCaption: incomingCaption || null,
     };
 
-    await prisma.homeAbout.upsert({
+    const saved = await prisma.homeAbout.upsert({
       where: { key: KEY },
       create: { key: KEY, ...data },
       update: data,
     });
 
+    // Clean up old Media if URLs changed
+    const urlsToDelete: string[] = [];
+    if (prev?.videoUrl && prev.videoUrl !== saved.videoUrl) urlsToDelete.push(prev.videoUrl);
+    if (prev?.videoPoster && prev.videoPoster !== saved.videoPoster)
+      urlsToDelete.push(prev.videoPoster);
+
+    if (urlsToDelete.length) {
+      await prisma.media.deleteMany({
+        where: { url: { in: urlsToDelete } },
+      });
+    }
+
     revalidatePath('/');
     return NextResponse.json({ ok: true });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('POST /api/home/about failed:', e);
     return NextResponse.json({ error: 'Server error (POST about).' }, { status: 500 });
   }

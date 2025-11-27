@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -21,7 +22,6 @@ type CSSVars = React.CSSProperties & { [key: `--${string}`]: string | number };
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.matchMedia(`(max-width: ${MOBILE_BP}px)`).matches : false
@@ -33,6 +33,7 @@ export default function Navbar() {
   const [hover, setHover] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // springs
   const m = useRef(0);
   const v = useRef(0);
   const mm = useRef(0);
@@ -43,6 +44,12 @@ export default function Navbar() {
   const lastTime = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const raf = useRef<number | null>(null);
 
+  // === ACTIVE SECTION STATE (for home page) ===
+  const [activeSection, setActiveSection] = useState<string>('top');
+  const activeRef = useRef<string>('top');
+  const sectionIds = NAV_LINKS.map((l) => l.id);
+
+  // mobile breakpoint
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOBILE_BP}px)`);
     const apply = () => setIsMobile(mq.matches);
@@ -53,17 +60,19 @@ export default function Navbar() {
 
   const setM = (value: number) => {
     m.current = value;
-    document.querySelectorAll<HTMLElement>(`.${styles.centerStack}`).forEach((el) => {
-      el.style.setProperty('--m', value.toFixed(4));
-      el.style.setProperty('--links-pe', value > 0.6 ? 'none' : 'auto');
-    });
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--nav-m', value.toFixed(4));
+      root.style.setProperty('--nav-links-pe', value > 0.6 ? 'none' : 'auto');
+    }
   };
 
   const setMM = (value: number) => {
     mm.current = value;
-    document.querySelectorAll<HTMLElement>(`.${styles.mobilePill}`).forEach((node) => {
-      node.style.setProperty('--mm', value.toFixed(4));
-    });
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--nav-mm', value.toFixed(4));
+    }
   };
 
   const stepSpring = useCallback(
@@ -92,6 +101,7 @@ export default function Navbar() {
     []
   );
 
+  // lock body when mobile menu open
   useEffect(() => {
     const prev = document.body.style.overflow;
     if (menuOpen) document.body.style.overflow = 'hidden';
@@ -100,6 +110,7 @@ export default function Navbar() {
     };
   }, [menuOpen]);
 
+  // ESC closes menu
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false);
@@ -108,6 +119,7 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // scroll-based handoff + springs
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -142,11 +154,17 @@ export default function Navbar() {
 
     const onScroll = () => {
       updateHandoff();
+
       if (!isMobile) {
         const y = window.scrollY || 0;
         const dy = y - lastY.current;
-        if (dy > 0) dirTarget.current = 1;
-        else if (dy < 0) dirTarget.current = 0;
+
+        if (dy > 0) {
+          dirTarget.current = 1; // scrolling down → logo mode
+        } else if (dy < 0) {
+          dirTarget.current = 0; // scrolling up → links mode
+        }
+
         lastY.current = y;
       }
     };
@@ -178,7 +196,7 @@ export default function Navbar() {
     lastTime.current = performance.now();
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onOrient);
     raf.current = requestAnimationFrame(loop);
 
@@ -190,6 +208,56 @@ export default function Navbar() {
     };
   }, [hover, menuOpen, stepSpring, isMobile]);
 
+  // === ACTIVE SECTION TRACKING (home only) ===
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (pathname !== '/') return; // only track sections on home
+
+    const handle = () => {
+      const y = window.scrollY || 0;
+
+      // very top of page => Home
+      if (y < 200) {
+        if (activeRef.current !== 'top') {
+          activeRef.current = 'top';
+          setActiveSection('top');
+        }
+        return;
+      }
+
+      const viewportOffset = 100; // approx nav height
+      let bestId = 'top';
+      let bestDelta = Infinity;
+
+      sectionIds.forEach((id) => {
+        if (id === 'top') return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const top = rect.top + window.scrollY;
+        const delta = Math.abs(top - (y + viewportOffset));
+
+        if (delta < bestDelta && rect.bottom > viewportOffset + 40) {
+          bestDelta = delta;
+          bestId = id;
+        }
+      });
+
+      if (bestId && activeRef.current !== bestId) {
+        activeRef.current = bestId;
+        setActiveSection(bestId);
+      }
+    };
+
+    handle(); // run once on mount
+    window.addEventListener('scroll', handle, { passive: true });
+    window.addEventListener('resize', handle);
+    return () => {
+      window.removeEventListener('scroll', handle);
+      window.removeEventListener('resize', handle);
+    };
+  }, [pathname, sectionIds]);
+
   const onEnter = () => setHover(true);
   const onLeave = () => setHover(false);
 
@@ -199,7 +267,39 @@ export default function Navbar() {
   const HIDE_PX = NAV_H + HIDE_EXTRA;
   const topStyle = { transform: `translateY(${handoff ? 0 : -HIDE_PX}px)` };
   const bottomStyle = { transform: `translateY(${handoff ? HIDE_PX : 0}px)` };
-  const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length };
+  const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length as number };
+
+  // smooth scroll to sections (home only)
+  const handleNavClick =
+    (id: string) => (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+      if (pathname !== '/') {
+        // if you ever add other pages with same nav, let Next.js route normally
+        return;
+      }
+
+      e.preventDefault();
+
+      if (id === 'top') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        closeMenu();
+        return;
+      }
+
+      const target = document.getElementById(id);
+      if (!target) {
+        closeMenu();
+        return;
+      }
+
+      const y = target.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+      closeMenu();
+    };
+
+  const isLinkActive = (id: string) => {
+    if (pathname !== '/') return false;
+    return activeSection === id;
+  };
 
   // Desktop pill (links ⇄ logo)
   const CenterMorph = () => (
@@ -210,16 +310,20 @@ export default function Navbar() {
         </Link>
       </div>
       <div className={styles.linksLayer}>
-        {NAV_LINKS.map(({ slug, label }) => (
-          <Link
-            key={slug}
-            href={`/${slug}`}
-            className={`${styles.link} ${isActive(`/${slug}`) ? styles.active : ''}`}
-            aria-current={isActive(`/${slug}`) ? 'page' : undefined}
-          >
-            {label}
-          </Link>
-        ))}
+        {NAV_LINKS.map(({ id, label }) => {
+          const href = id === 'top' ? '#top' : `#${id}`;
+          return (
+            <Link
+              key={id}
+              href={href}
+              className={`${styles.link} ${isLinkActive(id) ? styles.active : ''}`}
+              aria-current={isLinkActive(id) ? 'page' : undefined}
+              onClick={handleNavClick(id)}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -289,16 +393,19 @@ export default function Navbar() {
             Navigation
           </h2>
           <nav className={styles.mobileNav}>
-            {NAV_LINKS.map(({ slug, label }) => (
-              <Link
-                key={slug}
-                href={`/${slug}`}
-                className={`${styles.mobileLink} ${isActive(`/${slug}`) ? styles.activeMobile : ''}`}
-                onClick={closeMenu}
-              >
-                {label}
-              </Link>
-            ))}
+            {NAV_LINKS.map(({ id, label }) => {
+              const href = id === 'top' ? '#top' : `#${id}`;
+              return (
+                <Link
+                  key={id}
+                  href={href}
+                  className={`${styles.mobileLink} ${isLinkActive(id) ? styles.activeMobile : ''}`}
+                  onClick={handleNavClick(id)}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>
@@ -308,6 +415,29 @@ export default function Navbar() {
   const topClass = `${styles.topWrapper} ${handoff ? styles.handoff : ''}`;
   const bottomClass = `${styles.bottomWrapper} ${handoff ? styles.handoff : ''}`;
 
+  const isHome = pathname === '/';
+
+  // 🔹 Non-home: simple sticky bar with Back to home
+  if (!isHome) {
+    return (
+      <header className={styles.secondaryBar}>
+        <div className={styles.secondaryInner}>
+          <Link href="/" className={styles.secondaryBrand} aria-label="Back to home">
+            <span className={styles.secondaryLogo}>
+              <Image src="/assets/NOCTURNA_W.png" alt="Nocturna" width={120} height={28} priority />
+            </span>
+          </Link>
+
+          <Link href="/" className={styles.secondaryBack}>
+            <span className={styles.secondaryBackArrow}>←</span>
+            <span>Back to home</span>
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
+  // 🔹 Home: full floating morph pill + mobile dock
   return (
     <>
       <div className={topClass} style={topStyle}>

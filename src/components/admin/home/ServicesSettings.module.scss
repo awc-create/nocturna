@@ -1,48 +1,31 @@
-:root {
-  --ink: #0b0b0b;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --soft: #f8fafc;
-  --card: #ffffff;
-  --shadow-1: 0 8px 24px rgba(15, 23, 42, 0.06);
-  --blue: #2563eb;
-  --blue-press: #1e4fd1;
-  --dark: #111;
-  --radius: 14px;
-}
+/* ============================================================
+   SERVICES SETTINGS — NOCTURNA DARK THEME
+   ============================================================ */
 
-/* === SECTION === */
 .section {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-  padding: 18px;
-  animation: fadeIn 0.18s ease both;
-  overflow: hidden;
-  box-sizing: border-box;
+  /* Local tokens instead of :root for CSS-module purity */
+  --services-ink: #e5e7eb;
+  --services-muted: #94a3b8;
+  --services-line: rgba(148, 163, 184, 0.45);
+  --services-soft: rgba(15, 23, 42, 0.7);
+  --services-card: rgba(15, 23, 42, 0.85);
+  --services-radius: 14px;
+  --services-accent: #e5c17a;
+  --services-accent-ink: #111827;
+
+  margin-bottom: 2rem;
 
   h2 {
     margin-bottom: 0.25rem;
     font-size: 1.25rem;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.02em;
+    color: #f9fafb;
   }
 
   p {
-    color: var(--muted);
+    color: var(--services-muted);
     margin: 0 0 1rem;
     font-size: 0.95rem;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -51,64 +34,74 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-
-  .full {
-    grid-column: 1 / -1;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    font-weight: 600;
-    color: var(--ink);
-
-    input,
-    textarea {
-      width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 0.7rem 0.85rem;
-      background: #fff;
-      font-size: 1rem;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-      box-sizing: border-box;
-    }
-
-    input:focus,
-    textarea:focus {
-      outline: none;
-      border-color: color-mix(in srgb, var(--blue) 35%, transparent);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 12%, transparent);
-      background: #fff;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 110px;
-    }
-  }
 }
 
-/* === FIELDSET === */
+.full {
+  grid-column: 1 / -1;
+}
+
+/* labels + inputs scoped for purity */
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--services-ink);
+  font-size: 0.9rem;
+}
+
+.form label input,
+.form label textarea {
+  width: 100%;
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+
+  border: 1px solid var(--services-line);
+  background: rgba(15, 23, 42, 0.95);
+  color: var(--services-ink);
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+  box-sizing: border-box;
+}
+
+.form label input:focus,
+.form label textarea:focus {
+  outline: none;
+  border-color: var(--services-accent);
+  box-shadow: 0 0 0 1px rgba(229, 193, 122, 0.35);
+  background: rgba(15, 23, 42, 1);
+}
+
+.form label textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+/* === FIELDSET: container for all services === */
 .fieldset {
   position: relative;
   grid-column: 1 / -1;
-  border: 1px solid var(--line);
+  border: 1px solid var(--services-line);
   border-radius: 12px;
-  padding: 14px 14px 60px;
-  background: var(--soft);
+  padding: 14px 14px 70px;
+  background: var(--services-soft);
 
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 
-  legend {
-    padding: 0 6px;
-    color: #334155;
-    font-weight: 700;
-    font-size: 0.93rem;
-  }
+.fieldset legend {
+  padding: 0 6px;
+  color: var(--services-ink);
+  font-weight: 700;
+  font-size: 0.93rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 /* === SERVICE ITEM ROW === */
@@ -116,91 +109,144 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
-  background: #fff;
-  border: 1px solid var(--line);
+
+  background: var(--services-card);
+  border: 1px solid var(--services-line);
   border-radius: 12px;
   padding: 1rem;
-  position: relative;
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-
-  textarea {
-    grid-column: 1 / -1;
-  }
 }
 
+.itemRow label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.itemRow textarea {
+  grid-column: 1 / -1;
+}
+
+/* === UPLOAD ROW + PREVIEW === */
+.uploadRow {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.uploadRow small {
+  color: var(--services-muted);
+  font-size: 0.82rem;
+}
+
+.imagePreview {
+  grid-column: 1 / -1;
+  margin-top: 0.3rem;
+  max-width: 260px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  display: block;
+}
+
+/* === REMOVE BUTTON === */
 .removeBtn {
   grid-column: 1 / -1;
-  justify-self: end;
+  justify-self: flex-end;
   padding: 0.45rem 1rem;
   border-radius: 999px;
   background: #ef4444;
-  color: #fff;
+  color: #fef2f2;
   border: none;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.08s ease, filter 0.15s ease;
+  box-shadow: 0 6px 16px rgba(127, 29, 29, 0.5);
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease;
 
   &:hover {
     transform: translateY(-1px);
-    filter: brightness(1.1);
+    filter: brightness(1.08);
   }
 }
 
-/* === ADD BUTTON === */
+/* === ADD BUTTON (bottom-right of fieldset) === */
 .addBtn {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  border: 1px solid transparent;
-  background: var(--blue);
-  color: #fff;
+  bottom: 14px;
+  right: 14px;
+  border: none;
   border-radius: 999px;
   padding: 0.6rem 1rem;
+
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--services-accent) 0%,
+    #ddb66b 40%,
+    #b38a45 100%
+  );
+  color: var(--services-accent-ink);
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.18);
-  transition: transform 0.08s ease, background 0.15s ease;
+
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.9);
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
-    background: var(--blue-press);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 1);
   }
 }
 
-/* === ACTIONS === */
+/* === SAVE BUTTON ROW === */
 .actions {
   grid-column: 1 / -1;
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
   margin-top: 0.25rem;
+}
 
-  .save {
-    padding: 0.7rem 1.1rem;
-    border-radius: 999px;
-    border: 1px solid var(--dark);
-    background: var(--dark);
-    color: #fff;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: transform 0.08s ease, filter 0.15s ease;
+.save {
+  padding: 0.7rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
 
-    &:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
+  background: radial-gradient(
+    circle at 0% 0%,
+    var(--services-accent) 0%,
+    #ddb66b 40%,
+    #b38a45 100%
+  );
+  color: var(--services-accent-ink);
 
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.85);
+  transition:
+    transform 0.08s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.save:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 1);
+}
+
+.save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* === RESPONSIVE === */
@@ -208,11 +254,29 @@
   .form {
     grid-template-columns: 1fr;
   }
+
   .fieldset {
     grid-template-columns: 1fr;
-    padding-bottom: 64px;
+    padding-bottom: 80px;
   }
+
   .itemRow {
     grid-template-columns: 1fr;
+  }
+
+  .addBtn {
+    position: static;
+    margin-top: 6px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .save {
+    width: 100%;
+    text-align: center;
   }
 }
