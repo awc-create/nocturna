@@ -69,6 +69,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# ✅ Needed for post-deploy seed scripts that run inside the runtime container
+COPY --from=deps /app/node_modules/bcryptjs ./node_modules/bcryptjs
+
 # Include prisma migrations so `prisma migrate deploy` can run in container
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
@@ -77,3 +80,4 @@ RUN npm i -g prisma@6.13.0
 USER 1001
 EXPOSE 3000
 CMD ["node", "server.js"]
+
