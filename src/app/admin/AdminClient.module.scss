@@ -37,15 +37,9 @@
   gap: 12px;
 }
 
-.topLeft {
-  justify-self: start;
-}
-.topCenter {
-  justify-self: center;
-}
-.topRight {
-  justify-self: end;
-}
+.topLeft { justify-self: start; }
+.topCenter { justify-self: center; }
+.topRight { justify-self: end; }
 
 /* Icon buttons */
 .iconBtn {
@@ -70,18 +64,18 @@
     filter: brightness(1.12);
     box-shadow: 0 14px 32px rgba(15, 23, 42, 0.9);
   }
+
   &:active {
     transform: translateY(1px);
   }
 }
 
-/* Top-left label */
+/* Brand */
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
   font-weight: 800;
-  letter-spacing: 0.2px;
 }
 
 .brand svg {
@@ -101,10 +95,9 @@
   padding: 8px 12px;
   border-radius: 999px;
   font-weight: 700;
-
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
   cursor: pointer;
 
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.8);
   transition: all 0.15s ease;
 
   &:hover {
@@ -119,18 +112,12 @@
   kbd {
     margin-left: 6px;
     font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
-
     border: 1px solid rgba(148, 163, 184, 0.6);
     border-radius: 6px;
     padding: 3px 6px;
-
     background: rgba(15, 23, 42, 0.9);
     color: #e5e7eb;
   }
-}
-
-.kbdLabel {
-  white-space: nowrap;
 }
 
 /* User badge */
@@ -138,47 +125,30 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-
   padding: 4px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 999px;
-
+  border: 1px solid rgba(148, 163, 184, 0.45);
   background: radial-gradient(circle at 0% 0%, #0f172a 0%, #020617 85%);
-  box-shadow: var(--shadow-1);
 }
 
-/* Avatar ring + image fit (matches the “little circle” look) */
 .avatar {
   width: 28px;
   height: 28px;
   border-radius: 999px;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-
-  /* ✅ REQUIRED for next/image fill */
   position: relative;
-
-  /* ring */
   border: 1px solid rgba(229, 193, 122, 0.55);
-  background: rgba(15, 23, 42, 0.85);
 }
 
 .avatarImg {
   object-fit: cover;
-  object-position: center;
 }
-
 
 .meta {
   display: grid;
   gap: 1px;
-  line-height: 1.1;
 
-  strong {
-    font-weight: 800;
-  }
-
+  strong { font-weight: 800; }
   small {
     color: var(--muted);
     text-transform: lowercase;
@@ -186,14 +156,13 @@
 }
 
 /* ======================================= */
-/* BODY GRID */
+/* BODY */
 /* ======================================= */
 
 .body {
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
   gap: 18px;
-
   padding: 18px clamp(14px, 3.6vw, 32px) 28px;
 }
 
@@ -207,48 +176,35 @@
   align-self: start;
 
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto auto; /* ✅ was auto 1fr */
 
   width: 76px;
   transition: width 0.18s ease;
 }
 
-/* This class is applied from JS: `${styles.rail} ${railOpen ? styles.railOpen : ""}` */
-.railOpen {
-  width: 260px;
-}
 
-/* Sidebar heading */
+.railOpen { width: 260px; }
+
 .railHead {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  margin: 0 6px 8px 0;
   padding: 8px 10px;
 }
 
-.railHead svg {
-  stroke: var(--accent);
-}
-
-/* Nav panel */
 .railNav {
   background: rgba(2, 6, 23, 0.78);
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: var(--radius);
-
-  box-shadow: var(--shadow-2);
-
   padding: 8px;
   display: grid;
   gap: 6px;
 }
 
-/* Sidebar items */
+/* Sidebar item */
 .railItem {
   all: unset;
-
   cursor: pointer;
   display: grid;
   grid-template-columns: 24px 1fr;
@@ -257,128 +213,77 @@
 
   padding: 10px;
   border-radius: 12px;
-  border: 1px solid transparent;
-
   color: var(--ink);
-
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
     background: rgba(15, 23, 42, 0.9);
-    border-color: rgba(148, 163, 184, 0.7);
   }
 
+  /* 🔥 ICON FIX */
   svg {
-    stroke: var(--muted);
-    transition: stroke 0.15s ease;
+    stroke: currentColor;
   }
 }
 
-/* ✅ FIX: collapsed rail should center icon (no phantom 2nd column)
-   IMPORTANT: with CSS modules, :not(.railOpen) won’t work reliably if you
-   try to reference the hashed class inside a selector. This does.
-*/
+/* Collapsed sidebar */
 .rail:not(.railOpen) .railItem {
   grid-template-columns: 1fr;
   justify-items: center;
-  gap: 0;
 }
 
-/* Active sidebar item */
+/* Active item */
 .active {
   background: radial-gradient(
     circle at 0% 0%,
     rgba(248, 250, 252, 0.12) 0%,
     rgba(15, 23, 42, 0.95) 60%
   );
-  border-color: var(--accent);
-
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
 
   svg {
-    stroke: var(--accent);
-  }
-
-  .railText strong {
-    color: var(--accent-ink);
+    stroke: currentColor;
   }
 }
 
 .railText {
   display: grid;
   gap: 2px;
-}
 
-.railText small {
-  color: var(--muted);
-  font-size: 12px;
+  small {
+    color: var(--muted);
+    font-size: 12px;
+  }
 }
 
 /* ======================================= */
-/* MAIN CONTENT */
+/* MAIN */
 /* ======================================= */
 
-.main {
+.main { 
   min-width: 0;
+  padding-bottom: clamp(80px, 10vh, 140px); 
 }
 
-/* Section header card */
+
 .sectionHero {
   background: radial-gradient(
-      circle at 0% 0%,
-      rgba(248, 250, 252, 0.08) 0%,
-      rgba(15, 23, 42, 0.96) 55%
-    ),
-    linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
-
+    circle at 0% 0%,
+    rgba(248, 250, 252, 0.08) 0%,
+    rgba(15, 23, 42, 0.96) 55%
+  );
   border: 1px solid rgba(148, 163, 184, 0.55);
   border-radius: 20px;
-
-  box-shadow: var(--shadow-2);
-
-  padding: 22px 18px 20px;
+  padding: 22px;
   margin-bottom: 14px;
 }
 
-.sectionBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  background: rgba(24, 24, 27, 0.9);
-  color: var(--accent);
-
-  border: 1px solid rgba(234, 179, 8, 0.4);
-  padding: 6px 12px;
-  border-radius: 999px;
-
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-}
-
-.sectionHero h1 {
-  margin: 10px 0 6px;
-  font-size: 1.35rem;
-  color: #f9fafb;
-}
-
-.sectionHero p {
-  margin: 0;
-  color: var(--muted);
-}
-
-/* Content panel */
 .panel {
   background: var(--card);
   border: 1px solid rgba(148, 163, 184, 0.4);
   border-radius: 16px;
-
-  box-shadow: var(--shadow-2);
-
   padding: 18px;
-  animation: fadeIn 0.18s ease both;
 }
 
 /* ======================================= */
@@ -388,196 +293,58 @@
 .cmdOverlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
-
   background: rgba(0, 0, 0, 0.6);
-
   display: grid;
   place-items: start center;
-
   padding-top: 10vh;
 }
 
 .cmd {
   width: min(760px, 92vw);
-
   background: rgba(15, 23, 42, 0.98);
   border: 1px solid rgba(148, 163, 184, 0.6);
   border-radius: 16px;
-
-  box-shadow: 0 26px 70px rgba(15, 23, 42, 1);
-  overflow: hidden;
-}
-
-.cmdHead {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.6);
-
-  font-weight: 800;
-  letter-spacing: 0.2px;
-
-  svg {
-    stroke: var(--accent);
-  }
-}
-
-.cmdList {
-  display: grid;
-  padding: 6px;
-
-  max-height: 60vh;
-  overflow: auto;
 }
 
 .cmdItem {
   all: unset;
   cursor: pointer;
-
   display: grid;
   grid-template-columns: 20px 1fr;
   gap: 10px;
-
   padding: 10px;
-  border-radius: 12px;
 
-  color: #e5e7eb;
-
-  transition: background 0.15s ease;
+  color: var(--ink);
 
   &:hover {
     background: rgba(15, 23, 42, 0.9);
   }
 
   svg {
-    stroke: var(--muted);
-  }
-}
-
-.cmdText {
-  display: grid;
-  gap: 2px;
-}
-
-.cmdText small {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-/* ======================================= */
-/* ANIMATIONS */
-/* ======================================= */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    stroke: currentColor;
   }
 }
 
 /* ======================================= */
-/* MOBILE TWEAKS */
+/* MOBILE */
 /* ======================================= */
 
 @media (max-width: 768px) {
-  .topbar {
-    grid-template-columns: auto 1fr;
-    column-gap: 8px;
-    padding-inline: 12px;
-  }
-
-  .topCenter {
-    display: none;
-  }
-
-  .topRight {
-    gap: 8px;
-  }
-
-  .badge {
-    padding: 2px 6px;
-  }
-
-  .badge .meta {
-    display: none;
-  }
-
   .body {
     grid-template-columns: 1fr;
-    padding: 14px 12px 80px;
-    gap: 12px;
   }
 
   .rail {
     position: fixed;
+    bottom: 16px;
     left: 12px;
     right: 12px;
-    bottom: 16px;
-    top: auto;
-    width: auto;
-    z-index: 45;
-    grid-template-rows: 1fr;
-
     transform: translateY(110%);
     opacity: 0;
-    pointer-events: none;
-    transition: transform 0.18s ease, opacity 0.18s ease;
   }
 
   .railOpen {
     transform: translateY(0);
     opacity: 1;
-    pointer-events: auto;
-  }
-
-  .railHead {
-    display: none;
-  }
-
-  .railNav {
-    display: flex;
-    padding: 6px;
-    border-radius: 999px;
-    backdrop-filter: blur(14px);
-  }
-
-  .railItem {
-    flex: 1;
-    grid-template-columns: auto;
-    justify-content: center;
-    padding-block: 10px;
-  }
-
-  .railText {
-    display: none;
-  }
-
-  .sectionHero {
-    border-radius: 16px;
-    padding: 16px 14px;
-  }
-
-  .sectionHero h1 {
-    font-size: 1.15rem;
-  }
-
-  .panel {
-    padding: 14px 12px 16px;
-    border-radius: 14px;
-  }
-
-  .cmdOverlay {
-    padding-top: 20vh;
-  }
-
-  .cmd {
-    width: 92vw;
   }
 }

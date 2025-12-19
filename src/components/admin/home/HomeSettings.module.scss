@@ -21,6 +21,7 @@
 
 .titleBlock {
   min-width: 0;
+  padding-bottom: clamp(80px, 10vh, 140px);
 
   h2 {
     font-size: 1.25rem;
