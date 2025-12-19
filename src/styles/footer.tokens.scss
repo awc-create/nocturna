@@ -1,0 +1,17 @@
+/* src/styles/footer.tokens.scss */
+
+:root {
+  --footer-bg: #243545;
+  --footer-bg-2: #203040;
+
+  --footer-text: #f5f5f4;
+  --footer-muted: #cdd3da;
+
+  --footer-line: rgba(255,255,255,0.10);
+  --footer-tile: rgba(255,255,255,0.06);
+  --footer-tile-hover: rgba(255,255,255,0.10);
+
+  --footer-accent: #e6d3ad;
+  --footer-accent-ink: #0b0b0b;
+  --footer-focus: rgba(230, 211, 173, 0.55);
+}

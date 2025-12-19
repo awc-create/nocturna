@@ -1,21 +1,39 @@
-:root {
-  /* light */
-  --admin-bg: #0b1325; /* deep night bg */
-  --admin-gradient: radial-gradient(1200px 600px at 20% -10%, #111a33 0%, transparent 55%),
-                    radial-gradient(1200px 800px at 100% 0%, #0c1736 0%, transparent 55%),
-                    linear-gradient(#0b1325, #0b1325);
-  --card: #0e162a;
-  --ink: #dfe6f7;
-  --muted: #a7b0c6;
-  --line: #1b2642;
-  --soft: #0f1a32;
-  --accent: #6aa8ff;
-  --accent-ink: #cfe0ff;
-  --ok: #22c55e;
-  --warn: #f59e0b;
-  --err: #ef4444;
+/* src/styles/admin.tokens.scss */
+/* Global tokens for the Nocturna Admin UI */
 
-  --radius: 14px;
-  --shadow-1: 0 1px 2px rgba(2,8,23,.5);
-  --shadow-2: 0 12px 32px rgba(2,8,23,.55);
+:root {
+  /* Backgrounds */
+  --admin-bg: #0b1325; /* deep night */
+  --admin-gradient:
+    radial-gradient(1200px 600px at 20% -10%, #111a33 0%, transparent 55%),
+    radial-gradient(1200px 800px at 100% 0%, #0c1736 0%, transparent 55%),
+    linear-gradient(#0b1325, #0b1325);
+
+  /* Surfaces */
+  --admin-card: rgba(15, 23, 42, 0.88);
+  --admin-soft: rgba(15, 23, 42, 0.62);
+
+  /* Text */
+  --admin-ink: #dfe6f7;
+  --admin-muted: #a7b0c6;
+
+  /* Lines */
+  --admin-line: rgba(148, 163, 184, 0.28);
+
+  /* Accent */
+  --admin-accent: #6aa8ff;
+  --admin-accent-ink: #cfe0ff;
+  --admin-accent-gold: #e6d3ad; /* optional if you want gold touches too */
+
+  /* Status */
+  --admin-ok: #22c55e;
+  --admin-warn: #f59e0b;
+  --admin-err: #ef4444;
+
+  /* Geometry */
+  --admin-radius: 14px;
+
+  /* Shadows */
+  --admin-shadow-1: 0 1px 2px rgba(2, 8, 23, 0.5);
+  --admin-shadow-2: 0 12px 32px rgba(2, 8, 23, 0.55);
 }

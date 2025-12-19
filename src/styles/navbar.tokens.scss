@@ -1,0 +1,27 @@
+/* src/styles/navbar.tokens.scss */
+
+:root {
+  --nav-height: 70px;
+  --nav-radius: 26px;
+  --chip-min-w: 88px;
+  --static-w: 140px;
+  --min-w: 280px;
+  --max-w: 960px;
+  --logo-nudge: -13px;
+
+  --nav-bg: rgba(13, 13, 13, 0.6);
+  --nav-border: rgba(255, 255, 255, 0.10);
+  --nav-inner: rgba(255, 255, 255, 0.06);
+
+  --nav-text: #f5f5f4;
+  --nav-muted: #d1d5db;
+
+  --nav-accent: #e6d3ad;
+  --nav-accent-ink: #1a1a1a;
+  --nav-focus: rgba(230, 211, 173, 0.55);
+
+  /* global morph vars (set from Navbar.tsx) */
+  --nav-m: 0;
+  --nav-mm: 0;
+  --nav-links-pe: auto;
+}
