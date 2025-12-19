@@ -15,5 +15,4 @@ const nextConfig = {
   // If you’re deploying to a Node server:
   // output: 'standalone',
 };
-
 module.exports = nextConfig;
