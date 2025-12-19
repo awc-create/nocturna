@@ -1,3 +1,4 @@
+// src/components/home/contact/Contact.tsx
 'use client';
 
 import { FaEnvelope, FaPhoneAlt } from 'react-icons/fa';

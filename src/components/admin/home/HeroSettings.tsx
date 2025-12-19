@@ -1,3 +1,4 @@
+// src/components/admin/home/HeroSettings.tsx
 'use client';
 
 import { useEffect, useState, type ChangeEvent } from 'react';

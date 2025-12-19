@@ -1,3 +1,4 @@
+// src/components/admin/settings/FAQSettings.tsx
 'use client';
 
 import { useEffect, useState } from 'react';

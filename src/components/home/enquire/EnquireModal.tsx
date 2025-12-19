@@ -1,9 +1,10 @@
-// src/components/home/enquire/EnquireModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useModals } from '../modals/ModalContext';
 import styles from './EnquireModal.module.scss';
+
+const GOOGLE_BOOKING_URL = process.env.NEXT_PUBLIC_GOOGLE_BOOKING_URL || '';
 
 type FormFieldType = 'text' | 'email' | 'tel' | 'textarea';
 
@@ -203,7 +204,23 @@ export default function EnquireModal() {
               {status === 'submitting' ? 'Sending…' : 'Send Enquiry'}
             </button>
 
-            {status === 'success' && <p className={styles.success}>{config.successMessage}</p>}
+            {status === 'success' && (
+              <>
+                <p className={styles.success}>{config.successMessage}</p>
+
+                {GOOGLE_BOOKING_URL && (
+                  <a
+                    href={GOOGLE_BOOKING_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.bookingCta}
+                  >
+                    Book a call in our calendar
+                  </a>
+                )}
+              </>
+            )}
+
             {status === 'error' && <p className={styles.error}>{error}</p>}
           </form>
         </div>

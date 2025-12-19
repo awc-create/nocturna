@@ -1,0 +1,297 @@
+/* =========================
+   CLIENTS — Logos ⇄ Testimonials flip
+   ========================= */
+.section {
+  --ink: #fff;
+  --muted: #c9d1e3;
+
+  position: relative;
+  z-index: 1;
+  color: var(--ink);
+  padding: clamp(72px, 9vw, 110px) clamp(16px, 4vw, 24px);
+  margin-block: 0;
+  background: transparent !important;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.head {
+  text-align: center;
+  max-width: 880px;
+  margin: 0 auto clamp(24px, 3vw, 32px);
+
+  .title {
+    font-weight: 900;
+    font-size: clamp(26px, 4.5vw, 42px);
+    letter-spacing: -0.015em;
+    text-shadow: 0 0 24px rgba(255, 255, 255, 0.06);
+  }
+  .lead {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: clamp(14px, 1.3vw, 18px);
+  }
+}
+
+/* Grid (≤5) */
+.grid {
+  --w: min(1160px, 92vw);
+  width: var(--w);
+  margin: clamp(24px, 3vw, 32px) auto 0;
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: clamp(16px, 2.2vw, 24px);
+
+  @media (max-width: 980px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 680px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Card + flip */
+.item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  perspective: 1000px;
+
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    background 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.05);
+    filter: brightness(1.08);
+  }
+}
+
+.cardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.23, 0.9, 0.35, 1);
+}
+
+/* Faces */
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  padding: 12px 16px;
+  z-index: 1;
+}
+
+/* FRONT: logo */
+.logoFace {
+  background: transparent !important;
+}
+
+/* BACK: testimonial */
+.quoteFace {
+  transform: rotateY(180deg);
+  padding: 18px 18px;
+  align-content: center;
+  row-gap: 10px;
+  // background: radial-gradient(
+  //     120% 120% at 0% 0%,
+  //     rgba(248, 250, 252, 0.05),
+  //     transparent 60%
+  //   ),
+  //   linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.96));
+}
+
+/* default mode – show logos */
+.cardInner {
+  transform: rotateY(0deg);
+}
+
+/* testimonials mode – flip all cards by default */
+.modeTestimonials .cardInner {
+  transform: rotateY(180deg);
+}
+
+/* Normal mode: flip to testimonial on hover */
+.section:not(.modeTestimonials) .item:hover .cardInner {
+  transform: rotateY(180deg);
+}
+
+/* in testimonials mode, hovering a card shows the logo */
+.modeTestimonials .item:hover .cardInner {
+  transform: rotateY(0deg);
+}
+
+/* Logo internals */
+.logoWrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.logo {
+  /* let the logo breathe more inside the transparent card */
+  max-width: clamp(190px, 24vw, 230px);
+  width: 85%;
+  height: auto;
+  opacity: 0.96;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35));
+
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+
+  .item:hover & {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* Testimonial text */
+.quoteBody {
+  margin: 0;
+  font-size: clamp(13px, 1.1vw, 15px);
+  line-height: 1.6;
+  color: #e5e7eb;
+  text-align: left;
+}
+.quoteMeta {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.quoteName {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.quoteRole {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+/* Marquee (6+) */
+.marquee {
+  --w: min(1160px, 92vw);
+  width: var(--w);
+  margin: clamp(18px, 2.5vw, 24px) auto 0;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+.track {
+  display: flex;
+  gap: clamp(32px, 5vw, 48px);
+  align-items: center;
+  animation: scroll 30s linear infinite;
+  will-change: transform;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+.slide {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  padding: 8px 2px;
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* CTA below cards */
+.ctaRow {
+  display: flex;
+  justify-content: center;
+  margin: clamp(18px, 3vw, 28px) 0 0;
+}
+.testimonialsCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.03)
+  );
+  transition:
+    transform 0.12s ease,
+    filter 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.22);
+    filter: brightness(1.05);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.04)
+    );
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Mobile polish */
+@media (max-width: 480px) {
+  .section {
+    padding-inline: 16px;
+  }
+
+  .item {
+    min-height: 150px;
+  }
+
+  .quoteBody {
+    font-size: 13px;
+  }
+
+  .testimonialsCta {
+    width: 100%;
+    max-width: 320px;
+  }
+}

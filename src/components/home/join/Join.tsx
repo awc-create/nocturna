@@ -1,3 +1,4 @@
+// src/components/home/join/Join.tsx
 'use client';
 
 import { useModals } from '../modals/ModalContext';

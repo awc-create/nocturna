@@ -12,38 +12,50 @@ export default function Home() {
   return (
     <ModalProvider>
       <main className={styles.homeContainer}>
-        {/* HERO */}
+        {/* HERO (no divider above the very first section) */}
         <section id="top">
           <Hero />
         </section>
 
         {/* ABOUT */}
-        <section id="about">
+        <section id="about" className={styles.sectionDivider}>
           <About />
         </section>
 
         {/* SERVICES */}
-        <section id="services">
+        <section
+          id="services"
+          className={`${styles.sectionDivider} ${styles.sectionDividerServices}`}
+        >
           <Services />
         </section>
 
         {/* CLIENTS */}
-        <section id="clients">
+        <section
+          id="clients"
+          className={`${styles.sectionDivider} ${styles.sectionDividerClients}`}
+        >
           <Clients />
         </section>
 
         {/* ENQUIRE */}
-        <section id="enquire">
+        <section
+          id="enquire"
+          className={`${styles.sectionDivider} ${styles.sectionDividerEnquire}`}
+        >
           <Enquire />
         </section>
 
         {/* JOIN */}
-        <section id="join">
+        <section id="join" className={`${styles.sectionDivider} ${styles.sectionDividerJoin}`}>
           <Join />
         </section>
 
         {/* CONTACT */}
-        <section id="contact">
+        <section
+          id="contact"
+          className={`${styles.sectionDivider} ${styles.sectionDividerContact}`}
+        >
           <Contact />
         </section>
       </main>

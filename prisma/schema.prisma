@@ -3,78 +3,67 @@ generator client {
 }
 
 datasource db {
-  provider   = "postgresql"
-  url        = env("DATABASE_URL")
-  directUrl  = env("DIRECT_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
-/* ========= Enums ========= */
-enum MediaType {
-  VIDEO
-  IMAGE
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  role         String   @default("user")
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  image        String?
 }
 
-/* ========= Home: Hero ========= */
+/// ========= Home: Hero =========
 model HeroHome {
   id              String    @id @default(cuid())
   key             String    @unique @default("home")
-
-  // Media controls
   mediaType       MediaType @default(VIDEO)
   imageSrc        String    @default("/assets/hero.png")
   videoSrc        String?
   posterSrc       String?
-
-  // Copy + CTA
   title           String    @default("Your Modern Website Starts Here")
   description     String    @default("Crafted with performance and style in mind...")
   ctaText         String    @default("APPLY FOR MEMBERSHIP")
   ctaHref         String    @default("/apply")
-
-  // Overlay intensity (0..1)
   overlayDarkness Float     @default(0.5)
-
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
 
 model HomeAbout {
-  id              String   @id @default(cuid())
-  key             String   @unique @default("about")
-  eyebrow         String   @default("ABOUT NOCTURNA")
-  title           String
-  lead            String
-  bullets         String[]
-  ctaPrimaryText  String   @default("Learn more")
-  ctaPrimaryHref  String   @default("/about")
-  ctaGhostText    String   @default("Enquire now")
-  ctaGhostHref    String   @default("/enquire")
-  quickFacts      Json     @default("[]")
-  values          Json     @default("[]")
-  videoUrl        String?
-  videoPoster     String?
-  videoCaption    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  key            String   @unique @default("about")
+  eyebrow        String   @default("ABOUT NOCTURNA")
+  title          String
+  lead           String
+  bullets        String[]
+  ctaPrimaryText String   @default("Learn more")
+  ctaPrimaryHref String   @default("/about")
+  ctaGhostText   String   @default("Enquire now")
+  ctaGhostHref   String   @default("/enquire")
+  quickFacts     Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  videoUrl       String?
+  videoPoster    String?
+  videoCaption   String?
+  values         Json     @default("[]")
 }
 
-/* ========= Home: Services (grid of cards) ========= */
+/// ========= Home: Services (grid of cards) =========
 model HomeServices {
   id        String   @id @default(cuid())
   key       String   @unique @default("services")
-
   kicker    String   @default("Our Services")
   title     String   @default("Sound that fits the room.")
   lead      String   @default("Two core offerings to start — built to scale with your brand.")
-
-  // Array of cards:
-  // {
-  //   key, title, blurb, href, image, tag,
-  //   backImage?,  // optional: back-face image
-  //   detail?      // optional: deeper explanation (back of card)
-  // }
   items     Json     @default("[]")
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -82,26 +71,16 @@ model HomeServices {
 model HomeEnquire {
   id             String   @id @default(cuid())
   key            String   @unique @default("enquire")
-
-  // Home section copy
   eyebrow        String   @default("For venues & events")
   title          String   @default("Enquire about DJs and live music.")
   lead           String   @default("We curate DJs and musicians for restaurants, bars and event spaces — matching artists to your brand, guest profile and schedule.")
   buttonLabel    String   @default("Open enquiry form")
-
-  // Modal copy
   modalKicker    String   @default("Enquire Now")
   modalTitle     String   @default("Tell us about your venue or event.")
   modalLead      String   @default("Share a few details about your space, schedule and music brief — we’ll match you with the right artists.")
   successMessage String   @default("Thanks — we’ll be in touch shortly.")
-
-  // NEW: configurable form fields (JSON array)
-  // Stored as [{ id, label, name, type, required, placeholder }]
   formFields     Json     @default("[]")
-
-  // Where enquiries should be sent (optional override)
   recipientEmail String?
-
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -109,25 +88,16 @@ model HomeEnquire {
 model HomeJoin {
   id             String   @id @default(cuid())
   key            String   @unique @default("join")
-
-  // Home section copy
   eyebrow        String   @default("For artists & collectives")
   title          String   @default("Join the Nocturna roster.")
   lead           String   @default("DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.")
   buttonLabel    String   @default("Open application form")
-
-  // Modal copy
   modalKicker    String   @default("Join Nocturna")
   modalTitle     String   @default("Tell us about your sound.")
   modalLead      String   @default("Share links, socials and a short intro — we’ll review and get back if there’s a fit.")
   successMessage String   @default("Thanks — we’ll review your submission and follow up.")
-
-  // NEW: configurable form fields (JSON array)
   formFields     Json     @default("[]")
-
-  // Where applications should go (optional override)
   recipientEmail String?
-
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -135,21 +105,14 @@ model HomeJoin {
 model HomeContact {
   id             String   @id @default(cuid())
   key            String   @unique @default("contact")
-
-  // Home section copy (used in the modal)
   title          String   @default("Send us a message.")
   description    String   @default("We’ll get back to you shortly.")
   submitLabel    String   @default("Send Message")
   successMessage String   @default("Thanks — we’ll be in touch soon.")
-
-  // Where contact form submissions should be emailed
   recipientEmail String?
-
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
-
-/* ========= Home: Clients ========= */
 
 model HomeClients {
   id        String   @id @default(cuid())
@@ -164,28 +127,23 @@ model HomeClients {
 model FaqPage {
   id        String   @id @default(cuid())
   key       String   @unique @default("faq")
-
   eyebrow   String   @default("Help centre")
   title     String   @default("Frequently asked questions.")
   lead      String   @default("A quick guide for venues, events and artists working with Nocturna. If you can’t find what you’re looking for, just get in touch.")
-
-  // Stored as:
-  // [{ id, category, question, answer }]
   items     Json     @default("[]")
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-/* ========= Minimal About page content (your short model) ========= */
+/// ========= Minimal About page content (your short model) =========
 model AboutUs {
   id          String   @id @default(cuid())
   key         String   @unique @default("about")
   title       String
-  description String
   bullets     String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  description String
 }
 
 model ContactPage {
@@ -210,4 +168,10 @@ model Media {
   updatedAt DateTime @updatedAt
 
   @@index([name])
+}
+
+/// ========= Enums =========
+enum MediaType {
+  VIDEO
+  IMAGE
 }

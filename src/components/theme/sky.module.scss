@@ -1,59 +1,50 @@
-/* ============================================================================
-   Nocturna Sky Theme
-   - Deep navy base → pitch black as --night-t goes 0 → 1
-   - Canvas starfield with random sparkle
-   - Soft horizon glow
-   - All BEHIND content
-   ============================================================================ */
+/* =====================================================
+   NOCTURNA SKY — FUN, DEEP, CINEMATIC
+   ===================================================== */
 
+/* PAGE-HEIGHT GRADIENT */
 .skyOverlay {
-  position: fixed;
+  position: absolute; /* important */
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  --t: var(--night-t, 0); /* 0 = navy, 1 = black */
+  min-height: 100%;
 
-  &::before,
-  &::after { content: ''; position: absolute; inset: 0; }
-
-  /* Deep navy base with overhead glow + vertical falloff */
-  &::before {
-    background:
-      radial-gradient(120% 80% at 50% -10%, #10223c 0%, #0a1220 58%, #06090f 100%),
-      linear-gradient(180deg, #0b1526 0%, #070c14 100%);
-  }
-
-  /* Black gradient layer — increases with --night-t */
-  &::after {
-    background: linear-gradient(180deg, #050607 0%, #000000 100%);
-    opacity: calc(var(--t));
-    transition: opacity 280ms ease;
-  }
+  background: linear-gradient(
+    180deg,
+    #04060c 0%,
+    #070e1f 15%,
+    #0b1f3f 32%,
+    #0c2d5f 48%,
+    #0a3a7a 60%,
+    #081d3f 72%,
+    #050915 100%
+  );
 }
 
-/* Canvas stars; JS handles sparkle — no CSS animation needed */
+/* STARS — ALWAYS VISIBLE */
 .starCanvas {
   position: fixed;
   inset: 0;
-  pointer-events: none;
   z-index: 0;
-  opacity: 0.95; /* reduce if too bright */
+  pointer-events: none;
+
+  opacity: 0.9;
+  mix-blend-mode: screen;
 }
 
-/* Soft horizon glow around mid-viewport */
-.skyHorizon {
+/* ATMOSPHERIC BLUE GLOW */
+.skyGlow {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(120% 40% at 50% 60vh,
-      rgba(20, 40, 70, .25),
-      rgba(10, 20, 35, .12) 40%,
-      transparent 70%);
-}
 
-/* Respect motion prefs (JS already stops animating, but keep styles minimal) */
-@media (prefers-reduced-motion: reduce) {
-  .starCanvas { opacity: 0.85; }
+  background:
+    radial-gradient(
+      120% 40% at 50% 55vh,
+      rgba(70, 120, 220, 0.28),
+      rgba(30, 60, 120, 0.16) 45%,
+      transparent 70%
+    );
 }

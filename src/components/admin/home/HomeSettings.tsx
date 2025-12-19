@@ -1,3 +1,4 @@
+// src/components/admin/home/HomeSettings.tsx
 'use client';
 
 import { useState, type ChangeEvent } from 'react';

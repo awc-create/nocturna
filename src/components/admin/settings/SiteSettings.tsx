@@ -1,16 +1,19 @@
-// src/components/admin/settings/SiteSettings.tsx
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
 import styles from './SiteSettings.module.scss';
 import FAQSettings from './FAQSettings';
+import AccountSettings from './AccountSettings';
 
-type SettingsTab = 'faq';
+type SettingsTab = 'account' | 'faq';
 
-const TABS: { key: SettingsTab; label: string }[] = [{ key: 'faq', label: 'FAQ' }];
+const TABS: { key: SettingsTab; label: string }[] = [
+  { key: 'account', label: 'Account' },
+  { key: 'faq', label: 'FAQ' },
+];
 
 export default function SiteSettings() {
-  const [active, setActive] = useState<SettingsTab>('faq');
+  const [active, setActive] = useState<SettingsTab>('account');
 
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setActive(e.target.value as SettingsTab);
@@ -20,11 +23,11 @@ export default function SiteSettings() {
     <section className={styles.wrapper}>
       <header className={styles.header}>
         <div className={styles.titleBlock}>
-          <h2>Site</h2>
-          <p>Global settings like FAQs and other static content.</p>
+          <h2>Settings</h2>
+          <p>Account profile and site-wide configuration.</p>
         </div>
 
-        <nav className={styles.tabs} role="tablist" aria-label="Site settings sections">
+        <nav className={styles.tabs} role="tablist" aria-label="Settings sections">
           {TABS.map((t) => {
             const isActive = active === t.key;
             return (
@@ -57,6 +60,7 @@ export default function SiteSettings() {
       </div>
 
       <div className={styles.panel} role="tabpanel">
+        {active === 'account' && <AccountSettings />}
         {active === 'faq' && <FAQSettings />}
       </div>
     </section>

@@ -1,0 +1,102 @@
+/* ============================================================================
+   NOCTURNA — SMOOTH SECTION DIVIDERS
+   Elegant glowing ridges between sections.
+   Works across any dark backgrounds.
+   Add to any section wrapper:  .hasDivider
+   ============================================================================ */
+
+.hasDivider {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Shared divider — soft glow ridge */
+.hasDivider::before {
+  content: "";
+  position: absolute;
+  top: -42px; /* sits between sections */
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1100px, 92vw);
+  height: 80px;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      120% 220% at 50% 0%,
+      rgba(231, 215, 167, 0.55),
+      rgba(231, 215, 167, 0.12) 42%,
+      transparent 75%
+    );
+
+  opacity: 0.75;
+  filter: blur(14px);
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+
+/* ===============================
+   VARIANTS FOR SPECIFIC SECTIONS
+   =============================== */
+
+/* SERVICES — more blue to match stage lighting */
+.hasDivider--services::before {
+  background:
+    radial-gradient(
+      140% 240% at 50% 0%,
+      rgba(90, 140, 230, 0.65),
+      rgba(90, 140, 230, 0.16) 40%,
+      transparent 72%
+    );
+  opacity: 0.78;
+}
+
+/* CLIENTS — slightly cooler neutral ridge */
+.hasDivider--clients::before {
+  background:
+    radial-gradient(
+      140% 240% at 50% 0%,
+      rgba(200, 220, 255, 0.42),
+      rgba(150, 180, 255, 0.12) 40%,
+      transparent 72%
+    );
+  opacity: 0.68;
+}
+
+/* ENQUIRE — warm gold emphasis */
+.hasDivider--enquire::before {
+  background:
+    radial-gradient(
+      120% 230% at 50% 0%,
+      rgba(231, 215, 167, 0.68),
+      rgba(231, 215, 167, 0.18) 40%,
+      transparent 75%
+    );
+  opacity: 0.78;
+}
+
+/* JOIN — neutral-gold blend */
+.hasDivider--join::before {
+  background:
+    radial-gradient(
+      120% 230% at 50% 0%,
+      rgba(230, 210, 165, 0.55),
+      rgba(230, 210, 165, 0.15) 40%,
+      transparent 75%
+    );
+}
+
+/* CONTACT — soft wide spread for footer area */
+.hasDivider--contact::before {
+  top: -50px;
+  height: 100px;
+  background:
+    radial-gradient(
+      160% 260% at 50% 0%,
+      rgba(231, 215, 167, 0.55),
+      rgba(231, 215, 167, 0.1) 45%,
+      transparent 80%
+    );
+  opacity: 0.7;
+  filter: blur(18px);
+}
