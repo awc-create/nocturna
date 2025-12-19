@@ -9,7 +9,9 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "prepare": "husky",
-    "seed:admin": "ts-node scripts/seed-admin.ts"
+    "seed:admin": "ts-node scripts/seed-admin.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
