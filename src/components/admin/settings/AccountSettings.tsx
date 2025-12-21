@@ -5,6 +5,7 @@ import Image from 'next/image';
 import styles from './AccountSettings.module.scss';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 
 type Role = 'admin' | 'user';
 
@@ -48,7 +49,6 @@ export default function AccountSettings() {
       if (!res.ok) return;
 
       const data = (await res.json()) as Me;
-
       if (!mounted) return;
 
       const next: Me = {
@@ -198,8 +198,9 @@ export default function AccountSettings() {
             </div>
 
             <div className={styles.uploaderRow}>
-              <UploadButton<OurFileRouter, 'mediaUploader'>
-                endpoint="mediaUploader"
+              {/* ✅ Images only → clearer errors if someone tries to upload a video */}
+              <UploadButton<OurFileRouter, 'imageUploader'>
+                endpoint="imageUploader"
                 className={styles.utButton}
                 appearance={{
                   button: styles.utButton,
@@ -207,17 +208,14 @@ export default function AccountSettings() {
                   allowedContent: styles.utAllowed,
                 }}
                 onClientUploadComplete={(res) => {
-                  const u = res?.[0]?.url?.trim();
+                  const u = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                   if (!u) return;
 
                   // Optimistic UI
                   setMe((prev) => (prev ? { ...prev, image: u } : prev));
                   void saveProfile({ image: u });
                 }}
-                onUploadError={(err) => {
-                  const msg = err instanceof Error ? err.message : 'Upload failed';
-                  alert(msg);
-                }}
+                onUploadError={(err) => alert(humanUploadError(err, 'image'))}
               />
 
               <button

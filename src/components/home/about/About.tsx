@@ -1,7 +1,7 @@
-// src/components/home/about/About.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import styles from './About.module.scss';
 
 type QuickFact = { value: string; label: string };
@@ -28,7 +28,6 @@ const FALLBACK: AboutData = {
     { value: 'DJs & Musicians', label: 'Tailored rosters' },
   ],
   videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
-  // videoPoster: '/media/nocturna-about-poster.jpg',
   videoCaption: '1-min overview',
   values: [
     {
@@ -70,33 +69,72 @@ const FALLBACK: AboutData = {
   ],
 };
 
-const PRIMARY_VALUES = 4; // show 4, then progressively disclose the rest
+const PRIMARY_VALUES = 4;
+
+/* ================= URL HELPERS ================= */
+
+const normalizeUrl = (raw?: string) => {
+  if (!raw) return '';
+  const s = raw.trim();
+  if (!s) return '';
+  if (s.startsWith('http://')) return `https://${s.slice(7)}`;
+  if (!/^https?:\/\//i.test(s)) return `https://${s}`;
+  return s;
+};
+
+const getYouTubeId = (raw?: string) => {
+  const u0 = normalizeUrl(raw);
+  if (!u0) return '';
+  try {
+    const u = new URL(u0);
+
+    if (u.hostname.includes('youtu.be')) {
+      return u.pathname.split('/').filter(Boolean)[0] ?? '';
+    }
+
+    const v = u.searchParams.get('v');
+    if (v) return v;
+
+    const parts = u.pathname.split('/').filter(Boolean);
+    const i = parts.findIndex((p) => ['shorts', 'live', 'embed'].includes(p));
+    return i >= 0 ? (parts[i + 1] ?? '') : '';
+  } catch {
+    return '';
+  }
+};
+
+const ytEmbed = (raw?: string) => {
+  const id = getYouTubeId(raw);
+  return id
+    ? `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&playsinline=1&autoplay=1&mute=1`
+    : '';
+};
+
+const vmEmbed = (raw?: string) => {
+  const u0 = normalizeUrl(raw);
+  const id = u0.match(/vimeo\.com\/(\d+)/)?.[1];
+  return id ? `https://player.vimeo.com/video/${id}?autoplay=1` : '';
+};
 
 export default function About() {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const valuesInnerRef = useRef<HTMLDivElement | null>(null);
 
   const [data, setData] = useState<AboutData>(FALLBACK);
-
-  // Lightbox (video)
   const [lightbox, setLightbox] = useState(false);
-
-  // Values reveal (toggled by “More about Nocturna”)
   const [valuesOpen, setValuesOpen] = useState(false);
-  const valuesInnerRef = useRef<HTMLDivElement | null>(null);
   const [valuesMaxH, setValuesMaxH] = useState(0);
-
-  // After open animation completes, drop max-height cap to avoid clipping
   const [valuesLockOpen, setValuesLockOpen] = useState(false);
+  const [showAllValues] = useState(false);
 
-  // Progressive disclosure inside values reveal
-  const [showAllValues, setShowAllValues] = useState(false);
   const primaryValues = data.values.slice(0, PRIMARY_VALUES);
   const extraValues = data.values.slice(PRIMARY_VALUES);
 
-  // Fade-in
+  /* Fade in */
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+
     el.classList.add(styles.visible);
     const io = new IntersectionObserver(
       (ents) => ents.forEach((e) => e.isIntersecting && el.classList.add(styles.visible)),
@@ -106,7 +144,7 @@ export default function About() {
     return () => io.disconnect();
   }, []);
 
-  // API hydrate from unified /api/home/about
+  /* Fetch content */
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -118,12 +156,12 @@ export default function About() {
           setData({
             ...FALLBACK,
             ...json,
-            quickFacts: json.quickFacts ?? FALLBACK.quickFacts,
-            values: json.values ?? FALLBACK.values,
+            videoUrl: json.videoUrl ? normalizeUrl(json.videoUrl) : FALLBACK.videoUrl,
+            videoPoster: json.videoPoster ? normalizeUrl(json.videoPoster) : undefined,
           });
         }
       } catch {
-        // ignore – fallback remains
+        /* fallback */
       }
     })();
     return () => {
@@ -131,216 +169,130 @@ export default function About() {
     };
   }, []);
 
-  // Measure values content for height animation
+  /* Measure values panel */
   useEffect(() => {
     const el = valuesInnerRef.current;
     if (!el) return;
+
     const measure = () => setValuesMaxH(el.scrollHeight);
     measure();
+
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, [data, valuesOpen, showAllValues]);
 
-  // Unlock after transition so panel can grow freely (no clipping)
   useEffect(() => {
     if (!valuesOpen) {
       setValuesLockOpen(false);
       return;
     }
-    const t = setTimeout(() => setValuesLockOpen(true), 480); // match CSS transition
+    const t = setTimeout(() => setValuesLockOpen(true), 480);
     return () => clearTimeout(t);
   }, [valuesOpen]);
 
-  // Lightbox helpers
-  const isYT = (u?: string) => !!u && /youtube\.com|youtu\.be/i.test(u);
-  const isVimeo = (u?: string) => !!u && /vimeo\.com/i.test(u);
-  const yt = (u?: string) => {
-    if (!u) return '';
-    const id = u.match(/v=([^&]+)/)?.[1] || u.match(/youtu\.be\/([^?]+)/)?.[1] || '';
-    return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1`;
-  };
-  const vm = (u?: string) => {
-    if (!u) return '';
-    const id = u.match(/vimeo\.com\/(\d+)/)?.[1] || '';
-    return `https://player.vimeo.com/video/${id}?title=0&byline=0&portrait=0&autoplay=1`;
-  };
-
-  // Stagger cards when values first open
-  useEffect(() => {
-    if (!valuesOpen) return;
-    const cards = Array.from(
-      sectionRef.current?.querySelectorAll<HTMLElement>(`.${styles.valueCard}`) ?? []
-    );
-    cards.forEach((c, i) => {
-      c.style.animationDelay = `${120 + i * 70}ms`;
-      c.classList.add(styles.popIn);
-    });
-  }, [valuesOpen]);
+  const videoUrl = normalizeUrl(data.videoUrl);
+  const ytSrc = ytEmbed(videoUrl);
+  const vmSrc = vmEmbed(videoUrl);
 
   return (
-    <section ref={sectionRef} className={styles.about} data-section="after-hero" aria-label="About">
+    <section ref={sectionRef} className={styles.about} aria-label="About">
       <div className={styles.inner}>
         <div className={styles.kicker}>{data.eyebrow}</div>
         <h2 className={styles.title}>{data.title}</h2>
 
-        {/* VIDEO (hero) */}
         <div className={styles.mediaBlock}>
           <button
             type="button"
             className={styles.videoThumb}
             onClick={() => setLightbox(true)}
-            aria-haspopup="dialog"
             aria-label="Play About video"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {data.videoPoster ? <img src={data.videoPoster} alt="" /> : null}
-            <span className={styles.thumbFallback} aria-hidden="true" />
-            <span className={styles.thumbVignette} aria-hidden="true" />
-            <span className={styles.playBadge} aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            {data.videoPoster && (
+              <Image
+                src={data.videoPoster}
+                alt=""
+                fill
+                sizes="(max-width: 720px) 100vw, 1160px"
+                priority={false}
+              />
+            )}
+
+            <span className={styles.thumbFallback} />
+            <span className={styles.thumbVignette} />
+
+            <span className={styles.playBadge}>
+              <svg width="18" height="18" viewBox="0 0 18 18">
                 <path d="M6 4.5l7 4.5-7 4.5V4.5z" fill="currentColor" />
               </svg>
             </span>
-            {data.videoCaption ? (
-              <span className={styles.thumbCaption}>{data.videoCaption}</span>
-            ) : null}
+
+            {data.videoCaption && <span className={styles.thumbCaption}>{data.videoCaption}</span>}
           </button>
 
           <p className={styles.blurb}>{data.lead}</p>
-
-          {data.quickFacts?.length ? (
-            <div className={styles.statsRow}>
-              {data.quickFacts.map((f, i) => (
-                <div key={i} className={styles.stat}>
-                  <span className={styles.statNumber}>{f.value}</span>
-                  <span className={styles.statLabel}>{f.label}</span>
-                </div>
-              ))}
-            </div>
-          ) : null}
         </div>
 
-        {/* TEXT CTA → toggles VALUES ONLY */}
         <button
           type="button"
           className={`${styles.bigLink} ${valuesOpen ? styles.active : ''}`}
           onClick={() => setValuesOpen((s) => !s)}
-          aria-expanded={valuesOpen}
-          aria-controls="about2-values"
-          aria-label={valuesOpen ? 'Hide values' : 'Show ethos and values'}
         >
           <span className={styles.bigLinkLabel}>
             <span className={styles.underline}>
               {valuesOpen ? 'Hide values' : 'More about Nocturna'}
             </span>
-            <span className={styles.subnote}>Ethos &amp; values</span>
+            <span className={styles.subnote}>Ethos & values</span>
           </span>
-
-          <span className={styles.chev} aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M8 5l7 7-7 7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-
-          <span className={styles.orb} aria-hidden="true" />
         </button>
 
-        {/* VALUES REVEAL */}
         <div
-          id="about2-values"
-          className={`${styles.valuesReveal} ${valuesOpen ? styles.valuesRevealOpen : ''}`}
+          className={styles.valuesReveal}
           style={{
             maxHeight: valuesOpen ? (valuesLockOpen ? 'none' : `${valuesMaxH + 40}px`) : 0,
           }}
         >
           <div ref={valuesInnerRef} className={styles.valuesInner}>
-            <h3 className={styles.valuesTitle}>Ethos & values</h3>
-
-            <div className={`${styles.valuesGrid} ${showAllValues ? styles.valuesOpen : ''}`}>
-              {primaryValues.map((v, i) => (
-                <article key={`p-${i}`} className={`${styles.valueCard} ${styles.popIn}`}>
+            <div className={styles.valuesGrid}>
+              {primaryValues.map((v) => (
+                <article key={v.title} className={styles.valueCard}>
                   <h4>{v.title}</h4>
                   <p>{v.body}</p>
                 </article>
               ))}
-              {extraValues.map((v, i) => (
-                <article key={`x-${i}`} className={`${styles.valueCard} ${styles.extra}`}>
-                  <h4>{v.title}</h4>
-                  <p>{v.body}</p>
-                </article>
-              ))}
-
-              {extraValues.length > 0 && !showAllValues ? (
-                <div className={styles.valuesMore}>
-                  <button
-                    type="button"
-                    className={styles.valuesBtn}
-                    onClick={() => setShowAllValues(true)}
-                    aria-expanded={showAllValues}
-                  >
-                    Show all values ({data.values.length})
-                  </button>
-                </div>
-              ) : null}
+              {showAllValues &&
+                extraValues.map((v) => (
+                  <article key={v.title} className={styles.valueCard}>
+                    <h4>{v.title}</h4>
+                    <p>{v.body}</p>
+                  </article>
+                ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* LIGHTBOX (scroll behind allowed) */}
-      {lightbox ? (
+      {lightbox && (
         <div
           className={styles.lightbox}
-          role="dialog"
-          aria-modal="true"
-          aria-label="About video"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setLightbox(false);
-          }}
+          onClick={(e) => e.target === e.currentTarget && setLightbox(false)}
         >
           <div className={styles.lbBox}>
-            <button
-              className={styles.lbClose}
-              onClick={() => setLightbox(false)}
-              aria-label="Close video"
-            >
+            <button className={styles.lbClose} onClick={() => setLightbox(false)}>
               ✕
             </button>
             <div className={styles.lbAspect}>
-              {isYT(data.videoUrl) ? (
-                <iframe
-                  src={yt(data.videoUrl)}
-                  title="About Nocturna video"
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : isVimeo(data.videoUrl) ? (
-                <iframe
-                  src={vm(data.videoUrl)}
-                  title="About Nocturna video"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : data.videoUrl ? (
-                <video
-                  src={data.videoUrl}
-                  poster={data.videoPoster ?? undefined}
-                  controls
-                  autoPlay
-                  playsInline
-                />
-              ) : null}
+              {ytSrc ? (
+                <iframe src={ytSrc} allow="autoplay; encrypted-media" allowFullScreen />
+              ) : vmSrc ? (
+                <iframe src={vmSrc} allow="autoplay; fullscreen" allowFullScreen />
+              ) : (
+                videoUrl && <video src={videoUrl} controls autoPlay playsInline />
+              )}
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </section>
   );
 }

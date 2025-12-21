@@ -6,6 +6,7 @@
   display: grid;
   place-items: center;
   padding: clamp(16px, 4vw, 40px);
+  isolation: isolate;
 
   /* Full-screen dark fade */
   background:

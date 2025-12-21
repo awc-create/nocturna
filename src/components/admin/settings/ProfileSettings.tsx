@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import styles from './ProfileSettings.module.scss';
-// If you already have UploadThing in admin, reuse it:
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 
 type Props = {
   initial: { email: string; name: string; image: string | null };
@@ -70,13 +70,14 @@ export default function ProfileSettings({ initial, onUpdated }: Props) {
             </label>
 
             <div className={styles.uploader}>
-              <UploadButton<OurFileRouter, 'mediaUploader'>
-                endpoint="mediaUploader"
+              {/* ✅ Images only, and friendlier error messages */}
+              <UploadButton<OurFileRouter, 'imageUploader'>
+                endpoint="imageUploader"
                 onClientUploadComplete={(res) => {
-                  const u = res?.[0]?.url;
+                  const u = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                   if (u) setImage(u);
                 }}
-                onUploadError={(err) => alert(err instanceof Error ? err.message : 'Upload failed')}
+                onUploadError={(err) => alert(humanUploadError(err, 'image'))}
               />
               <small>Upload a square image for best results.</small>
             </div>

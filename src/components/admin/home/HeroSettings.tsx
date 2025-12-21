@@ -5,6 +5,7 @@ import { useEffect, useState, type ChangeEvent } from 'react';
 import styles from './HeroSettings.module.scss';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 
 type MediaType = 'VIDEO' | 'IMAGE';
 
@@ -203,18 +204,15 @@ export default function HeroSettings() {
                   onChange={onText('videoSrc')}
                 />
                 <div className={styles.uploaderRow}>
-                  <UploadButton<OurFileRouter, 'mediaUploader'>
-                    endpoint="mediaUploader"
+                  <UploadButton<OurFileRouter, 'videoUploader'>
+                    endpoint="videoUploader"
                     onClientUploadComplete={(res) => {
-                      const u = res?.[0]?.url;
+                      const u = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                       if (u) setForm((prev) => ({ ...prev, videoSrc: u }));
                     }}
-                    onUploadError={(err) => {
-                      const msg = err instanceof Error ? err.message : 'Upload failed';
-                      alert(msg);
-                    }}
+                    onUploadError={(err) => alert(humanUploadError(err, 'video'))}
                   />
-                  <small>Upload .mp4 (10–15s loop recommended)</small>
+                  <small>Upload MP4/MOV (10–15s loop recommended).</small>
                 </div>
               </label>
 
@@ -226,18 +224,15 @@ export default function HeroSettings() {
                   onChange={onText('posterSrc')}
                 />
                 <div className={styles.uploaderRow}>
-                  <UploadButton<OurFileRouter, 'mediaUploader'>
-                    endpoint="mediaUploader"
+                  <UploadButton<OurFileRouter, 'imageUploader'>
+                    endpoint="imageUploader"
                     onClientUploadComplete={(res) => {
-                      const u = res?.[0]?.url;
+                      const u = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                       if (u) setForm((prev) => ({ ...prev, posterSrc: u }));
                     }}
-                    onUploadError={(err) => {
-                      const msg = err instanceof Error ? err.message : 'Upload failed';
-                      alert(msg);
-                    }}
+                    onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                   />
-                  <small>Shown before the video loads, and on slower connections.</small>
+                  <small>Poster/thumbnail image (JPG/PNG/WebP).</small>
                 </div>
               </label>
             </div>
@@ -251,25 +246,22 @@ export default function HeroSettings() {
                   onChange={onText('imageSrc')}
                 />
                 <div className={styles.uploaderRow}>
-                  <UploadButton<OurFileRouter, 'mediaUploader'>
-                    endpoint="mediaUploader"
+                  <UploadButton<OurFileRouter, 'imageUploader'>
+                    endpoint="imageUploader"
                     onClientUploadComplete={(res) => {
-                      const u = res?.[0]?.url;
+                      const u = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                       if (u) setForm((prev) => ({ ...prev, imageSrc: u }));
                     }}
-                    onUploadError={(err) => {
-                      const msg = err instanceof Error ? err.message : 'Upload failed';
-                      alert(msg);
-                    }}
+                    onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                   />
-                  <small>Upload a high-contrast hero image.</small>
+                  <small>Upload a high-contrast hero image (images only).</small>
                 </div>
               </label>
             </div>
           )}
         </div>
 
-        {/* ========= ACTIONS (sticky on mobile) ========= */}
+        {/* ========= ACTIONS ========= */}
         <div className={styles.actions}>
           <button className={styles.save} onClick={save} disabled={saving}>
             {saving ? 'Saving…' : 'Save hero'}

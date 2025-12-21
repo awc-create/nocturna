@@ -1,3 +1,4 @@
+// src/components/admin/home/ServicesSettings.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,6 +6,7 @@ import type React from 'react';
 import Image from 'next/image';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 import styles from './ServicesSettings.module.scss';
 
 type Service = {
@@ -98,14 +100,14 @@ export default function ServicesSettings() {
   const onText =
     <K extends keyof ServicesData>(key: K) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const val = e.target.value;
+      const val = e.currentTarget.value;
       setForm((f) => ({ ...f, [key]: val as ServicesData[K] }));
     };
 
   const updateItem =
     (idx: number, field: keyof Service) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const val = e.target.value;
+      const val = e.currentTarget.value;
       setForm((f) => {
         const next = [...f.items];
         next[idx] = { ...next[idx], [field]: val };
@@ -247,23 +249,21 @@ export default function ServicesSettings() {
               </label>
 
               <div className={styles.uploadRow}>
-                <UploadButton<OurFileRouter, 'mediaUploader'>
-                  endpoint="mediaUploader"
+                <UploadButton<OurFileRouter, 'imageUploader'>
+                  endpoint="imageUploader"
                   onClientUploadComplete={(res) => {
-                    const url = res?.[0]?.ufsUrl ?? res?.[0]?.url;
+                    const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                     if (!url) return;
+
                     setForm((prev) => {
                       const next = [...prev.items];
-                      next[i] = { ...next[i], image: url };
+                      next[i] = { ...next[i], image: url, backImage: next[i].backImage || url };
                       return { ...prev, items: next };
                     });
                   }}
-                  onUploadError={(err: unknown) => {
-                    const msg = err instanceof Error ? err.message : 'Upload failed';
-                    alert(msg);
-                  }}
+                  onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                 />
-                <small>Optional: upload a front image for this card.</small>
+                <small>Upload an image only (PNG/JPG/WebP).</small>
               </div>
 
               <label>
@@ -276,23 +276,21 @@ export default function ServicesSettings() {
               </label>
 
               <div className={styles.uploadRow}>
-                <UploadButton<OurFileRouter, 'mediaUploader'>
-                  endpoint="mediaUploader"
+                <UploadButton<OurFileRouter, 'imageUploader'>
+                  endpoint="imageUploader"
                   onClientUploadComplete={(res) => {
-                    const url = res?.[0]?.ufsUrl ?? res?.[0]?.url;
+                    const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                     if (!url) return;
+
                     setForm((prev) => {
                       const next = [...prev.items];
                       next[i] = { ...next[i], backImage: url };
                       return { ...prev, items: next };
                     });
                   }}
-                  onUploadError={(err: unknown) => {
-                    const msg = err instanceof Error ? err.message : 'Upload failed';
-                    alert(msg);
-                  }}
+                  onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                 />
-                <small>Optional: upload a different image for the back of the card.</small>
+                <small>Optional: upload a different back image (images only).</small>
               </div>
 
               {(item.image || item.backImage) && (

@@ -1,3 +1,4 @@
+// src/components/admin/home/AboutSettings.tsx (or wherever yours lives)
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -5,6 +6,7 @@ import type React from 'react';
 import styles from './AboutSettings.module.scss';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 
 type QuickFact = { value: string; label: string };
 type ValueCard = { title: string; body: string };
@@ -386,21 +388,20 @@ export default function AboutUsSettings() {
           <label className={styles.full}>
             Upload video file (optional)
             <div className={styles.uploaderRow}>
-              <UploadButton<OurFileRouter, 'mediaUploader'>
-                endpoint="mediaUploader"
+              <UploadButton<OurFileRouter, 'videoUploader'>
+                endpoint="videoUploader"
                 onClientUploadComplete={(res) => {
                   const u = res?.[0]?.ufsUrl ?? res?.[0]?.url;
-                  if (u) {
-                    setForm((prev) => ({ ...prev, videoUrl: u }));
-                  }
+                  if (!u) return;
+                  setForm((prev) => ({ ...prev, videoUrl: u }));
                 }}
                 onUploadError={(err) => {
-                  const msg = err instanceof Error ? err.message : 'Upload failed';
-                  alert(msg);
+                  alert(humanUploadError(err, 'video'));
                 }}
               />
               <small>
-                MP4 / MOV, up to ~128MB. For long, high-quality cuts, YouTube is usually better.
+                MP4 / MOV / WEBM, up to ~128MB. For long, high-quality cuts, YouTube is usually
+                better.
               </small>
             </div>
           </label>
@@ -441,20 +442,18 @@ export default function AboutUsSettings() {
           <label className={styles.full}>
             Upload poster image (optional)
             <div className={styles.uploaderRow}>
-              <UploadButton<OurFileRouter, 'mediaUploader'>
-                endpoint="mediaUploader"
+              <UploadButton<OurFileRouter, 'imageUploader'>
+                endpoint="imageUploader"
                 onClientUploadComplete={(res) => {
                   const u = res?.[0]?.ufsUrl ?? res?.[0]?.url;
-                  if (u) {
-                    setForm((prev) => ({ ...prev, videoPoster: u }));
-                  }
+                  if (!u) return;
+                  setForm((prev) => ({ ...prev, videoPoster: u }));
                 }}
                 onUploadError={(err) => {
-                  const msg = err instanceof Error ? err.message : 'Upload failed';
-                  alert(msg);
+                  alert(humanUploadError(err, 'image'));
                 }}
               />
-              <small>JPG / PNG; up to ~16MB.</small>
+              <small>JPG / PNG / WEBP; up to ~16MB.</small>
             </div>
           </label>
 

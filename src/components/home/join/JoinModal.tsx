@@ -1,4 +1,3 @@
-// src/components/home/join/JoinModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -27,14 +26,23 @@ type FormField = {
   type: FormFieldType;
   required: boolean;
   placeholder?: string;
-  options?: string[]; // for select / multiselect
-  showIf?: ShowIf; // simple conditional visibility
+  options?: string[];
+  showIf?: ShowIf;
+};
+
+type ApiConfig = {
+  title: string;
+  intro: string;
+  submitLabel: string;
+  successMessage: string;
+  fields: FormField[];
 };
 
 type JoinConfig = {
   modalKicker: string;
   modalTitle: string;
   modalLead: string;
+  submitLabel: string;
   successMessage: string;
   formFields: FormField[];
 };
@@ -46,9 +54,9 @@ const FALLBACK: JoinConfig = {
   modalTitle: 'Tell us about your sound.',
   modalLead:
     'Tell us who you are, what you play, and where you’re currently performing. We’ll review every application carefully.',
+  submitLabel: 'Send Application',
   successMessage: 'Thanks — we’ll review your submission and follow up.',
   formFields: [
-    // Role (select: DJ / Musician)
     {
       id: 'role',
       label: 'Role *',
@@ -58,7 +66,6 @@ const FALLBACK: JoinConfig = {
       placeholder: 'Select your role',
       options: ['DJ', 'Musician'],
     },
-    // Instrument (only when Musician)
     {
       id: 'instrument',
       label: 'Instrument (if musician)',
@@ -116,44 +123,12 @@ const FALLBACK: JoinConfig = {
       placeholder: 'https://your-site.com',
     },
     {
-      id: 'youtube',
-      label: 'YouTube',
-      name: 'youtube',
-      type: 'url',
-      required: false,
-      placeholder: 'Channel or main video link',
-    },
-    {
       id: 'soundcloud',
       label: 'SoundCloud',
       name: 'soundcloud',
       type: 'url',
       required: false,
-      placeholder: 'Profile or playlist link',
-    },
-    {
-      id: 'current_venues',
-      label: 'Where do you currently play?',
-      name: 'current_venues',
-      type: 'textarea',
-      required: false,
-      placeholder: 'Residencies, venues, events…',
-    },
-    {
-      id: 'equipment',
-      label: 'What PA & equipment do you have?',
-      name: 'equipment',
-      type: 'textarea',
-      required: false,
-      placeholder: 'e.g. controllers, mixers, speakers, instruments…',
-    },
-    {
-      id: 'referral',
-      label: 'How did you hear about us?',
-      name: 'referral',
-      type: 'text',
-      required: false,
-      placeholder: 'Friend, venue, Instagram, TikTok…',
+      placeholder: 'Profile link',
     },
     {
       id: 'genres',
@@ -161,18 +136,93 @@ const FALLBACK: JoinConfig = {
       name: 'genres',
       type: 'text',
       required: false,
-      placeholder: 'e.g. soulful house, amapiano, R&B, afrobeats…',
-    },
-    {
-      id: 'venues_pref',
-      label: 'Which venues would you like to play?',
-      name: 'venues_pref',
-      type: 'textarea',
-      required: false,
-      placeholder: 'Name venues or describe types of venues you’d like to play.',
+      placeholder: 'e.g. soulful house, amapiano, R&B…',
     },
   ],
 };
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+function safeString(v: unknown): string {
+  return typeof v === 'string' ? v : '';
+}
+
+function ensureId(item: Record<string, unknown>, idx: number, prefix: string) {
+  const id = safeString(item.id).trim();
+  const name = safeString(item.name).trim();
+  if (id) return id;
+  if (name) return name;
+  return `${prefix}_${idx}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function normalizeFields(raw: unknown): FormField[] {
+  if (!Array.isArray(raw)) return [];
+
+  const allowed: readonly FormFieldType[] = [
+    'text',
+    'textarea',
+    'email',
+    'tel',
+    'date',
+    'url',
+    'select',
+    'multiselect',
+  ] as const;
+
+  const out: Array<FormField | null> = raw.map((item, idx) => {
+    if (!isRecord(item)) return null;
+
+    const typeRaw = safeString(item.type).trim() as FormFieldType;
+    const type: FormFieldType = allowed.includes(typeRaw) ? typeRaw : 'text';
+
+    const name = safeString(item.name).trim();
+    const label = safeString(item.label).trim();
+    if (!name || !label) return null;
+
+    const placeholder = safeString(item.placeholder).trim();
+
+    const options =
+      Array.isArray(item.options) && (type === 'select' || type === 'multiselect')
+        ? item.options.map((x) => safeString(x).trim()).filter(Boolean)
+        : undefined;
+
+    let showIf: ShowIf | undefined;
+    if (isRecord(item.showIf)) {
+      const f = safeString(item.showIf.field).trim();
+      const eq = safeString(item.showIf.equals).trim();
+      if (f && eq) showIf = { field: f, equals: eq };
+    }
+
+    const field: FormField = {
+      id: ensureId(item, idx, 'join'),
+      name,
+      label,
+      type,
+      required: Boolean(item.required),
+      ...(placeholder ? { placeholder } : {}),
+      ...(options && options.length ? { options } : {}),
+      ...(showIf ? { showIf } : {}),
+    };
+
+    return field;
+  });
+
+  return out.filter((x): x is FormField => x !== null);
+}
+
+function mapApiToModal(api: Partial<ApiConfig>): JoinConfig {
+  const fields = normalizeFields(api.fields);
+  return {
+    ...FALLBACK,
+    modalTitle: safeString(api.title).trim() || FALLBACK.modalTitle,
+    modalLead: safeString(api.intro).trim() || FALLBACK.modalLead,
+    submitLabel: safeString(api.submitLabel).trim() || FALLBACK.submitLabel,
+    successMessage: safeString(api.successMessage).trim() || FALLBACK.successMessage,
+    formFields: fields.length ? fields : FALLBACK.formFields,
+  };
+}
 
 export default function JoinModal() {
   const { open, close } = useModals();
@@ -183,36 +233,25 @@ export default function JoinModal() {
 
   const visible = open === 'join';
 
-  // Lock body scroll when open
   useEffect(() => {
-    if (visible) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = prev;
-      };
-    }
-    return () => {};
+    if (!visible) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [visible]);
 
-  // Hydrate config from API (can override fallback fields later)
+  // Hydrate config from API (NEW SHAPE: title/intro/submitLabel/fields)
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const res = await fetch('/api/home/join', { cache: 'no-store' });
         if (!res.ok) return;
-        const json = (await res.json()) as Partial<JoinConfig>;
+        const json = (await res.json()) as Partial<ApiConfig>;
         if (!mounted) return;
-        const fields = (json.formFields ?? FALLBACK.formFields).map((fld, idx) => ({
-          ...fld,
-          id: fld.id || fld.name || `f_${idx}_${Math.random().toString(36).slice(2, 9)}`,
-        }));
-        setConfig({
-          ...FALLBACK,
-          ...json,
-          formFields: fields,
-        });
+        setConfig(mapApiToModal(json));
       } catch {
         // keep fallback
       }
@@ -240,11 +279,7 @@ export default function JoinModal() {
       form.reset();
       setFormValues({});
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Error submitting application.');
-      }
+      setError(err instanceof Error ? err.message : 'Error submitting application.');
       setStatus('error');
     }
   }
@@ -273,14 +308,14 @@ export default function JoinModal() {
       }));
     };
 
+  const shouldShowField = (field: FormField) => {
+    if (!field.showIf) return true;
+    const controllingValue = formValues[field.showIf.field] ?? '';
+    return controllingValue === field.showIf.equals;
+  };
+
   const renderField = (field: FormField) => {
-    // Conditional visibility (e.g. Instrument only when Role = Musician)
-    if (field.showIf) {
-      const controllingValue = formValues[field.showIf.field] ?? '';
-      if (controllingValue !== field.showIf.equals) {
-        return null;
-      }
-    }
+    if (!shouldShowField(field)) return null;
 
     const baseId = `join-${field.id}`;
 
@@ -305,6 +340,7 @@ export default function JoinModal() {
           required={field.required}
           multiple={field.type === 'multiselect'}
           onChange={handleValueChange(field)}
+          value={field.type === 'multiselect' ? undefined : (formValues[field.name] ?? '')}
         >
           {field.type === 'select' && <option value="">Select…</option>}
           {(field.options ?? []).map((opt) => (
@@ -316,7 +352,7 @@ export default function JoinModal() {
       );
     }
 
-    const inputType = field.type === 'date' ? 'date' : field.type === 'url' ? 'url' : field.type; // text | email | tel
+    const inputType = field.type === 'date' ? 'date' : field.type === 'url' ? 'url' : field.type;
 
     return (
       <input
@@ -341,12 +377,7 @@ export default function JoinModal() {
       }}
     >
       <div className={styles.panel}>
-        <button
-          type="button"
-          className={styles.close}
-          onClick={close}
-          aria-label="Close application form"
-        >
+        <button type="button" className={styles.close} onClick={close} aria-label="Close form">
           ✕
         </button>
 
@@ -360,7 +391,6 @@ export default function JoinModal() {
               {config.formFields.map((field) => {
                 const control = renderField(field);
                 if (!control) return null;
-
                 const isWide = field.type === 'textarea';
 
                 return (
@@ -378,7 +408,7 @@ export default function JoinModal() {
             </div>
 
             <button type="submit" className={styles.submit} disabled={status === 'submitting'}>
-              {status === 'submitting' ? 'Sending…' : 'Send Application'}
+              {status === 'submitting' ? 'Sending…' : config.submitLabel}
             </button>
 
             {status === 'success' && <p className={styles.success}>{config.successMessage}</p>}

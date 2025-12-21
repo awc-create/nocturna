@@ -1,9 +1,11 @@
+// src/components/admin/home/ClientSettings.tsx (or your current path)
 'use client';
 
 import { useEffect, useState } from 'react';
 import styles from './ClientSettings.module.scss';
 import { UploadButton } from '@uploadthing/react';
 import type { OurFileRouter } from '@/app/api/uploadthing/core';
+import { humanUploadError } from '@/utils/uploadErrors';
 
 type ClientLogo = { name: string; src: string; href?: string };
 
@@ -46,12 +48,14 @@ export default function ClientSettings() {
 
   const onText =
     <K extends keyof ClientsData>(key: K) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value as ClientsData[K] }));
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = typeof e?.currentTarget?.value === 'string' ? e.currentTarget.value : '';
+      setForm((f) => ({ ...f, [key]: val as ClientsData[K] }));
+    };
 
   const updateItem =
     (idx: number, field: keyof ClientLogo) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
+      const val = typeof e?.currentTarget?.value === 'string' ? e.currentTarget.value : '';
       setForm((f) => {
         const next = [...f.items];
         next[idx] = { ...next[idx], [field]: val };
@@ -82,7 +86,7 @@ export default function ClientSettings() {
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(payload?.error || `Failed to save (status ${res.status}).`);
+        alert((payload as { error?: string })?.error || `Failed to save (status ${res.status}).`);
         return;
       }
       alert('Clients updated! Refresh Home to see changes.');
@@ -132,17 +136,19 @@ export default function ClientSettings() {
                 Image URL
                 <input placeholder="https://cdn…" value={it.src} onChange={updateItem(i, 'src')} />
                 <div className={styles.uploaderRow}>
-                  <UploadButton<OurFileRouter, 'mediaUploader'>
-                    endpoint="mediaUploader"
+                  <UploadButton<OurFileRouter, 'imageUploader'>
+                    endpoint="imageUploader"
                     onClientUploadComplete={(res) => {
-                      const url = res?.[0]?.url;
+                      const url = res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '';
                       if (url) setItemSrc(i, url); // ✅ save CDN url into form
                     }}
                     onUploadError={(err) => {
-                      alert(err instanceof Error ? err.message : 'Upload failed');
+                      alert(humanUploadError(err, 'image'));
                     }}
                   />
-                  <small>PNG/SVG preferred. Transparent works best on dark theme.</small>
+                  <small>
+                    PNG/SVG preferred. Transparent works best on dark theme. (Uploads: images only.)
+                  </small>
                 </div>
               </label>
 
