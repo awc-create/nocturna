@@ -1,34 +1,44 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // --- Your existing settings ---
   output: 'standalone',
   trailingSlash: false,
   reactStrictMode: true,
 
-  // --- Image handling (UploadThing + others) ---
   images: {
     remotePatterns: [
+      // UploadThing / UFS
+      { protocol: 'https', hostname: 'ufs.sh' },
+      { protocol: 'https', hostname: '*.ufs.sh' },
+
+      // UploadThing legacy / UTFS
       { protocol: 'https', hostname: 'utfs.io' },
       { protocol: 'https', hostname: '*.utfs.io' },
-      { protocol: 'https', hostname: '*.ufs.sh' },
+
+      // UploadThing CDN domains
       { protocol: 'https', hostname: 'uploadthing.com' },
+      { protocol: 'https', hostname: '*.uploadthing.com' },
       { protocol: 'https', hostname: 'cdn.uploadthing.com' },
     ],
-    unoptimized: true,
+    // ✅ Prefer leaving this OFF unless you really need it
+    // unoptimized: true,
   },
 
-  // --- SECURITY HEADERS (CSP FIXES POSTERS + YOUTUBE) ---
   async headers() {
     const csp = [
       "default-src 'self'",
+
       // Images (UploadThing posters, data URLs)
-      "img-src 'self' data: blob: https://*.ufs.sh https://*.utfs.io https://cdn.uploadthing.com",
+      "img-src 'self' data: blob: https://ufs.sh https://*.ufs.sh https://utfs.io https://*.utfs.io https://cdn.uploadthing.com https://uploadthing.com https://*.uploadthing.com",
+
       // Video files (if you ever host videos on UploadThing)
-      "media-src 'self' blob: https://*.ufs.sh https://*.utfs.io https://cdn.uploadthing.com",
+      "media-src 'self' blob: https://ufs.sh https://*.ufs.sh https://utfs.io https://*.utfs.io https://cdn.uploadthing.com",
+
       // YouTube / Vimeo embeds
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
+
       // API + UploadThing
-      "connect-src 'self' https://*.uploadthing.com https://*.ufs.sh https://*.utfs.io",
+      "connect-src 'self' https://*.uploadthing.com https://ufs.sh https://*.ufs.sh https://utfs.io https://*.utfs.io",
+
       // Basic JS/CSS (keep compatible with Next)
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
@@ -38,12 +48,7 @@ const nextConfig = {
     return [
       {
         source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: csp,
-          },
-        ],
+        headers: [{ key: 'Content-Security-Policy', value: csp }],
       },
     ];
   },

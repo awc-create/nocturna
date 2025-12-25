@@ -61,10 +61,10 @@ export default function Clients() {
         const res = await fetch('/api/home/clients', { cache: 'no-store' });
         if (!res.ok) return;
         const data = (await res.json()) as { items?: ClientLogo[] };
+
         if (mounted && Array.isArray(data?.items) && data.items.length) {
           setLogos(
             data.items.map((item, i) => ({
-              // fallback quote/role from defaults if admin hasn’t filled them
               ...DEFAULTS[i % DEFAULTS.length],
               ...item,
             }))
@@ -74,12 +74,15 @@ export default function Clients() {
         /* keep defaults */
       }
     })();
+
     return () => {
       mounted = false;
     };
   }, []);
 
   const many = logos.length > 5;
+
+  // duplicate ONLY for marquee mode so we can loop seamlessly
   const marqueeList = many ? [...logos, ...logos] : logos;
 
   // pause marquee on hover
@@ -90,8 +93,16 @@ export default function Clients() {
   }, [paused, logos.length]);
 
   const ctaLabel = showTestimonials ? 'See our clients' : 'See what our clients say';
-
   const toggleMode = () => setShowTestimonials((s) => !s);
+
+  // We animate exactly ONE set length (not 50% guessing).
+  // Provide CSS vars for distance calculation.
+  const trackVars = many
+    ? ({
+        // number of items in ONE set (not doubled)
+        ['--logoCount' as unknown as string]: String(logos.length),
+      } as React.CSSProperties)
+    : undefined;
 
   return (
     <section
@@ -111,7 +122,6 @@ export default function Clients() {
           {logos.map((logo) => (
             <li key={logo.name} className={styles.item}>
               <div className={styles.cardInner}>
-                {/* FRONT: logo */}
                 <figure className={`${styles.face} ${styles.logoFace}`}>
                   <div className={styles.logoWrap} title={logo.name}>
                     <Image
@@ -125,7 +135,6 @@ export default function Clients() {
                   </div>
                 </figure>
 
-                {/* BACK: testimonial */}
                 <figure className={`${styles.face} ${styles.quoteFace}`}>
                   <blockquote className={styles.quoteBody}>
                     {logo.quote || '“Consistent, brand-fit music every week.”'}
@@ -140,13 +149,13 @@ export default function Clients() {
           ))}
         </ul>
       ) : (
-        // MARQUEE (6+) – flip cards inside scrolling slides
+        /* MARQUEE (6+) */
         <div
           className={styles.marquee}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          <div ref={trackRef} className={styles.track}>
+          <div ref={trackRef} className={styles.track} style={trackVars}>
             {marqueeList.map((logo, i) => (
               <div key={`${logo.name}-${i}`} className={styles.slide}>
                 <div className={styles.item}>
@@ -162,6 +171,7 @@ export default function Clients() {
                         />
                       </div>
                     </figure>
+
                     <figure className={`${styles.face} ${styles.quoteFace}`}>
                       <blockquote className={styles.quoteBody}>
                         {logo.quote || '“Consistent, brand-fit music every week.”'}
