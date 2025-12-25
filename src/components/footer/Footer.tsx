@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/config/menu.config';
-import { FaFacebookF, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { FaInstagram, FaTiktok } from 'react-icons/fa6';
 import styles from './Footer.module.scss';
 
 const Footer: React.FC = () => {
@@ -19,7 +19,6 @@ const Footer: React.FC = () => {
             <h2 className={styles.srOnly}>Site navigation</h2>
             <ul className={styles.menuList}>
               {NAV_LINKS.map(({ id, label }) => {
-                // Home section is id = "top"
                 const href = id === 'top' ? '/' : `#${id}`;
                 return (
                   <li key={id}>
@@ -66,18 +65,26 @@ const Footer: React.FC = () => {
           </Link>
         </nav>
 
-        {/* Socials */}
+        {/* Socials — Instagram + TikTok */}
         <div className={styles.socialRow}>
           <span className={styles.socialLabel}>Follow</span>
           <div className={styles.socialIcons}>
-            <a href="#" aria-label="Facebook">
-              <FaFacebookF />
-            </a>
-            <a href="#" aria-label="Twitter">
-              <FaTwitter />
-            </a>
-            <a href="#" aria-label="Instagram">
+            <a
+              href="https://www.instagram.com/nocturna_artist_agency"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Nocturna Instagram"
+            >
               <FaInstagram />
+            </a>
+
+            <a
+              href="https://www.tiktok.com/@nocturna_artist_agency"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Nocturna TikTok"
+            >
+              <FaTiktok />
             </a>
           </div>
         </div>
@@ -86,9 +93,16 @@ const Footer: React.FC = () => {
         <p className={styles.copy}>
           &copy; {new Date().getFullYear()} Nocturna. All rights reserved.
         </p>
+
+        {/* Creator credit */}
         <p className={styles.credit}>
           Website created by{' '}
-          <a href="https://adaptiveworks.net" target="_blank" rel="noopener noreferrer">
+          <a
+            href="https://adaptiveworks.net"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.creditLink}
+          >
             AWC
           </a>
         </p>
