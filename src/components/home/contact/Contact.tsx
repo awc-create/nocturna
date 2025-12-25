@@ -1,15 +1,8 @@
 // src/components/home/contact/Contact.tsx
 'use client';
 
-import { FaEnvelope, FaPhoneAlt } from 'react-icons/fa';
-import {
-  FaInstagram,
-  FaYoutube,
-  FaTiktok,
-  FaLinkedin,
-  FaXTwitter,
-  FaFacebook,
-} from 'react-icons/fa6';
+import { FaEnvelope } from 'react-icons/fa';
+import { FaInstagram, FaTiktok } from 'react-icons/fa6';
 import { useModals } from '../modals/ModalContext';
 import ContactModal from './ContactModal';
 import styles from './Contact.module.scss';
@@ -45,37 +38,32 @@ export default function Contact() {
             <span className={styles.ctaSub}>GENERAL ENQUIRIES</span>
           </button>
 
-          {/* contact details */}
+          {/* contact details — email only */}
           <div className={styles.details}>
             <p>
               <FaEnvelope />
-              <a href="mailto:hello@nocturna.com">hello@nocturna.com</a>
-            </p>
-            <p>
-              <FaPhoneAlt />
-              <a href="tel:03303112112">03303 112 112</a>
+              <a href="mailto:info@nocturna.com">info@nocturna.com</a>
             </p>
           </div>
 
-          {/* socials */}
+          {/* socials — IG + TikTok only */}
           <div className={styles.socials}>
-            <a href="https://facebook.com" target="_blank" rel="noreferrer">
-              <FaFacebook />
-            </a>
-            <a href="https://twitter.com" target="_blank" rel="noreferrer">
-              <FaXTwitter />
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer">
+            <a
+              href="https://www.instagram.com/nocturna_artist_agency"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Nocturna Instagram"
+            >
               <FaInstagram />
             </a>
-            <a href="https://youtube.com" target="_blank" rel="noreferrer">
-              <FaYoutube />
-            </a>
-            <a href="https://tiktok.com" target="_blank" rel="noreferrer">
+
+            <a
+              href="https://www.tiktok.com/@nocturna_artist_agency"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Nocturna TikTok"
+            >
               <FaTiktok />
-            </a>
-            <a href="https://linkedin.com" target="_blank" rel="noreferrer">
-              <FaLinkedin />
             </a>
           </div>
         </div>

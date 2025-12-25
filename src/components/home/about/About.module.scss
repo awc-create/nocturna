@@ -79,30 +79,28 @@
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-/* === FIXED POSTER LAYERING — final correct order === */
+/* Next/Image renders <img> inside wrapper — still ok */
 .videoThumb img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 1;   /* poster on top of fallback */
+  z-index: 1;
 }
 
 .thumbFallback {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, #0b0f16, #111827);
-  z-index: 0;   /* behind poster */
+  z-index: 0;
 }
-
 .thumbVignette {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.45));
-  z-index: 2;   /* gentle overlay above poster */
+  z-index: 2;
 }
-/* === END FIX === */
 
 .playBadge {
   position: absolute;
@@ -118,6 +116,7 @@
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.35),
     inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+  z-index: 3;
 }
 .thumbCaption {
   position: absolute;
@@ -128,6 +127,7 @@
   font-weight: 800;
   letter-spacing: 0.01em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  z-index: 3;
 }
 
 .blurb {
@@ -135,7 +135,7 @@
   line-height: 1.7;
 }
 
-/* Distinct quick-facts (stat line) */
+/* ---- STATS (200+/UK-wide/...) ---- */
 .statsRow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -178,7 +178,7 @@
   letter-spacing: 0.02em;
 }
 
-/* ---- CTA text (glow) ---- */
+/* ---- CTA / TOGGLE ---- */
 .bigLink {
   --rail: rgba(231, 215, 167, 0.08);
   --rail-strong: rgba(231, 215, 167, 0.18);
@@ -235,32 +235,11 @@
       radial-gradient(80% 140% at 100% 40%, var(--rail-strong) 0%, transparent 70%);
   }
 }
+
 .bigLink:hover,
 .bigLink.active {
   color: var(--accent);
   transform: translateY(-2px);
-}
-
-.orb {
-  position: absolute;
-  right: -40px;
-  top: 50%;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 70%);
-  box-shadow:
-    0 0 20px rgba(231, 215, 167, 0.5),
-    0 0 60px rgba(231, 215, 167, 0.3);
-  opacity: 0;
-  transform: scale(0.6) translateY(-50%);
-  transform-origin: center;
-  transition: all 0.35s ease;
-}
-.bigLink:hover .orb,
-.bigLink.active .orb {
-  opacity: 1;
-  transform: scale(1) translateY(-50%);
 }
 
 .bigLinkLabel {
@@ -305,16 +284,13 @@
   display: inline-grid;
   place-items: center;
   transform: translateX(0);
-  transition:
-    transform 0.25s ease,
-    color 0.25s ease;
+  transition: transform 0.25s ease, color 0.25s ease;
 }
 .bigLink:hover .chev,
 .bigLink.active .chev {
   transform: translateX(4px);
 }
 
-/* Orb again for clarity */
 .orb {
   width: 26px;
   height: 26px;
@@ -326,9 +302,7 @@
   opacity: 0;
   transform: scale(0.6);
   transform-origin: center;
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 .bigLink:hover .orb,
 .bigLink.active .orb {
@@ -364,7 +338,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
   position: relative;
-  overflow: hidden;
 
   @media (min-width: 1100px) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -374,6 +347,7 @@
   }
 }
 
+/* ✅ Base cards visible (no more "open but invisible") */
 .valueCard {
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -384,26 +358,31 @@
   );
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
   padding: 14px 16px;
-  transform: translateY(8px);
-  opacity: 0;
+
+  opacity: 1;
+  transform: translateY(0);
+
   transition:
     transform 0.24s ease,
     box-shadow 0.18s ease,
     border-color 0.18s ease,
     opacity 0.24s ease;
 }
+
 .valueCard h4 {
   margin: 0 0 6px;
   font-size: 16px;
   font-weight: 800;
 }
+
 .valueCard p {
   margin: 0;
   color: #dbdbdb;
   line-height: 1.6;
 }
+
 .valueCard:hover {
-  transform: translateY(6px);
+  transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.06),
@@ -425,8 +404,11 @@
   animation: popInKey 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* Progressive disclosure */
-.valueCard.extra {
+/* ============================================================
+   ✅ Progressive disclosure is BACK
+   - extra cards are hidden (collapsed) until .valuesOpen is present
+   ============================================================ */
+.extra {
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
@@ -435,6 +417,8 @@
   padding-top: 0;
   padding-bottom: 0;
   border-width: 0;
+  overflow: hidden;
+
   transition:
     opacity 0.28s ease,
     transform 0.28s ease,
@@ -443,7 +427,9 @@
     margin 0.28s ease,
     border-width 0.28s ease;
 }
-.valuesOpen .valueCard.extra {
+
+/* When "show all" is active */
+.valuesOpen .extra {
   height: auto;
   opacity: 1;
   pointer-events: auto;
@@ -451,8 +437,11 @@
   margin: initial;
   padding: 14px 16px;
   border-width: 1px;
+  overflow: visible;
   animation: popInKey 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+
+/* Show all button overlay */
 .valuesMore {
   position: absolute;
   left: 0;
@@ -461,14 +450,10 @@
   display: grid;
   place-items: end center;
   padding-top: 48px;
-  background: linear-gradient(
-    180deg,
-    rgba(15, 18, 24, 0) 0%,
-    rgba(15, 18, 24, 0.85) 48%,
-    rgba(15, 18, 24, 1) 100%
-  );
+  background: none;
   pointer-events: none;
 }
+
 .valuesBtn {
   pointer-events: auto;
   margin: 0 0 2px;
@@ -488,11 +473,13 @@
     0 10px 24px rgba(0, 0, 0, 0.28),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
+
 .valuesBtn:hover {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.18);
 }
+
 .valuesOpen .valuesMore {
   display: none;
 }
@@ -552,28 +539,11 @@
   border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* Optional: tiny-phone horizontal snap for values */
-@media (max-width: 480px) {
-  .valuesGrid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 82%;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 12px;
-    padding-bottom: 8px;
-  }
-  .valueCard {
-    scroll-snap-align: start;
-  }
-}
-
-/* === Extra mobile polish === */
+/* Extra mobile polish */
 @media (max-width: 640px) {
   .inner {
     padding-inline: 16px;
   }
-
   .blurb {
     font-size: 0.94rem;
   }
@@ -583,16 +553,13 @@
   .statsRow {
     grid-template-columns: 1fr;
   }
-
   .bigLink {
     font-size: 1.6rem;
     padding-inline: 12px;
   }
 }
 
-/* ============================================================
-   MOBILE — Equal-size slider cards for Ethos & Values
-   ============================================================ */
+/* MOBILE slider for cards */
 @media (max-width: 640px) {
   .valuesGrid {
     display: flex;
@@ -601,7 +568,6 @@
     scroll-snap-type: x mandatory;
     scroll-padding-left: 12px;
     gap: 12px;
-
     padding: 6px 0 14px;
     -webkit-overflow-scrolling: touch;
   }
@@ -616,12 +582,15 @@
     justify-content: flex-start;
   }
 
+  /* Hide the overlay on mobile to avoid weird stacking */
   .valuesMore {
     display: none !important;
   }
 
-  .valuesTitle {
-    margin-bottom: 16px;
+  /* On mobile, extra cards should still be hidden until showAll */
+  .extra {
+    flex: 0 0 82vw;
+    max-width: 360px;
   }
 }
 
@@ -636,7 +605,6 @@
   text-align: center;
   display: none;
 }
-
 @media (max-width: 720px) {
   .swipeHint {
     display: block;

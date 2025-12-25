@@ -28,6 +28,7 @@ const FALLBACK: AboutData = {
     { value: 'DJs & Musicians', label: 'Tailored rosters' },
   ],
   videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
+  videoPoster: undefined,
   videoCaption: '1-min overview',
   values: [
     {
@@ -69,7 +70,7 @@ const FALLBACK: AboutData = {
   ],
 };
 
-const PRIMARY_VALUES = 4;
+const PRIMARY_VALUES = 6;
 
 /* ================= URL HELPERS ================= */
 
@@ -121,11 +122,19 @@ export default function About() {
   const valuesInnerRef = useRef<HTMLDivElement | null>(null);
 
   const [data, setData] = useState<AboutData>(FALLBACK);
+
+  // Lightbox
   const [lightbox, setLightbox] = useState(false);
+
+  // Values reveal (open/close section)
   const [valuesOpen, setValuesOpen] = useState(false);
+
+  // Progressive disclosure (show extras)
+  const [showAllValues, setShowAllValues] = useState(false);
+
+  // Height animation
   const [valuesMaxH, setValuesMaxH] = useState(0);
   const [valuesLockOpen, setValuesLockOpen] = useState(false);
-  const [showAllValues] = useState(false);
 
   const primaryValues = data.values.slice(0, PRIMARY_VALUES);
   const extraValues = data.values.slice(PRIMARY_VALUES);
@@ -152,24 +161,33 @@ export default function About() {
         const res = await fetch('/api/home/about', { cache: 'no-store' });
         if (!res.ok) return;
         const json = (await res.json()) as Partial<AboutData>;
-        if (mounted) {
-          setData({
-            ...FALLBACK,
-            ...json,
-            videoUrl: json.videoUrl ? normalizeUrl(json.videoUrl) : FALLBACK.videoUrl,
-            videoPoster: json.videoPoster ? normalizeUrl(json.videoPoster) : undefined,
-          });
-        }
+
+        if (!mounted) return;
+
+        setData((prev) => ({
+          ...prev,
+          ...FALLBACK,
+          ...json,
+          quickFacts:
+            Array.isArray(json.quickFacts) && json.quickFacts.length
+              ? json.quickFacts
+              : FALLBACK.quickFacts,
+          values: Array.isArray(json.values) && json.values.length ? json.values : FALLBACK.values,
+          videoUrl: json.videoUrl ? normalizeUrl(json.videoUrl) : FALLBACK.videoUrl,
+          videoPoster: json.videoPoster ? normalizeUrl(json.videoPoster) : FALLBACK.videoPoster,
+          videoCaption: json.videoCaption ?? FALLBACK.videoCaption,
+        }));
       } catch {
-        /* fallback */
+        // keep fallback
       }
     })();
+
     return () => {
       mounted = false;
     };
   }, []);
 
-  /* Measure values panel */
+  /* Measure values panel (for max-height animation) */
   useEffect(() => {
     const el = valuesInnerRef.current;
     if (!el) return;
@@ -182,14 +200,29 @@ export default function About() {
     return () => ro.disconnect();
   }, [data, valuesOpen, showAllValues]);
 
+  /* Unlock after transition so panel can grow freely (no clipping) */
   useEffect(() => {
     if (!valuesOpen) {
       setValuesLockOpen(false);
+      // Optional: when you close, collapse extra values next time
+      setShowAllValues(false);
       return;
     }
     const t = setTimeout(() => setValuesLockOpen(true), 480);
     return () => clearTimeout(t);
   }, [valuesOpen]);
+
+  /* Stagger animation when opening */
+  useEffect(() => {
+    if (!valuesOpen) return;
+    const cards = Array.from(
+      sectionRef.current?.querySelectorAll<HTMLElement>(`.${styles.valueCard}`) ?? []
+    );
+    cards.forEach((c, i) => {
+      c.style.animationDelay = `${120 + i * 70}ms`;
+      c.classList.add(styles.popIn);
+    });
+  }, [valuesOpen, showAllValues]);
 
   const videoUrl = normalizeUrl(data.videoUrl);
   const ytSrc = ytEmbed(videoUrl);
@@ -201,6 +234,7 @@ export default function About() {
         <div className={styles.kicker}>{data.eyebrow}</div>
         <h2 className={styles.title}>{data.title}</h2>
 
+        {/* VIDEO + TEXT */}
         <div className={styles.mediaBlock}>
           <button
             type="button"
@@ -208,7 +242,7 @@ export default function About() {
             onClick={() => setLightbox(true)}
             aria-label="Play About video"
           >
-            {data.videoPoster && (
+            {data.videoPoster ? (
               <Image
                 src={data.videoPoster}
                 alt=""
@@ -216,69 +250,124 @@ export default function About() {
                 sizes="(max-width: 720px) 100vw, 1160px"
                 priority={false}
               />
-            )}
+            ) : null}
 
-            <span className={styles.thumbFallback} />
-            <span className={styles.thumbVignette} />
+            <span className={styles.thumbFallback} aria-hidden="true" />
+            <span className={styles.thumbVignette} aria-hidden="true" />
 
-            <span className={styles.playBadge}>
+            <span className={styles.playBadge} aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 18 18">
                 <path d="M6 4.5l7 4.5-7 4.5V4.5z" fill="currentColor" />
               </svg>
             </span>
 
-            {data.videoCaption && <span className={styles.thumbCaption}>{data.videoCaption}</span>}
+            {data.videoCaption ? (
+              <span className={styles.thumbCaption}>{data.videoCaption}</span>
+            ) : null}
           </button>
 
           <p className={styles.blurb}>{data.lead}</p>
+
+          {/* ✅ BACK: 200+/UK-wide/DJs */}
+          {data.quickFacts?.length ? (
+            <div className={styles.statsRow}>
+              {data.quickFacts.map((f, i) => (
+                <div key={i} className={styles.stat}>
+                  <span className={styles.statNumber}>{f.value}</span>
+                  <span className={styles.statLabel}>{f.label}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
+        {/* TOGGLE VALUES */}
         <button
           type="button"
           className={`${styles.bigLink} ${valuesOpen ? styles.active : ''}`}
           onClick={() => setValuesOpen((s) => !s)}
+          aria-expanded={valuesOpen}
+          aria-controls="about-values"
         >
           <span className={styles.bigLinkLabel}>
             <span className={styles.underline}>
               {valuesOpen ? 'Hide values' : 'More about Nocturna'}
             </span>
-            <span className={styles.subnote}>Ethos & values</span>
+            <span className={styles.subnote}>Ethos &amp; values</span>
           </span>
+
+          <span className={styles.chev} aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M8 5l7 7-7 7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+
+          <span className={styles.orb} aria-hidden="true" />
         </button>
 
+        {/* VALUES REVEAL */}
         <div
-          className={styles.valuesReveal}
+          id="about-values"
+          className={`${styles.valuesReveal} ${valuesOpen ? styles.valuesRevealOpen : ''}`}
           style={{
             maxHeight: valuesOpen ? (valuesLockOpen ? 'none' : `${valuesMaxH + 40}px`) : 0,
           }}
         >
           <div ref={valuesInnerRef} className={styles.valuesInner}>
-            <div className={styles.valuesGrid}>
-              {primaryValues.map((v) => (
-                <article key={v.title} className={styles.valueCard}>
+            <h3 className={styles.valuesTitle}>Ethos & values</h3>
+
+            {/* ✅ BACK: styles.valuesOpen controls extra-cards */}
+            <div className={`${styles.valuesGrid} ${showAllValues ? styles.valuesOpen : ''}`}>
+              {primaryValues.map((v, i) => (
+                <article key={`p-${i}`} className={styles.valueCard}>
                   <h4>{v.title}</h4>
                   <p>{v.body}</p>
                 </article>
               ))}
-              {showAllValues &&
-                extraValues.map((v) => (
-                  <article key={v.title} className={styles.valueCard}>
-                    <h4>{v.title}</h4>
-                    <p>{v.body}</p>
-                  </article>
-                ))}
+
+              {extraValues.map((v, i) => (
+                <article key={`x-${i}`} className={`${styles.valueCard} ${styles.extra}`}>
+                  <h4>{v.title}</h4>
+                  <p>{v.body}</p>
+                </article>
+              ))}
+
+              {!showAllValues && extraValues.length > 0 ? (
+                <div className={styles.valuesMore}>
+                  <button
+                    type="button"
+                    className={styles.valuesBtn}
+                    onClick={() => setShowAllValues(true)}
+                  >
+                    Show all values ({data.values.length})
+                  </button>
+                </div>
+              ) : null}
             </div>
+
+            <div className={styles.swipeHint}>Swipe for more</div>
           </div>
         </div>
       </div>
 
-      {lightbox && (
+      {/* LIGHTBOX */}
+      {lightbox ? (
         <div
           className={styles.lightbox}
           onClick={(e) => e.target === e.currentTarget && setLightbox(false)}
         >
           <div className={styles.lbBox}>
-            <button className={styles.lbClose} onClick={() => setLightbox(false)}>
+            <button
+              className={styles.lbClose}
+              onClick={() => setLightbox(false)}
+              aria-label="Close"
+            >
               ✕
             </button>
             <div className={styles.lbAspect}>
@@ -292,7 +381,7 @@ export default function About() {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
