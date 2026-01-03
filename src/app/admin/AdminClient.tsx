@@ -1,3 +1,4 @@
+// src/app/admin/AdminClient.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';

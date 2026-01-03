@@ -1,10 +1,27 @@
 // src/components/admin/home/EnquireSettings.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from './EnquireSettings.module.scss';
 
-type FieldType = 'text' | 'textarea' | 'email' | 'tel' | 'date' | 'url' | 'select' | 'multiselect';
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'tel'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'url'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'checkboxes'
+  | 'file';
+
+type ShowIf = { field: string; equals: string };
 
 type FormField = {
   id: string;
@@ -12,25 +29,56 @@ type FormField = {
   label: string;
   type: FieldType;
   required: boolean;
+
   placeholder?: string;
   helpText?: string;
+
   options?: string[];
+
+  min?: number;
+  max?: number;
+  step?: number;
+
+  accept?: string;
+  multipleFiles?: boolean;
+
+  showIf?: ShowIf;
 };
 
 type EnquireConfig = {
+  // section
+  eyebrow: string;
   title: string;
-  intro: string;
+  lead: string;
+  buttonLabel: string;
+
+  // modal
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
   submitLabel: string;
   successMessage: string;
+
+  // delivery
+  recipientEmail?: string | null;
+
   fields: FormField[];
 };
 
 const FALLBACK: EnquireConfig = {
+  eyebrow: 'For venues & events',
   title: 'Enquire about DJs and live music.',
-  intro:
-    'Tell us about your venue or event – we’ll match you with the right artists and schedules.',
+  lead: 'We curate DJs and musicians for restaurants, bars and event spaces — matching artists to your brand, guest profile and schedule.',
+  buttonLabel: 'Open enquiry form',
+
+  modalKicker: 'Enquire Now',
+  modalTitle: 'Tell us about your venue or event.',
+  modalLead:
+    'Share a few details about your space, schedule and music brief — we’ll match you with the right artists.',
   submitLabel: 'Send enquiry',
-  successMessage: 'Thanks – we’ll be in touch shortly.',
+  successMessage: 'Thanks — we’ll be in touch shortly.',
+
+  recipientEmail: null,
   fields: [],
 };
 
@@ -40,16 +88,23 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'tel', label: 'Phone' },
   { value: 'date', label: 'Date' },
+  { value: 'time', label: 'Time' },
+  { value: 'datetime', label: 'Date + time' },
   { value: 'url', label: 'URL' },
-  { value: 'select', label: 'Select' },
+  { value: 'number', label: 'Number' },
+  { value: 'select', label: 'Dropdown' },
   { value: 'multiselect', label: 'Multi-select' },
+  { value: 'radio', label: 'Radio buttons' },
+  { value: 'checkbox', label: 'Checkbox (single)' },
+  { value: 'checkboxes', label: 'Checkbox group' },
+  { value: 'file', label: 'File upload' },
 ];
 
 const makeId = () => `fld-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-const isSelectType = (t: FieldType) => t === 'select' || t === 'multiselect';
+const isOptionsType = (t: FieldType) =>
+  t === 'select' || t === 'multiselect' || t === 'radio' || t === 'checkboxes';
 
-// Only allow safe keys that work well as JSON keys + HTML field names
 const normalizeKey = (raw: string) => raw.trim();
 const isValidKey = (key: string) => /^[a-z][a-z0-9_]*$/i.test(key);
 
@@ -65,18 +120,21 @@ function fieldErrors(field: FormField, allFields: FormField[]) {
     errs.push('Field name (key) is required.');
   } else {
     if (!isValidKey(name)) {
-      errs.push('Field name must be letters/numbers/underscore only (e.g. venue_name).');
+      errs.push('Field name must be letters/numbers/underscore only (e.g. event_city).');
     }
     const duplicates = allFields.filter((f) => normalizeKey(f.name) === name);
-    if (duplicates.length > 1) {
-      errs.push('Field name (key) must be unique (duplicate found).');
-    }
+    if (duplicates.length > 1) errs.push('Field name (key) must be unique (duplicate found).');
   }
 
-  // Type-specific rules
-  if (isSelectType(field.type)) {
+  if (isOptionsType(field.type)) {
     const opts = (field.options ?? []).map((s) => s.trim()).filter(Boolean);
-    if (opts.length < 1) errs.push('Select fields need at least 1 option.');
+    if (opts.length < 1) errs.push('This field type needs at least 1 option.');
+  }
+
+  if (field.type === 'number') {
+    if (typeof field.min === 'number' && typeof field.max === 'number' && field.min > field.max) {
+      errs.push('Min cannot be greater than Max.');
+    }
   }
 
   return errs;
@@ -86,11 +144,6 @@ export default function EnquireSettings() {
   const [config, setConfig] = useState<EnquireConfig>(FALLBACK);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  /**
-   * ✅ Draft store per field for "options" textarea
-   * This is the key fix that makes Enter/newlines work.
-   */
   const [optionsDrafts, setOptionsDrafts] = useState<Record<string, string>>({});
 
   const getOptionsDraft = (fieldId: string, options?: string[]) => {
@@ -101,6 +154,37 @@ export default function EnquireSettings() {
 
   const setOptionsDraft = (fieldId: string, val: string) => {
     setOptionsDrafts((prev) => ({ ...prev, [fieldId]: val }));
+  };
+
+  const updateField = (idx: number, patch: Partial<FormField>) => {
+    setConfig((prev) => {
+      const next = [...prev.fields];
+      const existing = next[idx];
+      if (!existing) return prev;
+
+      if (patch.type && !isOptionsType(patch.type) && isOptionsType(existing.type)) {
+        setOptionsDrafts((d) => {
+          const copy = { ...d };
+          delete copy[existing.id];
+          return copy;
+        });
+        next[idx] = { ...existing, ...patch, options: undefined };
+        return { ...prev, fields: next };
+      }
+
+      if (patch.type && patch.type !== 'number' && existing.type === 'number') {
+        next[idx] = { ...existing, ...patch, min: undefined, max: undefined, step: undefined };
+        return { ...prev, fields: next };
+      }
+
+      if (patch.type && patch.type !== 'file' && existing.type === 'file') {
+        next[idx] = { ...existing, ...patch, accept: undefined, multipleFiles: undefined };
+        return { ...prev, fields: next };
+      }
+
+      next[idx] = { ...existing, ...patch };
+      return { ...prev, fields: next };
+    });
   };
 
   const commitOptions = (idx: number) => {
@@ -116,7 +200,6 @@ export default function EnquireSettings() {
     updateField(idx, { options: lines });
   };
 
-  // load config
   useEffect(() => {
     (async () => {
       try {
@@ -130,42 +213,19 @@ export default function EnquireSettings() {
           };
           setConfig(merged);
 
-          // seed drafts once from loaded data
           const seed: Record<string, string> = {};
           for (const f of merged.fields) {
-            if (isSelectType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
+            if (isOptionsType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
           }
           setOptionsDrafts(seed);
         }
       } catch {
-        // swallow, fallback stays
+        // ignore
       } finally {
         setLoading(false);
       }
     })();
   }, []);
-
-  const updateField = (idx: number, patch: Partial<FormField>) => {
-    setConfig((prev) => {
-      const next = [...prev.fields];
-      const existing = next[idx];
-      if (!existing) return prev;
-
-      // If switching type away from select types, clean options + draft
-      if (patch.type && !isSelectType(patch.type) && isSelectType(existing.type)) {
-        setOptionsDrafts((d) => {
-          const copy = { ...d };
-          delete copy[existing.id];
-          return copy;
-        });
-        next[idx] = { ...existing, ...patch, options: undefined };
-        return { ...prev, fields: next };
-      }
-
-      next[idx] = { ...existing, ...patch };
-      return { ...prev, fields: next };
-    });
-  };
 
   const addField = () => {
     const id = makeId();
@@ -213,15 +273,12 @@ export default function EnquireSettings() {
   const onConfigText =
     (key: keyof EnquireConfig) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const v = e.target.value;
-      setConfig((prev) => ({ ...prev, [key]: v }));
+      setConfig((prev) => ({ ...prev, [key]: e.target.value }));
     };
 
-  // Save-time validation (and also commit any open drafts)
   const validateAll = () => {
-    // Commit drafts for all select/multiselect fields before validation
     config.fields.forEach((f, idx) => {
-      if (isSelectType(f.type)) commitOptions(idx);
+      if (isOptionsType(f.type)) commitOptions(idx);
     });
 
     const problems: { idx: number; id: string; errors: string[] }[] = [];
@@ -237,10 +294,10 @@ export default function EnquireSettings() {
     try {
       const problems = validateAll();
       if (problems.length) {
-        const msg =
+        alert(
           'Fix these before saving:\n\n' +
-          problems.map((p) => `Field #${p.idx + 1}: ${p.errors.join(' ')}`).join('\n');
-        alert(msg);
+            problems.map((p) => `Field #${p.idx + 1}: ${p.errors.join(' ')}`).join('\n')
+        );
         return;
       }
 
@@ -251,15 +308,14 @@ export default function EnquireSettings() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error('Save /api/home/enquire failed:', res.status, text);
+        const txt = await res.text();
+        console.error('Save /api/home/enquire failed:', res.status, txt);
         throw new Error('Failed to save');
       }
 
-      alert('Enquiry form updated. Refresh the site to see changes.');
+      alert('Enquire settings updated. Refresh the site to see changes.');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Network error saving Enquire.';
-      alert(msg);
+      alert(err instanceof Error ? err.message : 'Network error saving Enquire.');
     } finally {
       setSaving(false);
     }
@@ -277,7 +333,7 @@ export default function EnquireSettings() {
     return (
       <section className={styles.section}>
         <h2>Enquire</h2>
-        <p>Loading enquiry form settings…</p>
+        <p>Loading enquire form settings…</p>
       </section>
     );
   }
@@ -285,33 +341,78 @@ export default function EnquireSettings() {
   return (
     <section className={styles.section}>
       <h2>Enquire</h2>
-      <p>Control the enquiry lightbox fields and copy.</p>
+      <p>Control the enquire section + enquire modal content and fields.</p>
 
       <div className={styles.form}>
-        <label className={styles.full}>
-          Title
-          <input
-            value={config.title}
-            onChange={onConfigText('title')}
-            placeholder="Enquire about DJs and live music."
-          />
-        </label>
+        {/* ===== Section copy ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Section copy</legend>
 
-        <label className={styles.full}>
-          Intro text
-          <textarea rows={3} value={config.intro} onChange={onConfigText('intro')} />
-        </label>
+          <div className={styles.fieldGrid}>
+            <label>
+              Eyebrow
+              <input value={config.eyebrow} onChange={onConfigText('eyebrow')} />
+            </label>
 
-        <label>
-          Submit button label
-          <input value={config.submitLabel} onChange={onConfigText('submitLabel')} />
-        </label>
+            <label>
+              Button label
+              <input value={config.buttonLabel} onChange={onConfigText('buttonLabel')} />
+            </label>
 
-        <label>
-          Success message
-          <input value={config.successMessage} onChange={onConfigText('successMessage')} />
-        </label>
+            <label className={styles.full}>
+              Title
+              <input value={config.title} onChange={onConfigText('title')} />
+            </label>
 
+            <label className={styles.full}>
+              Lead
+              <textarea rows={3} value={config.lead} onChange={onConfigText('lead')} />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* ===== Modal copy ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Modal copy</legend>
+
+          <div className={styles.fieldGrid}>
+            <label>
+              Modal kicker
+              <input value={config.modalKicker} onChange={onConfigText('modalKicker')} />
+            </label>
+
+            <label>
+              Recipient email (optional)
+              <input
+                value={config.recipientEmail ?? ''}
+                onChange={onConfigText('recipientEmail')}
+                placeholder="bookings@nocturna.com"
+              />
+            </label>
+
+            <label className={styles.full}>
+              Modal title
+              <input value={config.modalTitle} onChange={onConfigText('modalTitle')} />
+            </label>
+
+            <label className={styles.full}>
+              Modal lead
+              <textarea rows={3} value={config.modalLead} onChange={onConfigText('modalLead')} />
+            </label>
+
+            <label>
+              Submit button label
+              <input value={config.submitLabel} onChange={onConfigText('submitLabel')} />
+            </label>
+
+            <label>
+              Success message
+              <input value={config.successMessage} onChange={onConfigText('successMessage')} />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* ===== Fields ===== */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Form fields</legend>
 
@@ -323,6 +424,7 @@ export default function EnquireSettings() {
               <div key={field.id ?? idx} className={styles.fieldRow}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.fieldIndex}>#{idx + 1}</span>
+
                   <button
                     type="button"
                     onClick={() => moveField(idx, idx - 1)}
@@ -337,6 +439,7 @@ export default function EnquireSettings() {
                   >
                     ↓
                   </button>
+
                   <button
                     type="button"
                     className={styles.removeBtn}
@@ -360,10 +463,10 @@ export default function EnquireSettings() {
                     <input
                       value={field.name}
                       onChange={(e) => updateField(idx, { name: e.target.value })}
-                      placeholder="venue_name, budget, etc."
+                      placeholder="event_date, venue, message, etc."
                     />
                     <small>
-                      Use letters/numbers/underscore only (e.g. <code>venue_name</code>).
+                      Use letters/numbers/underscore only (e.g. <code>event_date</code>).
                     </small>
                   </label>
 
@@ -409,7 +512,7 @@ export default function EnquireSettings() {
                   </label>
                 </div>
 
-                {(field.type === 'select' || field.type === 'multiselect') && (
+                {isOptionsType(field.type) && (
                   <div className={styles.fieldGrid}>
                     <label className={styles.full}>
                       Options (one per line)
@@ -418,21 +521,104 @@ export default function EnquireSettings() {
                         value={optionsStr}
                         onChange={(e) => setOptionsDraft(field.id, e.target.value)}
                         onBlur={() => commitOptions(idx)}
-                        onKeyDown={(e) => {
-                          // ✅ Allow Enter newlines but stop parent handlers stealing the event
-                          if (e.key === 'Enter') e.stopPropagation();
-                        }}
                       />
-                      <small>
-                        Enter adds a new option line. Blank lines are ignored when you leave the
-                        box.
-                      </small>
+                      <small>Blank lines are ignored when you leave the box.</small>
                     </label>
                   </div>
                 )}
 
+                {field.type === 'number' && (
+                  <div className={styles.fieldGrid}>
+                    <label>
+                      Min
+                      <input
+                        type="number"
+                        value={field.min ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            min: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Max
+                      <input
+                        type="number"
+                        value={field.max ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            max: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                    <label>
+                      Step
+                      <input
+                        type="number"
+                        value={field.step ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            step: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {field.type === 'file' && (
+                  <div className={styles.fieldGrid}>
+                    <label className={styles.full}>
+                      Accept (optional)
+                      <input
+                        value={field.accept ?? ''}
+                        onChange={(e) => updateField(idx, { accept: e.target.value })}
+                        placeholder="audio/*,image/*,.pdf"
+                      />
+                    </label>
+
+                    <label className={styles.checkboxRow}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(field.multipleFiles)}
+                        onChange={(e) => updateField(idx, { multipleFiles: e.target.checked })}
+                      />
+                      <span>Allow multiple files</span>
+                    </label>
+                  </div>
+                )}
+
+                <div className={styles.fieldGrid}>
+                  <label className={styles.full}>
+                    Show only if (optional) — format: <code>field=value</code>
+                    <input
+                      value={
+                        field.showIf?.field && field.showIf?.equals
+                          ? `${field.showIf.field}=${field.showIf.equals}`
+                          : ''
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) return updateField(idx, { showIf: undefined });
+                        const [f, ...rest] = raw.split('=');
+                        const eq = rest.join('=');
+                        const fieldKey = (f ?? '').trim();
+                        const equals = (eq ?? '').trim();
+                        if (!fieldKey || !equals) return updateField(idx, { showIf: undefined });
+                        updateField(idx, { showIf: { field: fieldKey, equals } });
+                      }}
+                      placeholder="enq_type=Booking"
+                    />
+                    <small>
+                      Example: enq_type=Booking (field appears only for Booking enquiries).
+                    </small>
+                  </label>
+                </div>
+
                 {errs.length > 0 && (
-                  <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginTop: '0.35rem' }}>
+                  <div className={styles.errors}>
                     {errs.map((m, i) => (
                       <div key={i}>• {m}</div>
                     ))}

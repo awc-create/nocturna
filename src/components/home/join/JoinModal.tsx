@@ -1,42 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useModals } from '../modals/ModalContext';
 import styles from './JoinModal.module.scss';
+import HelpTip from '@/components/home/modals/HelpTip';
 
-type FormFieldType =
-  | 'text'
-  | 'email'
-  | 'tel'
-  | 'textarea'
-  | 'select'
-  | 'multiselect'
-  | 'date'
-  | 'url';
-
-type ShowIf = {
-  field: string;
-  equals: string;
-};
-
-type FormField = {
-  id: string;
-  label: string;
-  name: string;
-  type: FormFieldType;
-  required: boolean;
-  placeholder?: string;
-  options?: string[];
-  showIf?: ShowIf;
-};
-
-type ApiConfig = {
-  title: string;
-  intro: string;
-  submitLabel: string;
-  successMessage: string;
-  fields: FormField[];
-};
+import type { ApiFormConfig, FormField } from '@/types/form-builder';
+import { normalizeFields } from '@/lib/form-builder';
+import {
+  renderFieldControl,
+  shouldShowField,
+  type Values,
+} from '@/components/home/modals/renderField';
 
 type JoinConfig = {
   modalKicker: string;
@@ -141,98 +116,56 @@ const FALLBACK: JoinConfig = {
   ],
 };
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === 'object' && !Array.isArray(v);
-}
+function mapApiToModal(api: Partial<ApiFormConfig>): JoinConfig {
+  const fields = normalizeFields(api.fields, 'join');
 
-function safeString(v: unknown): string {
-  return typeof v === 'string' ? v : '';
-}
-
-function ensureId(item: Record<string, unknown>, idx: number, prefix: string) {
-  const id = safeString(item.id).trim();
-  const name = safeString(item.name).trim();
-  if (id) return id;
-  if (name) return name;
-  return `${prefix}_${idx}_${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function normalizeFields(raw: unknown): FormField[] {
-  if (!Array.isArray(raw)) return [];
-
-  const allowed: readonly FormFieldType[] = [
-    'text',
-    'textarea',
-    'email',
-    'tel',
-    'date',
-    'url',
-    'select',
-    'multiselect',
-  ] as const;
-
-  const out: Array<FormField | null> = raw.map((item, idx) => {
-    if (!isRecord(item)) return null;
-
-    const typeRaw = safeString(item.type).trim() as FormFieldType;
-    const type: FormFieldType = allowed.includes(typeRaw) ? typeRaw : 'text';
-
-    const name = safeString(item.name).trim();
-    const label = safeString(item.label).trim();
-    if (!name || !label) return null;
-
-    const placeholder = safeString(item.placeholder).trim();
-
-    const options =
-      Array.isArray(item.options) && (type === 'select' || type === 'multiselect')
-        ? item.options.map((x) => safeString(x).trim()).filter(Boolean)
-        : undefined;
-
-    let showIf: ShowIf | undefined;
-    if (isRecord(item.showIf)) {
-      const f = safeString(item.showIf.field).trim();
-      const eq = safeString(item.showIf.equals).trim();
-      if (f && eq) showIf = { field: f, equals: eq };
-    }
-
-    const field: FormField = {
-      id: ensureId(item, idx, 'join'),
-      name,
-      label,
-      type,
-      required: Boolean(item.required),
-      ...(placeholder ? { placeholder } : {}),
-      ...(options && options.length ? { options } : {}),
-      ...(showIf ? { showIf } : {}),
-    };
-
-    return field;
-  });
-
-  return out.filter((x): x is FormField => x !== null);
-}
-
-function mapApiToModal(api: Partial<ApiConfig>): JoinConfig {
-  const fields = normalizeFields(api.fields);
   return {
     ...FALLBACK,
-    modalTitle: safeString(api.title).trim() || FALLBACK.modalTitle,
-    modalLead: safeString(api.intro).trim() || FALLBACK.modalLead,
-    submitLabel: safeString(api.submitLabel).trim() || FALLBACK.submitLabel,
-    successMessage: safeString(api.successMessage).trim() || FALLBACK.successMessage,
+    modalTitle: (api.title ?? '').trim() || FALLBACK.modalTitle,
+    modalLead: (api.intro ?? '').trim() || FALLBACK.modalLead,
+    submitLabel: (api.submitLabel ?? '').trim() || FALLBACK.submitLabel,
+    successMessage: (api.successMessage ?? '').trim() || FALLBACK.successMessage,
     formFields: fields.length ? fields : FALLBACK.formFields,
   };
 }
 
 export default function JoinModal() {
   const { open, close } = useModals();
+
   const [status, setStatus] = useState<FormState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<JoinConfig>(FALLBACK);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formValues, setFormValues] = useState<Values>({});
 
+  const closeTimerRef = useRef<number | null>(null);
   const visible = open === 'join';
 
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
+
+  function resetState() {
+    setStatus('idle');
+    setError(null);
+    setFormValues({});
+  }
+
+  // ESC
+  useEffect(() => {
+    if (!visible) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [visible, close]);
+
+  // Lock scroll
   useEffect(() => {
     if (!visible) return;
     const prev = document.body.style.overflow;
@@ -242,23 +175,37 @@ export default function JoinModal() {
     };
   }, [visible]);
 
-  // Hydrate config from API (NEW SHAPE: title/intro/submitLabel/fields)
+  // Hydrate config when open
   useEffect(() => {
+    if (!visible) return;
+
     let mounted = true;
     (async () => {
       try {
         const res = await fetch('/api/home/join', { cache: 'no-store' });
         if (!res.ok) return;
-        const json = (await res.json()) as Partial<ApiConfig>;
+        const json = (await res.json()) as Partial<ApiFormConfig>;
         if (!mounted) return;
         setConfig(mapApiToModal(json));
       } catch {
         // keep fallback
       }
     })();
+
     return () => {
       mounted = false;
     };
+  }, [visible]);
+
+  // Cleanup when closed
+  useEffect(() => {
+    if (visible) return;
+    clearCloseTimer();
+    resetState();
+  }, [visible]);
+
+  useEffect(() => {
+    return () => clearCloseTimer();
   }, []);
 
   if (!visible) return null;
@@ -278,142 +225,82 @@ export default function JoinModal() {
       setStatus('success');
       form.reset();
       setFormValues({});
+
+      clearCloseTimer();
+      closeTimerRef.current = window.setTimeout(() => close(), 5000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error submitting application.');
       setStatus('error');
     }
   }
 
-  const handleValueChange =
-    (field: FormField) =>
-    (
-      e:
-        | React.ChangeEvent<HTMLInputElement>
-        | React.ChangeEvent<HTMLTextAreaElement>
-        | React.ChangeEvent<HTMLSelectElement>
-    ) => {
-      let value = '';
-
-      if (field.type === 'multiselect' && e.target instanceof HTMLSelectElement) {
-        value = Array.from(e.target.selectedOptions)
-          .map((opt) => opt.value)
-          .join(',');
-      } else {
-        value = e.target.value;
-      }
-
-      setFormValues((prev) => ({
-        ...prev,
-        [field.name]: value,
-      }));
-    };
-
-  const shouldShowField = (field: FormField) => {
-    if (!field.showIf) return true;
-    const controllingValue = formValues[field.showIf.field] ?? '';
-    return controllingValue === field.showIf.equals;
-  };
-
-  const renderField = (field: FormField) => {
-    if (!shouldShowField(field)) return null;
-
-    const baseId = `join-${field.id}`;
-
-    if (field.type === 'textarea') {
-      return (
-        <textarea
-          id={baseId}
-          name={field.name}
-          required={field.required}
-          placeholder={field.placeholder}
-          rows={4}
-          onChange={handleValueChange(field)}
-        />
-      );
-    }
-
-    if (field.type === 'select' || field.type === 'multiselect') {
-      return (
-        <select
-          id={baseId}
-          name={field.name}
-          required={field.required}
-          multiple={field.type === 'multiselect'}
-          onChange={handleValueChange(field)}
-          value={field.type === 'multiselect' ? undefined : (formValues[field.name] ?? '')}
-        >
-          {field.type === 'select' && <option value="">Select…</option>}
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    const inputType = field.type === 'date' ? 'date' : field.type === 'url' ? 'url' : field.type;
-
-    return (
-      <input
-        id={baseId}
-        name={field.name}
-        required={field.required}
-        placeholder={field.placeholder}
-        type={inputType}
-        onChange={handleValueChange(field)}
-      />
-    );
-  };
-
   return (
-    <div
-      className={styles.backdrop}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Join Nocturna"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
+    <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label="Join">
       <div className={styles.panel}>
         <button type="button" className={styles.close} onClick={close} aria-label="Close form">
           ✕
         </button>
 
         <div className={styles.scrollArea}>
-          <p className={styles.kicker}>{config.modalKicker}</p>
-          <h2 className={styles.title}>{config.modalTitle}</h2>
-          <p className={styles.lead}>{config.modalLead}</p>
+          {status === 'success' ? (
+            <div className={styles.successWrap}>
+              <p className={styles.kicker}>{config.modalKicker}</p>
+              <h2 className={styles.successTitle}>Application sent</h2>
+              <p className={styles.successLead}>{config.successMessage}</p>
 
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.grid}>
-              {config.formFields.map((field) => {
-                const control = renderField(field);
-                if (!control) return null;
-                const isWide = field.type === 'textarea';
+              <div className={styles.successPill}>
+                Closing in <span className={styles.successCount}>5s</span>
+              </div>
 
-                return (
-                  <div
-                    key={field.id}
-                    className={`${styles.field} ${isWide ? styles.fieldFull : ''}`}
-                  >
-                    <label htmlFor={`join-${field.id}`}>
-                      <span className={styles.labelText}>{field.label}</span>
-                      {control}
-                    </label>
-                  </div>
-                );
-              })}
+              <button type="button" className={styles.successCloseBtn} onClick={close}>
+                Close now
+              </button>
             </div>
+          ) : (
+            <>
+              <p className={styles.kicker}>{config.modalKicker}</p>
+              <h2 className={styles.title}>{config.modalTitle}</h2>
+              <p className={styles.lead}>{config.modalLead}</p>
 
-            <button type="submit" className={styles.submit} disabled={status === 'submitting'}>
-              {status === 'submitting' ? 'Sending…' : config.submitLabel}
-            </button>
+              <form className={styles.form} onSubmit={handleSubmit}>
+                <div className={styles.grid}>
+                  {config.formFields.map((field) => {
+                    if (!shouldShowField(field, formValues)) return null;
 
-            {status === 'success' && <p className={styles.success}>{config.successMessage}</p>}
-            {status === 'error' && <p className={styles.error}>{error}</p>}
-          </form>
+                    const isWide =
+                      field.type === 'textarea' ||
+                      field.type === 'checkboxes' ||
+                      field.type === 'file';
+
+                    return (
+                      <div
+                        key={field.id}
+                        className={`${styles.field} ${isWide ? styles.fieldFull : ''}`}
+                      >
+                        <div className={styles.labelRow}>
+                          <label htmlFor={`join-${field.id}`} className={styles.labelText}>
+                            {field.label}
+                          </label>
+
+                          {field.helpText ? (
+                            <HelpTip text={field.helpText} label={`Help for ${field.label}`} />
+                          ) : null}
+                        </div>
+
+                        {renderFieldControl(field, formValues, setFormValues, 'join')}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button type="submit" className={styles.submit} disabled={status === 'submitting'}>
+                  {status === 'submitting' ? 'Sending…' : config.submitLabel}
+                </button>
+
+                {status === 'error' && <p className={styles.error}>{error}</p>}
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

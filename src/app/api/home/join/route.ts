@@ -8,7 +8,22 @@ export const dynamic = 'force-dynamic';
 
 const KEY = 'join';
 
-type FieldType = 'text' | 'textarea' | 'email' | 'tel' | 'date' | 'url' | 'select' | 'multiselect';
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'tel'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'url'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'checkboxes'
+  | 'file';
 
 export type FormField = {
   id: string;
@@ -16,17 +31,41 @@ export type FormField = {
   label: string;
   type: FieldType;
   required: boolean;
+
   placeholder?: string;
   helpText?: string;
+
   options?: string[];
+
+  min?: number;
+  max?: number;
+  step?: number;
+
+  accept?: string;
+  multipleFiles?: boolean;
+
+  showIf?: { field: string; equals: string };
 };
 
-type JoinConfig = {
-  title: string; // -> modalTitle
-  intro: string; // -> modalLead
-  submitLabel: string; // -> buttonLabel
+export type JoinConfig = {
+  // section
+  eyebrow: string;
+  title: string;
+  lead: string;
+  buttonLabel: string;
+
+  // modal
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
+  submitLabel: string;
   successMessage: string;
-  fields: FormField[]; // -> formFields
+
+  // delivery
+  recipientEmail?: string | null;
+
+  // fields
+  fields: FormField[];
 };
 
 const DEFAULT_FIELDS: FormField[] = [
@@ -34,7 +73,7 @@ const DEFAULT_FIELDS: FormField[] = [
     id: 'role',
     name: 'role',
     label: 'Are you a musician or DJ?',
-    type: 'select',
+    type: 'radio',
     required: true,
     options: ['DJ', 'Musician'],
   },
@@ -45,6 +84,7 @@ const DEFAULT_FIELDS: FormField[] = [
     type: 'text',
     required: false,
     placeholder: 'e.g. Saxophone, keys, percussion…',
+    showIf: { field: 'role', equals: 'Musician' },
   },
   {
     id: 'full_name',
@@ -53,103 +93,42 @@ const DEFAULT_FIELDS: FormField[] = [
     type: 'text',
     required: true,
   },
-  {
-    id: 'address',
-    name: 'address',
-    label: 'Full address',
-    type: 'textarea',
-    required: true,
-  },
-  {
-    id: 'email',
-    name: 'email',
-    label: 'Email address',
-    type: 'email',
-    required: true,
-  },
-  {
-    id: 'phone',
-    name: 'phone',
-    label: 'Mobile number',
-    type: 'tel',
-    required: true,
-  },
-  {
-    id: 'dob',
-    name: 'dob',
-    label: 'Date of birth',
-    type: 'date',
-    required: true,
-  },
-  {
-    id: 'website',
-    name: 'website',
-    label: 'Website',
-    type: 'url',
-    required: false,
-  },
-  {
-    id: 'youtube',
-    name: 'youtube',
-    label: 'YouTube',
-    type: 'url',
-    required: false,
-  },
-  {
-    id: 'soundcloud',
-    name: 'soundcloud',
-    label: 'SoundCloud',
-    type: 'url',
-    required: false,
-  },
-  {
-    id: 'current_venues',
-    name: 'current_venues',
-    label: 'Where do you currently play?',
-    type: 'textarea',
-    required: false,
-  },
-  {
-    id: 'equipment',
-    name: 'equipment',
-    label: 'What PA & equipment do you have?',
-    type: 'textarea',
-    required: false,
-  },
-  {
-    id: 'referral',
-    name: 'referral',
-    label: 'How did you hear about us?',
-    type: 'text',
-    required: false,
-  },
-  {
-    id: 'genres',
-    name: 'genres',
-    label: 'What is / are your favourite genres to play?',
-    type: 'textarea',
-    required: false,
-  },
-  {
-    id: 'venues_pref',
-    name: 'venues_pref',
-    label: 'Which of the venues would you like to play?',
-    type: 'textarea',
-    required: false,
-    placeholder: 'If you know: rooftop, lounge, restaurant, bar, hotel, etc.',
-  },
+  { id: 'email', name: 'email', label: 'Email address', type: 'email', required: true },
+  { id: 'phone', name: 'phone', label: 'Mobile number', type: 'tel', required: true },
+  { id: 'dob', name: 'dob', label: 'Date of birth', type: 'date', required: true },
+  { id: 'address', name: 'address', label: 'Full address', type: 'textarea', required: true },
+  { id: 'genres', name: 'genres', label: 'Favourite genres', type: 'textarea', required: false },
 ];
 
 const DEFAULT_CONFIG: JoinConfig = {
-  title: 'Join the Nocturna roster',
-  intro:
-    'Tell us who you are, what you play, and where you’re performing now. We review every application carefully.',
+  eyebrow: 'For artists & collectives',
+  title: 'Join the Nocturna roster.',
+  lead: 'DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.',
+  buttonLabel: 'Open application form',
+
+  modalKicker: 'Join Nocturna',
+  modalTitle: 'Tell us about your sound.',
+  modalLead: 'Share links, socials and a short intro — we’ll review and get back if there’s a fit.',
   submitLabel: 'Apply to join',
-  successMessage: 'Thanks – we’ll review your application and get back to you if there’s a fit.',
+  successMessage: 'Thanks — we’ll review your submission and follow up.',
+
+  recipientEmail: null,
   fields: DEFAULT_FIELDS,
 };
 
+// ---- small runtime helpers (no any) ----
+type JsonObj = Record<string, unknown>;
+function isJsonObj(v: unknown): v is JsonObj {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
 const sanitizeStr = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+
+function sanitizeNum(v: unknown): number | undefined {
+  if (typeof v !== 'number') return undefined;
+  if (!Number.isFinite(v)) return undefined;
+  return v;
+}
 
 function sanitizeField(raw: unknown, idx: number): FormField | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -165,24 +144,54 @@ function sanitizeField(raw: unknown, idx: number): FormField | null {
     'email',
     'tel',
     'date',
+    'time',
+    'datetime',
     'url',
+    'number',
     'select',
     'multiselect',
+    'radio',
+    'checkbox',
+    'checkboxes',
+    'file',
   ];
   const type = allowedTypes.includes(typeRaw) ? typeRaw : 'text';
 
   const required = Boolean(r.required);
-
   const placeholder = sanitizeStr(r.placeholder);
   const helpText = sanitizeStr(r.helpText);
-  const id = sanitizeStr(r.id) || `${name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = sanitizeStr(r.id) || `join_${name}_${idx}`;
+
+  const needsOptions =
+    type === 'select' || type === 'multiselect' || type === 'radio' || type === 'checkboxes';
 
   let options: string[] | undefined;
-  if (type === 'select' || type === 'multiselect') {
-    const rawOpts = r.options;
-    if (Array.isArray(rawOpts)) {
-      options = rawOpts.map((x) => sanitizeStr(x)).filter((x) => x.length > 0);
-    }
+  if (needsOptions && Array.isArray(r.options)) {
+    options = r.options.map((x) => sanitizeStr(x)).filter((x) => x.length > 0);
+  }
+
+  let showIf: { field: string; equals: string } | undefined;
+  if (r.showIf && typeof r.showIf === 'object' && !Array.isArray(r.showIf)) {
+    const rr = r.showIf as Record<string, unknown>;
+    const f = sanitizeStr(rr.field);
+    const eq = sanitizeStr(rr.equals);
+    if (f && eq) showIf = { field: f, equals: eq };
+  }
+
+  let min: number | undefined;
+  let max: number | undefined;
+  let step: number | undefined;
+  if (type === 'number') {
+    min = sanitizeNum(r.min);
+    max = sanitizeNum(r.max);
+    step = sanitizeNum(r.step);
+  }
+
+  let accept: string | undefined;
+  let multipleFiles: boolean | undefined;
+  if (type === 'file') {
+    accept = sanitizeStr(r.accept) || undefined;
+    multipleFiles = Boolean(r.multipleFiles);
   }
 
   return {
@@ -194,50 +203,89 @@ function sanitizeField(raw: unknown, idx: number): FormField | null {
     placeholder: placeholder || undefined,
     helpText: helpText || undefined,
     options,
+    min,
+    max,
+    step,
+    accept,
+    multipleFiles,
+    showIf,
   };
 }
 
 function sanitizeConfig(body: Partial<JoinConfig>): JoinConfig {
   const fieldsRaw = Array.isArray(body.fields) ? body.fields : DEFAULT_FIELDS;
-
   const fields: FormField[] = fieldsRaw
     .map((f, i) => sanitizeField(f, i))
     .filter((f): f is FormField => !!f);
 
   return {
+    eyebrow: sanitizeStr(body.eyebrow) || DEFAULT_CONFIG.eyebrow,
     title: sanitizeStr(body.title) || DEFAULT_CONFIG.title,
-    intro: sanitizeStr(body.intro) || DEFAULT_CONFIG.intro,
+    lead: sanitizeStr(body.lead) || DEFAULT_CONFIG.lead,
+    buttonLabel: sanitizeStr(body.buttonLabel) || DEFAULT_CONFIG.buttonLabel,
+
+    modalKicker: sanitizeStr(body.modalKicker) || DEFAULT_CONFIG.modalKicker,
+    modalTitle: sanitizeStr(body.modalTitle) || DEFAULT_CONFIG.modalTitle,
+    modalLead: sanitizeStr(body.modalLead) || DEFAULT_CONFIG.modalLead,
     submitLabel: sanitizeStr(body.submitLabel) || DEFAULT_CONFIG.submitLabel,
     successMessage: sanitizeStr(body.successMessage) || DEFAULT_CONFIG.successMessage,
+
+    recipientEmail: sanitizeStr(body.recipientEmail) || null,
+
     fields: fields.length ? fields : DEFAULT_FIELDS,
   };
 }
 
+// Type the DB row shape so submitLabel is accessible without any-casting.
+// If your Prisma model already includes submitLabel, this will match.
+// If it doesn't exist yet, TS will tell you (which is correct) and you should run the migration.
+type HomeJoinRow = {
+  id: string;
+  key: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  buttonLabel: string;
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
+  submitLabel: string;
+  successMessage: string;
+  recipientEmail: string | null;
+  formFields: Prisma.JsonValue | null;
+};
+
 export async function GET() {
   try {
-    const row = await prisma.homeJoin.findUnique({
+    const row = (await prisma.homeJoin.findUnique({
       where: { key: KEY },
-    });
+    })) as HomeJoinRow | null;
 
-    if (!row) {
-      return NextResponse.json(DEFAULT_CONFIG);
-    }
+    if (!row) return NextResponse.json(DEFAULT_CONFIG);
 
-    const fieldsRaw = (row.formFields ?? []) as unknown;
+    const fieldsRaw: unknown = row.formFields ?? [];
     const fields = (Array.isArray(fieldsRaw) ? fieldsRaw : DEFAULT_FIELDS)
       .map((f, i) => sanitizeField(f, i))
       .filter((f): f is FormField => !!f);
 
     const config: JoinConfig = {
-      title: row.modalTitle || row.title || DEFAULT_CONFIG.title,
-      intro: row.modalLead || row.lead || DEFAULT_CONFIG.intro,
-      submitLabel: row.buttonLabel || DEFAULT_CONFIG.submitLabel,
+      eyebrow: row.eyebrow || DEFAULT_CONFIG.eyebrow,
+      title: row.title || DEFAULT_CONFIG.title,
+      lead: row.lead || DEFAULT_CONFIG.lead,
+      buttonLabel: row.buttonLabel || DEFAULT_CONFIG.buttonLabel,
+
+      modalKicker: row.modalKicker || DEFAULT_CONFIG.modalKicker,
+      modalTitle: row.modalTitle || DEFAULT_CONFIG.modalTitle,
+      modalLead: row.modalLead || DEFAULT_CONFIG.modalLead,
+      submitLabel: row.submitLabel || DEFAULT_CONFIG.submitLabel,
       successMessage: row.successMessage || DEFAULT_CONFIG.successMessage,
+
+      recipientEmail: row.recipientEmail ?? null,
       fields: fields.length ? fields : DEFAULT_FIELDS,
     };
 
     return NextResponse.json(config);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('GET /api/home/join failed:', e);
     return NextResponse.json({ error: 'Server error (GET join).' }, { status: 500 });
   }
@@ -245,33 +293,45 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as Partial<JoinConfig>;
+    const raw: unknown = await req.json();
+    if (!isJsonObj(raw)) {
+      return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+    }
+
+    const body = raw as Partial<JoinConfig>;
     const data = sanitizeConfig(body);
 
-    const fieldsJson = data.fields as unknown as Prisma.JsonArray;
+    // Prisma JSON accepts JsonValue. Arrays are valid JsonValue.
+    const fieldsJson: Prisma.JsonValue = data.fields;
+
+    // Use Prisma’s generated input type: no `as any` needed.
+    const payload: Prisma.HomeJoinUncheckedCreateInput = {
+      key: KEY,
+
+      eyebrow: data.eyebrow,
+      title: data.title,
+      lead: data.lead,
+      buttonLabel: data.buttonLabel,
+
+      modalKicker: data.modalKicker,
+      modalTitle: data.modalTitle,
+      modalLead: data.modalLead,
+      submitLabel: data.submitLabel,
+      successMessage: data.successMessage,
+
+      recipientEmail: data.recipientEmail ?? null,
+      formFields: fieldsJson,
+    };
 
     const saved = await prisma.homeJoin.upsert({
       where: { key: KEY },
-      create: {
-        key: KEY,
-        modalTitle: data.title,
-        modalLead: data.intro,
-        buttonLabel: data.submitLabel,
-        successMessage: data.successMessage,
-        formFields: fieldsJson,
-      },
-      update: {
-        modalTitle: data.title,
-        modalLead: data.intro,
-        buttonLabel: data.submitLabel,
-        successMessage: data.successMessage,
-        formFields: fieldsJson,
-      },
+      create: payload,
+      update: payload,
     });
 
     revalidatePath('/');
     return NextResponse.json({ ok: true, id: saved.id });
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('POST /api/home/join failed:', e);
     return NextResponse.json({ error: 'Server error (POST join).' }, { status: 500 });
   }

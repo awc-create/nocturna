@@ -1,3 +1,4 @@
+// src/components/home/hero/Hero.module.scss
 /* -----------------------------------------------------------
    Hero — Full-bleed, true full-height, solid black base
    ----------------------------------------------------------- */
@@ -157,11 +158,17 @@
 
 /* Body copy line (you already render this as cfg.description) */
 .tagline {
-  margin: 0; /* grid gap handles spacing */
+  margin: 0;
   max-width: min(92ch, 100%);
   font-size: clamp(15px, 1.6vw, 18px);
   line-height: 1.75;
   color: #eaeaea;
+
+  /* ✅ THIS IS THE KEY */
+  white-space: pre-line;
+
+  /* Optional polish */
+  text-wrap: balance;
 }
 
 /* CTA row */

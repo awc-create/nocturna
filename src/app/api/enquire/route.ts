@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { transporter, escapeHtml, BOOKING_URL, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const ENQUIRE_FROM =
   process.env.ENQUIRE_FROM_EMAIL || 'Nocturna Enquiries <enquire@nocturnagency.com>';
 
@@ -18,6 +21,19 @@ const LOGO_ROW = EMAIL_LOGO_URL
      </tr>`
   : '';
 
+function pickStr(fd: FormData, key: string) {
+  const v = fd.get(key);
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+function pickFirst(fd: FormData, keys: string[]) {
+  for (const k of keys) {
+    const v = pickStr(fd, k);
+    if (v) return v;
+  }
+  return '';
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!transporter || !INTERNAL_EMAIL) {
@@ -26,27 +42,49 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    const name = String(formData.get('name') ?? '').trim();
-    const email = String(formData.get('email') ?? '').trim();
-    const phone = String(formData.get('phone') ?? '').trim();
-    const message = String(formData.get('message') ?? '').trim();
+    // ✅ Support your modal field names
+    const name = pickFirst(formData, ['contact_name', 'name', 'full_name']);
+    const email = pickFirst(formData, ['email']);
+    const message = pickFirst(formData, ['message']);
 
-    if (!name || !email || !phone || !message) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    // ✅ Match your modal: require name+email+message only
+    if (!name || !email || !message) {
+      return NextResponse.json(
+        { error: 'Missing required fields (name, email, message).' },
+        { status: 400 }
+      );
     }
 
     const subject = `New venue / event enquiry from ${name}`;
 
-    const textBody = [
-      'New Nocturna enquiry',
-      '',
-      `Name: ${name}`,
-      `Email: ${email}`,
-      `Phone: ${phone}`,
-      '',
-      'Message:',
-      message,
-    ].join('\n');
+    // ✅ Capture ALL posted fields (so you keep enq_type, venue, budget, dates, etc.)
+    // NOTE: this includes phone if it's posted; no need to store a separate `phone` variable.
+    const rows: Array<{ key: string; value: string }> = [];
+    for (const [k, v] of formData.entries()) {
+      if (v instanceof File) continue; // (no file support here yet)
+      const s = String(v).trim();
+      if (!s) continue;
+      rows.push({ key: k, value: s });
+    }
+
+    const textBody = ['New Nocturna enquiry', '', ...rows.map((r) => `${r.key}: ${r.value}`)].join(
+      '\n'
+    );
+
+    const rowsHtml = rows
+      .map(
+        (r) => `
+          <tr>
+            <td style="padding:4px 0;color:rgba(148,163,184,0.95);width:130px;">${escapeHtml(
+              r.key
+            )}</td>
+            <td style="padding:4px 0;color:#f9fafb;font-weight:500;white-space:pre-wrap;">${escapeHtml(
+              r.value
+            )}</td>
+          </tr>
+        `
+      )
+      .join('');
 
     const htmlBody = `
       <!doctype html>
@@ -77,28 +115,9 @@ export async function POST(req: NextRequest) {
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding:10px 14px 4px;">
+                          <td style="padding:10px 14px 10px;">
                             <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;font-size:13px;">
-                              <tr>
-                                <td style="padding:4px 0;color:rgba(148,163,184,0.95);width:130px;">Name</td>
-                                <td style="padding:4px 0;color:#f9fafb;font-weight:500;">${escapeHtml(
-                                  name
-                                )}</td>
-                              </tr>
-                              <tr>
-                                <td style="padding:4px 0;color:rgba(148,163,184,0.95);">Email</td>
-                                <td style="padding:4px 0;">
-                                  <a href="mailto:${escapeHtml(
-                                    email
-                                  )}" style="color:#facc6b;text-decoration:none;">${escapeHtml(
-                                    email
-                                  )}</a>
-                                </td>
-                              </tr>
-                              <tr>
-                                <td style="padding:4px 0;color:rgba(148,163,184,0.95);">Phone</td>
-                                <td style="padding:4px 0;color:#f9fafb;">${escapeHtml(phone)}</td>
-                              </tr>
+                              ${rowsHtml}
                             </table>
                           </td>
                         </tr>
@@ -209,7 +228,6 @@ export async function POST(req: NextRequest) {
       subject: thanksSubject,
       text: thanksText,
       html: thanksHtml,
-      // ✅ Replies go back to the enquiries alias/inbox
       replyTo: ENQUIRE_FROM,
       headers: {
         ...(INTERNAL_EMAIL ? { 'List-Unsubscribe': `<mailto:${INTERNAL_EMAIL}>` } : {}),
@@ -217,7 +235,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('[enquire] error:', err);
     return NextResponse.json({ error: 'Server error while sending enquiry.' }, { status: 500 });
   }

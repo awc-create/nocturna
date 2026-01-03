@@ -1,4 +1,3 @@
-// src/components/home/services/Services.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -8,13 +7,14 @@ import styles from './Services.module.scss';
 
 export type Service = {
   key: string;
-  title: string; // card title
-  blurb: string; // front-of-card copy
+  title: string;
+  blurb: string;
   href: string;
-  image: string; // front image
+  image: string;
   tag: string;
-  backImage?: string; // optional back image
-  detail?: string; // deeper explanation (back of card)
+  backImage?: string;
+  detail?: string;
+  includes?: string[];
 };
 
 type ServicesResponse = {
@@ -22,6 +22,17 @@ type ServicesResponse = {
   title?: string;
   lead?: string;
   items?: Service[];
+};
+
+type ServicesProps = {
+  /** Server snapshot to prevent defaults-flash + prevent hydration mismatch */
+  initialKicker?: string;
+  initialTitle?: string;
+  initialLead?: string;
+  initialItems?: Service[];
+
+  /** Keep your current “client refresh” behaviour (default true) */
+  enableClientRefresh?: boolean;
 };
 
 const DEFAULTS: Service[] = [
@@ -35,7 +46,14 @@ const DEFAULTS: Service[] = [
     tag: 'Nightlife energy',
     backImage: '/assets/services/djs-back.jpg',
     detail:
-      'From weekly residencies to one-off openings, we curate DJs who understand programming, volume discipline and guest flow across the whole night. We manage briefings, scheduling and reliable cover so your venue always has the right selector on the decks.',
+      'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
+    includes: [
+      'Programming aligned to time of day and atmosphere',
+      'DJs briefed on volume, tone, and venue context',
+      'Clear communication and artist alignment',
+      'One point of contact throughout',
+      'Reliable cover if availability changes',
+    ],
   },
   {
     key: 'musician',
@@ -47,82 +65,162 @@ const DEFAULTS: Service[] = [
     tag: 'Live atmosphere',
     backImage: '/assets/services/musicians-back.jpg',
     detail:
-      'For brunch, dinner or late-night lounges, we supply musicians who can read the room and adapt sets to brand, moment and space.',
+      'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
+    includes: [
+      'Set formats matched to service style and energy',
+      'Musicians briefed on volume, tone, and venue context',
+      'Clear communication and artist alignment',
+      'One point of contact throughout',
+      'Reliable cover if availability changes',
+    ],
   },
 ];
 
-export default function Services() {
+// ✅ Type-safe CSS var support (no any)
+type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
+
+function s(v: unknown) {
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+function normalizeItems(items: unknown): Service[] {
+  if (!Array.isArray(items)) return DEFAULTS;
+
+  const out: Service[] = [];
+  for (const it of items) {
+    if (!it || typeof it !== 'object') continue;
+    const r = it as Record<string, unknown>;
+
+    const key = s(r.key);
+    const title = s(r.title);
+    const blurb = s(r.blurb);
+    const href = s(r.href) || '#enquire';
+    const image = s(r.image);
+    const tag = s(r.tag);
+
+    if (!key || !title || !blurb || !image || !tag) continue;
+
+    const backImage = s(r.backImage) || undefined;
+    const detail = s(r.detail) || undefined;
+
+    const includesRaw = r.includes;
+    const includes = Array.isArray(includesRaw)
+      ? includesRaw.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean)
+      : undefined;
+
+    out.push({
+      key,
+      title,
+      blurb,
+      href,
+      image,
+      tag,
+      backImage,
+      detail,
+      includes,
+    });
+  }
+
+  return out.length ? out.slice(0, 12) : DEFAULTS;
+}
+
+export default function Services({
+  initialKicker,
+  initialTitle,
+  initialLead,
+  initialItems,
+  enableClientRefresh = true,
+}: ServicesProps) {
   const rootRef = useRef<HTMLElement | null>(null);
-  const [services, setServices] = useState<Service[]>(DEFAULTS);
-  const [kicker, setKicker] = useState('Our Services');
-  const [title, setTitle] = useState('Sound that fits the room.');
-  const [lead, setLead] = useState('Two core offerings to start — built to scale with your brand.');
 
-  // Which card is “flipped”
+  // ✅ Mount gate for anything that can diverge between SSR + client
+  const [mounted, setMounted] = useState(false);
+
+  const [services, setServices] = useState<Service[]>(() => {
+    if (Array.isArray(initialItems) && initialItems.length) return initialItems;
+    return DEFAULTS;
+  });
+
+  const [kicker, setKicker] = useState(s(initialKicker) || 'Our Services');
+  const [title, setTitle] = useState(s(initialTitle) || 'Sound that fits the room.');
+  const [lead, setLead] = useState(
+    s(initialLead) || 'Two core offerings to start — built to scale with your brand.'
+  );
+
   const [activeKey, setActiveKey] = useState<string | null>(null);
-
-  // Desktop vs mobile (hover vs tap)
   const [isDesktopHover, setIsDesktopHover] = useState(false);
 
-  // Detect if device supports hover (desktop-ish)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    setMounted(true);
+  }, []);
+
+  // Desktop hover detection (runs after hydration)
+  useEffect(() => {
     const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
-
-    const update = () => {
-      setIsDesktopHover(mq.matches);
-    };
-
+    const update = () => setIsDesktopHover(mq.matches);
     update();
     mq.addEventListener?.('change', update);
-
-    return () => {
-      mq.removeEventListener?.('change', update);
-    };
+    return () => mq.removeEventListener?.('change', update);
   }, []);
 
-  const toggleCard = (key: string) => {
-    setActiveKey((prev) => (prev === key ? null : key));
-  };
+  const toggleCard = (key: string) => setActiveKey((prev) => (prev === key ? null : key));
 
-  // Fetch live data from /api/home/services
+  // Fetch live data (after hydration). This will not affect the initial HTML snapshot.
   useEffect(() => {
+    if (!enableClientRefresh) return;
+
+    let alive = true;
+
     (async () => {
       try {
-        const res = await fetch('/api/home/services', {
-          cache: 'no-store',
-        });
-        if (!res.ok) throw new Error('Bad response');
-        const data = (await res.json()) as ServicesResponse;
+        const res = await fetch('/api/home/services', { cache: 'no-store' });
+        if (!res.ok) return;
 
-        setServices(data.items && data.items.length ? data.items : DEFAULTS);
-        setKicker(data.kicker || 'Our Services');
-        setTitle(data.title || 'Sound that fits the room.');
-        setLead(data.lead || 'Two core offerings to start — built to scale with your brand.');
-      } catch (err) {
-        console.warn('Falling back to defaults for services:', err);
-        setServices(DEFAULTS);
+        const data = (await res.json()) as ServicesResponse;
+        if (!alive) return;
+
+        const nextItems = normalizeItems(data.items);
+        setServices(nextItems);
+
+        const nextKicker = s(data.kicker) || 'Our Services';
+        const nextTitle = s(data.title) || 'Sound that fits the room.';
+        const nextLead =
+          s(data.lead) || 'Two core offerings to start — built to scale with your brand.';
+
+        setKicker(nextKicker);
+        setTitle(nextTitle);
+        setLead(nextLead);
+      } catch {
+        // keep current (server snapshot or defaults)
       }
     })();
-  }, []);
 
-  // Reveal animation
+    return () => {
+      alive = false;
+    };
+  }, [enableClientRefresh]);
+
+  // Reveal animation (client-only)
   useEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    el.classList.add(styles.visible);
+
     const io = new IntersectionObserver(
       (entries) =>
         entries.forEach((entry) => entry.isIntersecting && el.classList.add(styles.visible)),
       { threshold: 0.15 }
     );
+
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  // Tilt/parallax (outer card)
+  // Tilt/parallax (client-only)
   useEffect(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(`.${styles.card}`)) ?? [];
+    const root = rootRef.current;
+    if (!root) return;
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>(`.${styles.card}`)) ?? [];
 
     function handle(e: MouseEvent, el: HTMLElement) {
       const rect = el.getBoundingClientRect();
@@ -147,6 +245,7 @@ export default function Services() {
       };
       card.addEventListener('mousemove', onMove as EventListener);
       card.addEventListener('mouseleave', onLeave as EventListener);
+
       unsubs.push(() => {
         card.removeEventListener('mousemove', onMove as EventListener);
         card.removeEventListener('mouseleave', onLeave as EventListener);
@@ -155,8 +254,6 @@ export default function Services() {
 
     return () => unsubs.forEach((fn) => fn());
   }, [services]);
-
-  const noPanel = true;
 
   // Smooth scroll helper
   const scrollToSection =
@@ -170,18 +267,13 @@ export default function Services() {
       window.scrollTo({ top: y, behavior: 'smooth' });
     };
 
-  // Card click: flip card on mobile/tablet (tap)
   const handleCardClick = (key: string) => (e: React.MouseEvent<HTMLDivElement>) => {
-    // On desktop-hover mode, don’t use click to flip
     if (isDesktopHover) return;
-
     const target = e.target as HTMLElement | null;
     if (target && target.closest('a')) return;
-
     toggleCard(key);
   };
 
-  // Desktop hover handlers
   const handleMouseEnter = (key: string) => {
     if (!isDesktopHover) return;
     setActiveKey(key);
@@ -191,6 +283,14 @@ export default function Services() {
     if (!isDesktopHover) return;
     setActiveKey(null);
   };
+
+  const noPanel = true;
+
+  // Keep these stable across renders
+  const CLOSED = 460; // matches SCSS base closed height cap
+  const BASELINE_BULLETS = 4;
+  const PER_EXTRA_BULLET = 34;
+  const CUSHION = 40;
 
   return (
     <section
@@ -207,45 +307,61 @@ export default function Services() {
         <p className={styles.lead}>{lead}</p>
       </div>
 
-      {/* Hint row – text swaps between Tap / Hover in CSS */}
       <div className={styles.mobileHint}>
         <span className={styles.mobileHintTap}>Tap a card to see what’s included.</span>
         <span className={styles.mobileHintHover}>Hover a card to see what’s included.</span>
       </div>
 
       <div className={styles.grid}>
-        {services.map((s) => {
-          const href = s.href || '#enquire';
+        {services.map((srv) => {
+          const href = srv.href || '#enquire';
           const scrollHandler = href.startsWith('#') ? scrollToSection(href) : undefined;
 
-          const isActive = activeKey === s.key;
+          const isActive = activeKey === srv.key;
+
+          const includes = Array.isArray(srv.includes)
+            ? srv.includes.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean)
+            : [];
+
+          const bulletCount = includes.length;
+          const extra = Math.max(0, bulletCount - BASELINE_BULLETS);
+          const openH = Math.min(720, CLOSED + CUSHION + extra * PER_EXTRA_BULLET);
+
+          /**
+           * ✅ Hydration-safe:
+           * - On the server + first client render: style is undefined (no CSS var)
+           * - After mount: we apply --openH
+           */
+          const cardVars: CSSVars | undefined = mounted ? { '--openH': `${openH}px` } : undefined;
 
           return (
-            <article key={s.key} className={styles.card}>
+            <article key={srv.key} className={styles.card}>
               <div
                 className={`${styles.cardInner} ${isActive ? styles.cardInnerActive : ''}`}
-                onClick={handleCardClick(s.key)}
-                onMouseEnter={() => handleMouseEnter(s.key)}
+                style={cardVars}
+                onClick={handleCardClick(srv.key)}
+                onMouseEnter={() => handleMouseEnter(srv.key)}
                 onMouseLeave={handleMouseLeave}
               >
                 {/* FRONT */}
                 <div className={`${styles.face} ${styles.front}`}>
                   <div
                     className={styles.media}
-                    style={{ backgroundImage: `url(${s.image})` }}
+                    style={{ backgroundImage: `url(${srv.image})` }}
                     aria-hidden="true"
                   />
                   <div className={styles.scrim} aria-hidden="true" />
                   <div className={styles.info}>
-                    <span className={styles.tag}>{s.tag}</span>
-                    <h3 className={styles.cardTitle}>{s.title}</h3>
-                    <p className={styles.blurb}>{s.blurb}</p>
+                    <span className={styles.tag}>{srv.tag}</span>
+                    <h3 className={styles.cardTitle}>{srv.title}</h3>
+                    <p className={styles.blurb}>{srv.blurb}</p>
+
                     <div className={styles.actions}>
                       <Link href={href} className={styles.cta} onClick={scrollHandler}>
                         Enquire now
                       </Link>
                     </div>
-                    {/* Front hints: tap vs hover */}
+
                     <p className={`${styles.flipHint} ${styles.flipHintTap}`}>
                       Tap the card to see what&apos;s included ↓
                     </p>
@@ -255,28 +371,38 @@ export default function Services() {
                   </div>
                 </div>
 
-                {/* BACK – deeper explanation */}
+                {/* BACK */}
                 <div className={`${styles.face} ${styles.back}`}>
                   <div
                     className={styles.media}
-                    style={{
-                      backgroundImage: `url(${s.backImage || s.image})`,
-                    }}
+                    style={{ backgroundImage: `url(${srv.backImage || srv.image})` }}
                     aria-hidden="true"
                   />
                   <div className={styles.scrimBack} aria-hidden="true" />
+
                   <div className={styles.info}>
-                    <span className={styles.tag}>{s.tag}</span>
-                    <h3 className={styles.cardTitle}>{s.title}</h3>
-                    <p className={styles.blurb}>
-                      {s.detail && s.detail.length > 0 ? s.detail : s.blurb}
-                    </p>
+                    <span className={styles.tag}>{srv.tag}</span>
+                    <h3 className={styles.cardTitle}>{srv.title}</h3>
+
+                    <p className={styles.blurb}>{srv.detail?.trim() ? srv.detail : srv.blurb}</p>
+
+                    {includes.length > 0 && (
+                      <div className={styles.includesBox}>
+                        <div className={styles.includesTitle}>What’s included:</div>
+                        <ul className={styles.includesList}>
+                          {includes.map((line, i) => (
+                            <li key={`${srv.key}-inc-${i}`}>{line}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     <div className={styles.actions}>
                       <Link href={href} className={styles.ctaSecondary} onClick={scrollHandler}>
                         Talk to us
                       </Link>
                     </div>
-                    {/* Back hints */}
+
                     <p className={`${styles.flipHint} ${styles.flipHintTap}`}>
                       Tap again to return to the overview ↑
                     </p>
@@ -289,12 +415,6 @@ export default function Services() {
             </article>
           );
         })}
-      </div>
-
-      <div className={styles.footerRow}>
-        <Link href="#enquire" className={styles.viewAll} onClick={scrollToSection('#enquire')}>
-          Enquire now
-        </Link>
       </div>
 
       <div className={styles.vignette} aria-hidden="true" />

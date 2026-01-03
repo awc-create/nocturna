@@ -1,10 +1,27 @@
 // src/components/admin/home/JoinSettings.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from './JoinSettings.module.scss';
 
-type FieldType = 'text' | 'textarea' | 'email' | 'tel' | 'date' | 'url' | 'select' | 'multiselect';
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'tel'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'url'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'checkboxes'
+  | 'file';
+
+type ShowIf = { field: string; equals: string };
 
 type FormField = {
   id: string;
@@ -12,25 +29,56 @@ type FormField = {
   label: string;
   type: FieldType;
   required: boolean;
+
   placeholder?: string;
   helpText?: string;
+
   options?: string[];
+
+  min?: number;
+  max?: number;
+  step?: number;
+
+  accept?: string;
+  multipleFiles?: boolean;
+
+  showIf?: ShowIf;
 };
 
 type JoinConfig = {
+  // section
+  eyebrow: string;
   title: string;
-  intro: string;
+  lead: string;
+  buttonLabel: string;
+
+  // modal
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
   submitLabel: string;
   successMessage: string;
+
+  // delivery
+  recipientEmail?: string | null;
+
+  // fields
   fields: FormField[];
 };
 
 const FALLBACK: JoinConfig = {
-  title: 'Join the Nocturna roster',
-  intro:
-    'Tell us who you are, what you play and where you perform. We’ll review every application carefully.',
+  eyebrow: 'For artists & collectives',
+  title: 'Join the Nocturna roster.',
+  lead: 'DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.',
+  buttonLabel: 'Open application form',
+
+  modalKicker: 'Join Nocturna',
+  modalTitle: 'Tell us about your sound.',
+  modalLead: 'Share links, socials and a short intro — we’ll review and get back if there’s a fit.',
   submitLabel: 'Apply to join',
-  successMessage: 'Thanks – we’ll review your application and get back to you if there’s a fit.',
+  successMessage: 'Thanks — we’ll review your submission and follow up.',
+
+  recipientEmail: null,
   fields: [],
 };
 
@@ -40,14 +88,22 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'email', label: 'Email' },
   { value: 'tel', label: 'Phone' },
   { value: 'date', label: 'Date' },
+  { value: 'time', label: 'Time' },
+  { value: 'datetime', label: 'Date + time' },
   { value: 'url', label: 'URL' },
-  { value: 'select', label: 'Select' },
+  { value: 'number', label: 'Number' },
+  { value: 'select', label: 'Dropdown' },
   { value: 'multiselect', label: 'Multi-select' },
+  { value: 'radio', label: 'Radio buttons' },
+  { value: 'checkbox', label: 'Checkbox (single)' },
+  { value: 'checkboxes', label: 'Checkbox group' },
+  { value: 'file', label: 'File upload' },
 ];
 
 const makeId = () => `fld-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 
-const isSelectType = (t: FieldType) => t === 'select' || t === 'multiselect';
+const isOptionsType = (t: FieldType) =>
+  t === 'select' || t === 'multiselect' || t === 'radio' || t === 'checkboxes';
 
 const normalizeKey = (raw: string) => raw.trim();
 const isValidKey = (key: string) => /^[a-z][a-z0-9_]*$/i.test(key);
@@ -67,14 +123,18 @@ function fieldErrors(field: FormField, allFields: FormField[]) {
       errs.push('Field name must be letters/numbers/underscore only (e.g. instrument_type).');
     }
     const duplicates = allFields.filter((f) => normalizeKey(f.name) === name);
-    if (duplicates.length > 1) {
-      errs.push('Field name (key) must be unique (duplicate found).');
-    }
+    if (duplicates.length > 1) errs.push('Field name (key) must be unique (duplicate found).');
   }
 
-  if (isSelectType(field.type)) {
+  if (isOptionsType(field.type)) {
     const opts = (field.options ?? []).map((s) => s.trim()).filter(Boolean);
-    if (opts.length < 1) errs.push('Select fields need at least 1 option.');
+    if (opts.length < 1) errs.push('This field type needs at least 1 option.');
+  }
+
+  if (field.type === 'number') {
+    if (typeof field.min === 'number' && typeof field.max === 'number' && field.min > field.max) {
+      errs.push('Min cannot be greater than Max.');
+    }
   }
 
   return errs;
@@ -85,7 +145,6 @@ export default function JoinSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Draft store per field for options textarea
   const [optionsDrafts, setOptionsDrafts] = useState<Record<string, string>>({});
 
   const getOptionsDraft = (fieldId: string, options?: string[]) => {
@@ -96,6 +155,40 @@ export default function JoinSettings() {
 
   const setOptionsDraft = (fieldId: string, val: string) => {
     setOptionsDrafts((prev) => ({ ...prev, [fieldId]: val }));
+  };
+
+  const updateField = (idx: number, patch: Partial<FormField>) => {
+    setConfig((prev) => {
+      const next = [...prev.fields];
+      const existing = next[idx];
+      if (!existing) return prev;
+
+      // switching away from options type -> wipe options + draft
+      if (patch.type && !isOptionsType(patch.type) && isOptionsType(existing.type)) {
+        setOptionsDrafts((d) => {
+          const copy = { ...d };
+          delete copy[existing.id];
+          return copy;
+        });
+        next[idx] = { ...existing, ...patch, options: undefined };
+        return { ...prev, fields: next };
+      }
+
+      // switching away from number -> wipe min/max/step
+      if (patch.type && patch.type !== 'number' && existing.type === 'number') {
+        next[idx] = { ...existing, ...patch, min: undefined, max: undefined, step: undefined };
+        return { ...prev, fields: next };
+      }
+
+      // switching away from file -> wipe accept/multipleFiles
+      if (patch.type && patch.type !== 'file' && existing.type === 'file') {
+        next[idx] = { ...existing, ...patch, accept: undefined, multipleFiles: undefined };
+        return { ...prev, fields: next };
+      }
+
+      next[idx] = { ...existing, ...patch };
+      return { ...prev, fields: next };
+    });
   };
 
   const commitOptions = (idx: number) => {
@@ -109,54 +202,6 @@ export default function JoinSettings() {
       .filter(Boolean);
 
     updateField(idx, { options: lines });
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/home/join', { cache: 'no-store' });
-        if (res.ok) {
-          const data = (await res.json()) as Partial<JoinConfig>;
-          const merged: JoinConfig = {
-            ...FALLBACK,
-            ...data,
-            fields: data.fields ?? [],
-          };
-          setConfig(merged);
-
-          const seed: Record<string, string> = {};
-          for (const f of merged.fields) {
-            if (isSelectType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
-          }
-          setOptionsDrafts(seed);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  const updateField = (idx: number, patch: Partial<FormField>) => {
-    setConfig((prev) => {
-      const next = [...prev.fields];
-      const existing = next[idx];
-      if (!existing) return prev;
-
-      if (patch.type && !isSelectType(patch.type) && isSelectType(existing.type)) {
-        setOptionsDrafts((d) => {
-          const copy = { ...d };
-          delete copy[existing.id];
-          return copy;
-        });
-        next[idx] = { ...existing, ...patch, options: undefined };
-        return { ...prev, fields: next };
-      }
-
-      next[idx] = { ...existing, ...patch };
-      return { ...prev, fields: next };
-    });
   };
 
   const addField = () => {
@@ -208,9 +253,37 @@ export default function JoinSettings() {
       setConfig((prev) => ({ ...prev, [key]: v }));
     };
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/home/join', { cache: 'no-store' });
+        if (res.ok) {
+          const data = (await res.json()) as Partial<JoinConfig>;
+          const merged: JoinConfig = {
+            ...FALLBACK,
+            ...data,
+            fields: data.fields ?? [],
+          };
+          setConfig(merged);
+
+          const seed: Record<string, string> = {};
+          for (const f of merged.fields) {
+            if (isOptionsType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
+          }
+          setOptionsDrafts(seed);
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
   const validateAll = () => {
+    // ensure textarea options are committed before validation/save
     config.fields.forEach((f, idx) => {
-      if (isSelectType(f.type)) commitOptions(idx);
+      if (isOptionsType(f.type)) commitOptions(idx);
     });
 
     const problems: { idx: number; id: string; errors: string[] }[] = [];
@@ -245,7 +318,7 @@ export default function JoinSettings() {
         throw new Error('Failed to save');
       }
 
-      alert('Join form updated. Refresh the site to see changes.');
+      alert('Join settings updated. Refresh the site to see changes.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Network error saving Join.';
       alert(msg);
@@ -274,33 +347,78 @@ export default function JoinSettings() {
   return (
     <section className={styles.section}>
       <h2>Join</h2>
-      <p>Control the roster application lightbox fields and copy.</p>
+      <p>Control the join section + join modal content and fields.</p>
 
       <div className={styles.form}>
-        <label className={styles.full}>
-          Title
-          <input
-            value={config.title}
-            onChange={onConfigText('title')}
-            placeholder="Join the Nocturna roster"
-          />
-        </label>
+        {/* ===== Section copy ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Section copy</legend>
 
-        <label className={styles.full}>
-          Intro text
-          <textarea rows={3} value={config.intro} onChange={onConfigText('intro')} />
-        </label>
+          <div className={styles.fieldGrid}>
+            <label>
+              Eyebrow
+              <input value={config.eyebrow} onChange={onConfigText('eyebrow')} />
+            </label>
 
-        <label>
-          Submit button label
-          <input value={config.submitLabel} onChange={onConfigText('submitLabel')} />
-        </label>
+            <label>
+              Button label
+              <input value={config.buttonLabel} onChange={onConfigText('buttonLabel')} />
+            </label>
 
-        <label>
-          Success message
-          <input value={config.successMessage} onChange={onConfigText('successMessage')} />
-        </label>
+            <label className={styles.full}>
+              Title
+              <input value={config.title} onChange={onConfigText('title')} />
+            </label>
 
+            <label className={styles.full}>
+              Lead
+              <textarea rows={3} value={config.lead} onChange={onConfigText('lead')} />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* ===== Modal copy ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Modal copy</legend>
+
+          <div className={styles.fieldGrid}>
+            <label>
+              Modal kicker
+              <input value={config.modalKicker} onChange={onConfigText('modalKicker')} />
+            </label>
+
+            <label>
+              Recipient email (optional)
+              <input
+                value={config.recipientEmail ?? ''}
+                onChange={onConfigText('recipientEmail')}
+                placeholder="roster@nocturna.com"
+              />
+            </label>
+
+            <label className={styles.full}>
+              Modal title
+              <input value={config.modalTitle} onChange={onConfigText('modalTitle')} />
+            </label>
+
+            <label className={styles.full}>
+              Modal lead
+              <textarea rows={3} value={config.modalLead} onChange={onConfigText('modalLead')} />
+            </label>
+
+            <label>
+              Submit button label
+              <input value={config.submitLabel} onChange={onConfigText('submitLabel')} />
+            </label>
+
+            <label>
+              Success message
+              <input value={config.successMessage} onChange={onConfigText('successMessage')} />
+            </label>
+          </div>
+        </fieldset>
+
+        {/* ===== Fields ===== */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Form fields</legend>
 
@@ -312,6 +430,7 @@ export default function JoinSettings() {
               <div key={field.id ?? idx} className={styles.fieldRow}>
                 <div className={styles.fieldHeader}>
                   <span className={styles.fieldIndex}>#{idx + 1}</span>
+
                   <button
                     type="button"
                     onClick={() => moveField(idx, idx - 1)}
@@ -326,6 +445,7 @@ export default function JoinSettings() {
                   >
                     ↓
                   </button>
+
                   <button
                     type="button"
                     className={styles.removeBtn}
@@ -389,6 +509,7 @@ export default function JoinSettings() {
                       onChange={(e) => updateField(idx, { placeholder: e.target.value })}
                     />
                   </label>
+
                   <label className={styles.full}>
                     Help text (optional)
                     <input
@@ -398,7 +519,7 @@ export default function JoinSettings() {
                   </label>
                 </div>
 
-                {(field.type === 'select' || field.type === 'multiselect') && (
+                {isOptionsType(field.type) && (
                   <div className={styles.fieldGrid}>
                     <label className={styles.full}>
                       Options (one per line)
@@ -408,20 +529,108 @@ export default function JoinSettings() {
                         onChange={(e) => setOptionsDraft(field.id, e.target.value)}
                         onBlur={() => commitOptions(idx)}
                         onKeyDown={(e) => {
-                          // ✅ Allow Enter newlines but stop parent handlers stealing the event
                           if (e.key === 'Enter') e.stopPropagation();
                         }}
                       />
-                      <small>
-                        Enter adds a new option line. Blank lines are ignored when you leave the
-                        box.
-                      </small>
+                      <small>Blank lines are ignored when you leave the box.</small>
                     </label>
                   </div>
                 )}
 
+                {field.type === 'number' && (
+                  <div className={styles.fieldGrid}>
+                    <label>
+                      Min
+                      <input
+                        type="number"
+                        value={field.min ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            min: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Max
+                      <input
+                        type="number"
+                        value={field.max ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            max: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label>
+                      Step
+                      <input
+                        type="number"
+                        value={field.step ?? ''}
+                        onChange={(e) =>
+                          updateField(idx, {
+                            step: e.target.value === '' ? undefined : Number(e.target.value),
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {field.type === 'file' && (
+                  <div className={styles.fieldGrid}>
+                    <label className={styles.full}>
+                      Accept (optional)
+                      <input
+                        value={field.accept ?? ''}
+                        onChange={(e) => updateField(idx, { accept: e.target.value })}
+                        placeholder="audio/*,image/*,.pdf"
+                      />
+                    </label>
+
+                    <label className={styles.checkboxRow}>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(field.multipleFiles)}
+                        onChange={(e) => updateField(idx, { multipleFiles: e.target.checked })}
+                      />
+                      <span>Allow multiple files</span>
+                    </label>
+                  </div>
+                )}
+
+                <div className={styles.fieldGrid}>
+                  <label className={styles.full}>
+                    Show only if (optional) — format: <code>field=value</code>
+                    <input
+                      value={
+                        field.showIf?.field && field.showIf?.equals
+                          ? `${field.showIf.field}=${field.showIf.equals}`
+                          : ''
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (!raw) return updateField(idx, { showIf: undefined });
+                        const [f, ...rest] = raw.split('=');
+                        const eq = rest.join('=');
+                        const fieldKey = (f ?? '').trim();
+                        const equals = (eq ?? '').trim();
+                        if (!fieldKey || !equals) return updateField(idx, { showIf: undefined });
+                        updateField(idx, { showIf: { field: fieldKey, equals } });
+                      }}
+                      placeholder="role=Musician"
+                    />
+                    <small>
+                      Example: role=Musician (field appears only when role is Musician).
+                    </small>
+                  </label>
+                </div>
+
                 {errs.length > 0 && (
-                  <div style={{ color: '#fca5a5', fontSize: '0.85rem', marginTop: '0.35rem' }}>
+                  <div className={styles.errors}>
                     {errs.map((m, i) => (
                       <div key={i}>• {m}</div>
                     ))}

@@ -1,6 +1,6 @@
-@import "@/styles/admin.tokens.scss";
-@import "@/styles/navbar.tokens.scss";
-@import "@/styles/footer.tokens.scss";
+@use "@/styles/admin.tokens.scss" as *;
+@use "@/styles/navbar.tokens.scss" as *;
+@use "@/styles/footer.tokens.scss" as *;
 
 // src/styles/Global.scss
 /* ======================= */

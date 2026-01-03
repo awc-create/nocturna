@@ -1,125 +1,140 @@
-/* =========================
-   CLIENTS — Logos ⇄ Testimonials flip
-   ========================= */
-
 .section {
-  --ink: #fff;
-  --muted: #c9d1e3;
-
-  position: relative;
-  z-index: 1;
-  color: var(--ink);
-  padding: clamp(72px, 9vw, 110px) clamp(16px, 4vw, 24px);
-  background: transparent !important;
+  padding: clamp(72px, 9vw, 110px) 24px;
+  color: #fff;
 }
-
-/* ================= HEAD ================= */
 
 .head {
   text-align: center;
   max-width: 880px;
-  margin: 0 auto clamp(24px, 3vw, 32px);
+  margin: 0 auto 32px;
 
-  .title {
+  h2 {
+    font-size: clamp(28px, 4vw, 42px);
     font-weight: 900;
-    font-size: clamp(26px, 4.5vw, 42px);
-    letter-spacing: -0.015em;
-    text-shadow: 0 0 24px rgba(255, 255, 255, 0.06);
   }
 
-  .lead {
+  p {
     margin-top: 8px;
-    color: var(--muted);
-    font-size: clamp(14px, 1.3vw, 18px);
+    color: #c9d1e3;
   }
 }
 
-/* ================= GRID (≤5) ================= */
+/* =========================
+   GRID (≤4) — FIXED TILE WIDTH
+   ========================= */
 
 .grid {
-  --w: min(1160px, 92vw);
-  width: var(--w);
-  margin: clamp(24px, 3vw, 32px) auto 0;
-  list-style: none;
-  padding: 0;
+  width: min(1160px, 92vw);
+  margin: 0 auto;
 
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: clamp(16px, 2.2vw, 24px);
 
-  @media (max-width: 980px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  /* ✅ fixed card size always (no stretching when 1–4) */
+  grid-template-columns: repeat(auto-fit, 240px);
 
-  @media (max-width: 680px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  gap: 32px;
+
+  /* ✅ center the row when there are fewer cards */
+  justify-content: center;
+  justify-items: center;
 }
 
-/* ================= CARD ================= */
+/* =========================
+   CAROUSEL (5+) — CONTINUOUS GLIDE
+   ========================= */
 
-.item {
+.carousel {
   position: relative;
+  overflow: hidden;
+  width: min(1160px, 92vw);
+  margin: 0 auto;
+}
+
+.track {
+  display: flex;
+  gap: 40px; /* keep aligned with GAP in TSX */
+  will-change: transform;
+
+  /* optional: stops arrows overlaying cards too much */
+  padding: 0 56px;
+}
+
+.slide {
+  flex: 0 0 auto;
+  width: 240px; /* ✅ fixed */
+}
+
+/* =========================
+   ARROWS
+   ========================= */
+
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+
+  background: linear-gradient(180deg, #0b1f3a, #07152b);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
   display: grid;
   place-items: center;
+  cursor: pointer;
 
-  width: 100%;
-  height: 200px; /* ✅ critical: gives cardInner 100% height */
-
-  border-radius: 24px;
-  overflow: hidden;
-  isolation: isolate;
-  perspective: 1000px;
-
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   transition:
-    transform 0.22s ease,
-    filter 0.22s ease;
-
-  /* ✅ GLASS / DARK SHADE LAYER */
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-
-    background:
-      radial-gradient(
-        120% 120% at 0% 0%,
-        rgba(255, 255, 255, 0.06),
-        transparent 60%
-      ),
-      linear-gradient(
-        180deg,
-        rgba(2, 6, 23, 0.58),
-        rgba(2, 6, 23, 0.74)
-      );
-
-    backdrop-filter: blur(3px);
-  }
-
-  &:hover {
-    transform: translateY(-4px);
-    filter: brightness(1.08);
-
-    &::before {
-      background:
-        radial-gradient(
-          120% 120% at 0% 0%,
-          rgba(255, 255, 255, 0.08),
-          transparent 60%
-        ),
-        linear-gradient(
-          180deg,
-          rgba(2, 6, 23, 0.52),
-          rgba(2, 6, 23, 0.68)
-        );
-    }
-  }
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.2s ease;
 }
 
-/* ================= FLIP CORE ================= */
+.navBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.prev {
+  left: 8px;
+}
+
+.next {
+  right: 8px;
+}
+
+/* =========================
+   CARD STACK
+   ========================= */
+
+.item {
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-items: center;
+
+  /* keeps label aligned under same width */
+  width: 240px;
+}
+
+/* =========================
+   CARD
+   ========================= */
+
+.card {
+  width: 240px; /* ✅ force fixed width */
+  height: 220px;
+  border-radius: 24px;
+  perspective: 1000px;
+}
 
 .cardInner {
   position: relative;
@@ -127,209 +142,123 @@
   height: 100%;
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.23, 0.9, 0.35, 1);
-  z-index: 1;
-
-  transform: rotateY(0deg);
 }
 
-/* testimonial mode */
-.modeTestimonials .cardInner {
+.item:hover .cardInner {
   transform: rotateY(180deg);
 }
-
-/* hover flip (normal mode) */
-.section:not(.modeTestimonials) .item:hover .cardInner {
-  transform: rotateY(180deg);
-}
-
-/* hover flip back (testimonial mode) */
-.modeTestimonials .item:hover .cardInner {
-  transform: rotateY(0deg);
-}
-
-/* ================= CARD FACES ================= */
 
 .face {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 14px 18px;
   backface-visibility: hidden;
-  z-index: 1;
+
+  background: linear-gradient(180deg, #0b1f3a, #07152b);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-/* FRONT */
-.logoFace {
-  background: transparent;
-}
-
-/* BACK */
-.quoteFace {
-  transform: rotateY(180deg);
-  align-content: center;
-  row-gap: 10px;
-}
-
-/* ================= LOGO ================= */
-
-.logoWrap {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-}
-
-.logo {
-  max-width: clamp(190px, 24vw, 230px);
-  width: 85%;
+.face img {
+  max-width: 80%;
   height: auto;
-
-  opacity: 0.98;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.55));
-
-  transition:
-    transform 0.15s ease,
-    opacity 0.2s ease;
-
-  .item:hover & {
-    transform: scale(1.06);
-    opacity: 1;
-  }
 }
 
-/* ================= TESTIMONIAL ================= */
-
-.quoteBody {
-  margin: 0;
-  font-size: clamp(13px, 1.1vw, 15px);
-  line-height: 1.6;
-  color: #e5e7eb;
+.back {
+  transform: rotateY(180deg);
+  padding: 18px;
   text-align: left;
 }
 
-.quoteMeta {
+.back blockquote {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.meta {
   display: grid;
   gap: 2px;
+  margin-bottom: 10px;
+
+  strong {
+    font-size: 14px;
+  }
+
+  span {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a5b4fc;
+  }
 }
 
-.quoteName {
+/* =========================
+   STORY BUTTON
+   ========================= */
+
+.storyBtn {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
-  font-size: 0.9rem;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.quoteRole {
-  font-size: 0.78rem;
+/* =========================
+   LABEL UNDER CARD
+   ========================= */
+
+.cardLabel {
+  margin-top: 14px;
+  padding: 8px 14px;
+
+  border-radius: 999px;
+  max-width: 100%;
+
+  font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a5b4fc;
-}
+  text-align: center;
 
-/* ================= MARQUEE (6+) ================= */
+  background: linear-gradient(180deg, #0b1f3a, #07152b);
+  color: #ffffff;
 
-.marquee {
-  --w: min(1160px, 92vw);
-  --cardW: 220px; /* ✅ stable width per slide */
+  border: 1px solid rgba(255, 255, 255, 0.18);
 
-  width: var(--w);
-  margin: clamp(18px, 2.5vw, 24px) auto 0;
-
+  /* default: single line */
+  white-space: nowrap;
   overflow: hidden;
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 8%,
-    #000 92%,
-    transparent
-  );
-}
+  text-overflow: ellipsis;
 
-.track {
-  display: flex;
-  gap: clamp(32px, 5vw, 48px);
-  align-items: center;
-
-  animation: scroll 30s linear infinite;
-  will-change: transform;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
-}
-
-.slide {
-  flex: 0 0 auto;
-  width: var(--cardW); /* ✅ prevents collapse in marquee */
-  display: grid;
-  place-items: center;
-  padding: 8px 2px;
-}
-
-@keyframes scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* ================= CTA ================= */
-
-.ctaRow {
-  display: flex;
-  justify-content: center;
-  margin: clamp(18px, 3vw, 28px) 0 0;
-}
-
-.testimonialsCta {
-  height: 46px;
-  padding: 0 22px;
-  border-radius: 999px;
-
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  color: #fff;
-
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.04)
-  );
-
-  cursor: pointer;
-  backdrop-filter: blur(2px);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   transition:
-    transform 0.12s ease,
-    filter 0.18s ease,
-    border-color 0.18s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.05);
-    border-color: rgba(255, 255, 255, 0.25);
-  }
+    max-width 0.25s ease,
+    border-radius 0.25s ease,
+    filter 0.2s ease;
 }
 
-/* ================= MOBILE ================= */
+/* expand to two lines on card hover */
+.item:hover .cardLabel {
+  white-space: normal;
 
-@media (max-width: 480px) {
-  .item {
-    height: 150px; /* ✅ keep real height on mobile too */
-  }
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
 
-  .quoteBody {
-    font-size: 13px;
-  }
+  /* vendor + standard */
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 
-  .testimonialsCta {
-    width: 100%;
-    max-width: 320px;
-  }
+  overflow: hidden;
 
-  .marquee {
-    --cardW: 200px;
-  }
+  border-radius: 16px;
+  filter: brightness(1.06);
 }

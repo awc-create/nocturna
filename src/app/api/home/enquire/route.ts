@@ -8,7 +8,22 @@ export const dynamic = 'force-dynamic';
 
 const KEY = 'enquire';
 
-type FieldType = 'text' | 'textarea' | 'email' | 'tel' | 'date' | 'url' | 'select' | 'multiselect';
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'tel'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'url'
+  | 'number'
+  | 'select'
+  | 'multiselect'
+  | 'radio'
+  | 'checkbox'
+  | 'checkboxes'
+  | 'file';
 
 export type FormField = {
   id: string;
@@ -16,157 +31,234 @@ export type FormField = {
   label: string;
   type: FieldType;
   required: boolean;
+
   placeholder?: string;
   helpText?: string;
-  options?: string[]; // for select / multiselect
+
+  options?: string[];
+
+  min?: number;
+  max?: number;
+  step?: number;
+
+  accept?: string;
+  multipleFiles?: boolean;
+
+  showIf?: { field: string; equals: string };
 };
 
-type EnquireConfig = {
-  title: string; // maps to modalTitle
-  intro: string; // maps to modalLead
-  submitLabel: string; // maps to buttonLabel
+export type EnquireConfig = {
+  // section
+  eyebrow: string;
+  title: string;
+  lead: string;
+  buttonLabel: string;
+
+  // modal
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
+  submitLabel: string;
   successMessage: string;
-  fields: FormField[]; // maps to formFields JSON
+
+  // delivery
+  recipientEmail?: string | null;
+
+  // fields
+  fields: FormField[];
 };
 
 const DEFAULT_FIELDS: FormField[] = [
   {
-    id: 'name',
-    name: 'name',
-    label: 'Full name',
-    type: 'text',
+    id: 'enq_type',
+    name: 'enq_type',
+    label: 'What is this about?',
+    type: 'radio',
     required: true,
-    placeholder: 'Your full name',
+    options: ['Booking', 'Partnership', 'General'],
   },
-  {
-    id: 'email',
-    name: 'email',
-    label: 'Email address',
-    type: 'email',
-    required: true,
-    placeholder: 'you@example.com',
-  },
-  {
-    id: 'phone',
-    name: 'phone',
-    label: 'Mobile number',
-    type: 'tel',
-    required: true,
-    placeholder: '+44…',
-  },
-  {
-    id: 'venue',
-    name: 'venue',
-    label: 'Venue / event name',
-    type: 'text',
-    required: false,
-    placeholder: 'e.g. Bar, restaurant or event name',
-  },
-  {
-    id: 'message',
-    name: 'message',
-    label: 'Message',
-    type: 'textarea',
-    required: true,
-    placeholder: 'Venue location, preferred days, timings, music brief, budget, tech notes…',
-  },
+  { id: 'contact_name', name: 'contact_name', label: 'Your name', type: 'text', required: true },
+  { id: 'email', name: 'email', label: 'Email address', type: 'email', required: true },
+  { id: 'phone', name: 'phone', label: 'Phone number', type: 'tel', required: false },
+  { id: 'event_date', name: 'event_date', label: 'Event date', type: 'date', required: false },
+  { id: 'event_time', name: 'event_time', label: 'Event time', type: 'time', required: false },
+  { id: 'location', name: 'location', label: 'Location', type: 'text', required: false },
+  { id: 'message', name: 'message', label: 'Details', type: 'textarea', required: true },
 ];
 
 const DEFAULT_CONFIG: EnquireConfig = {
+  eyebrow: 'For venues & events',
   title: 'Enquire about DJs and live music.',
-  intro:
-    'Tell us about your venue or event – we’ll match you with the right artists and schedules.',
+  lead: 'We curate DJs and musicians for restaurants, bars and event spaces — matching artists to your brand, guest profile and schedule.',
+  buttonLabel: 'Open enquiry form',
+
+  modalKicker: 'Enquire Now',
+  modalTitle: 'Tell us about your venue or event.',
+  modalLead:
+    'Share a few details about your space, schedule and music brief — we’ll match you with the right artists.',
   submitLabel: 'Send enquiry',
-  successMessage: 'Thanks – we’ll be in touch shortly.',
+  successMessage: 'Thanks — we’ll be in touch shortly.',
+
+  recipientEmail: null,
   fields: DEFAULT_FIELDS,
 };
 
+/** -----------------------------
+ *  Guards / sanitizers
+ *  ---------------------------- */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
 const sanitizeStr = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 
+function sanitizeNum(v: unknown): number | undefined {
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+}
+
+function isFieldType(v: string): v is FieldType {
+  return (
+    v === 'text' ||
+    v === 'textarea' ||
+    v === 'email' ||
+    v === 'tel' ||
+    v === 'date' ||
+    v === 'time' ||
+    v === 'datetime' ||
+    v === 'url' ||
+    v === 'number' ||
+    v === 'select' ||
+    v === 'multiselect' ||
+    v === 'radio' ||
+    v === 'checkbox' ||
+    v === 'checkboxes' ||
+    v === 'file'
+  );
+}
+
 function sanitizeField(raw: unknown, idx: number): FormField | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const r = raw as Record<string, unknown>;
+  if (!isRecord(raw)) return null;
 
-  const label = sanitizeStr(r.label) || `Field ${idx + 1}`;
-  const name = sanitizeStr(r.name) || label.toLowerCase().replace(/\s+/g, '_');
+  const label = sanitizeStr(raw.label) || `Field ${idx + 1}`;
+  const name = sanitizeStr(raw.name) || label.toLowerCase().replace(/\s+/g, '_');
 
-  const typeRaw = sanitizeStr(r.type) as FieldType;
-  const allowedTypes: FieldType[] = [
-    'text',
-    'textarea',
-    'email',
-    'tel',
-    'date',
-    'url',
-    'select',
-    'multiselect',
-  ];
-  const type = allowedTypes.includes(typeRaw) ? typeRaw : 'text';
+  const typeStr = sanitizeStr(raw.type);
+  const type: FieldType = isFieldType(typeStr) ? typeStr : 'text';
 
-  const required = Boolean(r.required);
+  const required = Boolean(raw.required);
+  const placeholder = sanitizeStr(raw.placeholder);
+  const helpText = sanitizeStr(raw.helpText);
+  const id = sanitizeStr(raw.id) || `enquire_${name}_${idx}`;
 
-  const placeholder = sanitizeStr(r.placeholder);
-  const helpText = sanitizeStr(r.helpText);
-  const id = sanitizeStr(r.id) || `${name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
+  const needsOptions =
+    type === 'select' || type === 'multiselect' || type === 'radio' || type === 'checkboxes';
   let options: string[] | undefined;
-  if (type === 'select' || type === 'multiselect') {
-    const rawOpts = r.options;
-    if (Array.isArray(rawOpts)) {
-      options = rawOpts.map((x) => sanitizeStr(x)).filter((x) => x.length > 0);
-    }
+  if (needsOptions && Array.isArray(raw.options)) {
+    options = raw.options.map((x) => sanitizeStr(x)).filter(Boolean);
   }
 
-  return {
+  let showIf: { field: string; equals: string } | undefined;
+  if (isRecord(raw.showIf)) {
+    const f = sanitizeStr(raw.showIf.field);
+    const eq = sanitizeStr(raw.showIf.equals);
+    if (f && eq) showIf = { field: f, equals: eq };
+  }
+
+  let min: number | undefined;
+  let max: number | undefined;
+  let step: number | undefined;
+  if (type === 'number') {
+    min = sanitizeNum(raw.min);
+    max = sanitizeNum(raw.max);
+    step = sanitizeNum(raw.step);
+  }
+
+  let accept: string | undefined;
+  let multipleFiles: boolean | undefined;
+  if (type === 'file') {
+    accept = sanitizeStr(raw.accept) || undefined;
+    multipleFiles = Boolean(raw.multipleFiles);
+  }
+
+  const out: FormField = {
     id,
     name,
     label,
     type,
     required,
-    placeholder: placeholder || undefined,
-    helpText: helpText || undefined,
-    options,
   };
+
+  if (placeholder) out.placeholder = placeholder;
+  if (helpText) out.helpText = helpText;
+  if (options && options.length) out.options = options;
+  if (min !== undefined) out.min = min;
+  if (max !== undefined) out.max = max;
+  if (step !== undefined) out.step = step;
+  if (accept) out.accept = accept;
+  if (multipleFiles !== undefined) out.multipleFiles = multipleFiles;
+  if (showIf) out.showIf = showIf;
+
+  return out;
 }
 
-function sanitizeConfig(body: Partial<EnquireConfig>): EnquireConfig {
-  const fieldsRaw = Array.isArray(body.fields) ? body.fields : DEFAULT_FIELDS;
+function sanitizeConfig(body: unknown): EnquireConfig {
+  const b = isRecord(body) ? body : {};
 
-  const fields: FormField[] = fieldsRaw
+  const fieldsRaw = Array.isArray(b.fields) ? b.fields : DEFAULT_FIELDS;
+  const fields = fieldsRaw
     .map((f, i) => sanitizeField(f, i))
-    .filter((f): f is FormField => !!f);
+    .filter((f): f is FormField => Boolean(f));
+
+  const recipientEmail = sanitizeStr(b.recipientEmail);
 
   return {
-    title: sanitizeStr(body.title) || DEFAULT_CONFIG.title,
-    intro: sanitizeStr(body.intro) || DEFAULT_CONFIG.intro,
-    submitLabel: sanitizeStr(body.submitLabel) || DEFAULT_CONFIG.submitLabel,
-    successMessage: sanitizeStr(body.successMessage) || DEFAULT_CONFIG.successMessage,
+    eyebrow: sanitizeStr(b.eyebrow) || DEFAULT_CONFIG.eyebrow,
+    title: sanitizeStr(b.title) || DEFAULT_CONFIG.title,
+    lead: sanitizeStr(b.lead) || DEFAULT_CONFIG.lead,
+    buttonLabel: sanitizeStr(b.buttonLabel) || DEFAULT_CONFIG.buttonLabel,
+
+    modalKicker: sanitizeStr(b.modalKicker) || DEFAULT_CONFIG.modalKicker,
+    modalTitle: sanitizeStr(b.modalTitle) || DEFAULT_CONFIG.modalTitle,
+    modalLead: sanitizeStr(b.modalLead) || DEFAULT_CONFIG.modalLead,
+    submitLabel: sanitizeStr(b.submitLabel) || DEFAULT_CONFIG.submitLabel,
+    successMessage: sanitizeStr(b.successMessage) || DEFAULT_CONFIG.successMessage,
+
+    recipientEmail: recipientEmail || null,
+
     fields: fields.length ? fields : DEFAULT_FIELDS,
   };
 }
 
+function parseJsonArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
+
+/** -----------------------------
+ *  Handlers
+ *  ---------------------------- */
 export async function GET() {
   try {
-    const row = await prisma.homeEnquire.findUnique({
-      where: { key: KEY },
-    });
+    const row = await prisma.homeEnquire.findUnique({ where: { key: KEY } });
+    if (!row) return NextResponse.json(DEFAULT_CONFIG);
 
-    if (!row) {
-      return NextResponse.json(DEFAULT_CONFIG);
-    }
-
-    // use existing Prisma column `formFields`
-    const fieldsRaw = (row.formFields ?? []) as unknown;
-    const fields = (Array.isArray(fieldsRaw) ? fieldsRaw : DEFAULT_FIELDS)
+    const fieldsRaw = parseJsonArray(row.formFields);
+    const fields = (fieldsRaw.length ? fieldsRaw : DEFAULT_FIELDS)
       .map((f, i) => sanitizeField(f, i))
-      .filter((f): f is FormField => !!f);
+      .filter((f): f is FormField => Boolean(f));
 
-    // map Prisma columns -> API config shape
     const config: EnquireConfig = {
-      title: row.modalTitle || row.title || DEFAULT_CONFIG.title,
-      intro: row.modalLead || row.lead || DEFAULT_CONFIG.intro,
-      submitLabel: row.buttonLabel || DEFAULT_CONFIG.submitLabel,
+      eyebrow: row.eyebrow || DEFAULT_CONFIG.eyebrow,
+      title: row.title || DEFAULT_CONFIG.title,
+      lead: row.lead || DEFAULT_CONFIG.lead,
+      buttonLabel: row.buttonLabel || DEFAULT_CONFIG.buttonLabel,
+
+      modalKicker: row.modalKicker || DEFAULT_CONFIG.modalKicker,
+      modalTitle: row.modalTitle || DEFAULT_CONFIG.modalTitle,
+      modalLead: row.modalLead || DEFAULT_CONFIG.modalLead,
+      submitLabel: row.submitLabel || DEFAULT_CONFIG.submitLabel,
       successMessage: row.successMessage || DEFAULT_CONFIG.successMessage,
+
+      recipientEmail: row.recipientEmail ?? null,
       fields: fields.length ? fields : DEFAULT_FIELDS,
     };
 
@@ -179,27 +271,42 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as Partial<EnquireConfig>;
+    const body: unknown = await req.json();
     const data = sanitizeConfig(body);
 
-    const fieldsJson = data.fields as unknown as Prisma.JsonArray;
+    const fieldsJson: Prisma.InputJsonValue = data.fields as unknown as Prisma.InputJsonValue;
 
     const saved = await prisma.homeEnquire.upsert({
       where: { key: KEY },
       create: {
         key: KEY,
-        // map API config -> Prisma columns
-        modalTitle: data.title,
-        modalLead: data.intro,
-        buttonLabel: data.submitLabel,
+        eyebrow: data.eyebrow,
+        title: data.title,
+        lead: data.lead,
+        buttonLabel: data.buttonLabel,
+
+        modalKicker: data.modalKicker,
+        modalTitle: data.modalTitle,
+        modalLead: data.modalLead,
+        submitLabel: data.submitLabel,
         successMessage: data.successMessage,
+
+        recipientEmail: data.recipientEmail,
         formFields: fieldsJson,
       },
       update: {
-        modalTitle: data.title,
-        modalLead: data.intro,
-        buttonLabel: data.submitLabel,
+        eyebrow: data.eyebrow,
+        title: data.title,
+        lead: data.lead,
+        buttonLabel: data.buttonLabel,
+
+        modalKicker: data.modalKicker,
+        modalTitle: data.modalTitle,
+        modalLead: data.modalLead,
+        submitLabel: data.submitLabel,
         successMessage: data.successMessage,
+
+        recipientEmail: data.recipientEmail,
         formFields: fieldsJson,
       },
     });

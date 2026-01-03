@@ -71,16 +71,26 @@ model HomeServices {
 model HomeEnquire {
   id             String   @id @default(cuid())
   key            String   @unique @default("enquire")
+
+  // Section copy
   eyebrow        String   @default("For venues & events")
   title          String   @default("Enquire about DJs and live music.")
   lead           String   @default("We curate DJs and musicians for restaurants, bars and event spaces — matching artists to your brand, guest profile and schedule.")
   buttonLabel    String   @default("Open enquiry form")
+
+  // Modal copy
   modalKicker    String   @default("Enquire Now")
   modalTitle     String   @default("Tell us about your venue or event.")
   modalLead      String   @default("Share a few details about your space, schedule and music brief — we’ll match you with the right artists.")
+  submitLabel    String   @default("Send enquiry") // ✅ ADD
   successMessage String   @default("Thanks — we’ll be in touch shortly.")
+
+  // Dynamic form definition
   formFields     Json     @default("[]")
+
+  // Routing / delivery
   recipientEmail String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -88,16 +98,26 @@ model HomeEnquire {
 model HomeJoin {
   id             String   @id @default(cuid())
   key            String   @unique @default("join")
+
+  // Section copy
   eyebrow        String   @default("For artists & collectives")
   title          String   @default("Join the Nocturna roster.")
   lead           String   @default("DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.")
   buttonLabel    String   @default("Open application form")
+
+  // Modal copy
   modalKicker    String   @default("Join Nocturna")
   modalTitle     String   @default("Tell us about your sound.")
   modalLead      String   @default("Share links, socials and a short intro — we’ll review and get back if there’s a fit.")
+  submitLabel    String   @default("Apply to join") // ✅ ADD
   successMessage String   @default("Thanks — we’ll review your submission and follow up.")
+
+  // Dynamic form definition
   formFields     Json     @default("[]")
+
+  // Routing / delivery
   recipientEmail String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -105,11 +125,33 @@ model HomeJoin {
 model HomeContact {
   id             String   @id @default(cuid())
   key            String   @unique @default("contact")
+
+  // Section copy
+  eyebrow        String   @default("Contact")
   title          String   @default("Send us a message.")
-  description    String   @default("We’ll get back to you shortly.")
+  lead           String   @default("We’ll get back to you shortly.")
+  buttonLabel    String   @default("Open contact form")
+
+  // Public contact details (editable)
+  contactEmail   String   @default("info@nocturna.com") // ✅ ADD
+  contactPhone   String?                                 // ✅ ADD
+
+  // Socials (editable, extensible)
+  socialLinks    Json     @default("[]")                 // ✅ ADD
+
+  // Modal copy
+  modalKicker    String   @default("Contact")
+  modalTitle     String   @default("Send us a message.")
+  modalLead      String   @default("We’ll get back to you shortly.")
   submitLabel    String   @default("Send Message")
   successMessage String   @default("Thanks — we’ll be in touch soon.")
+
+  // Dynamic form definition
+  formFields     Json     @default("[]")
+
+  // Routing / delivery
   recipientEmail String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

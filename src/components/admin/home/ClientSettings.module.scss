@@ -1,5 +1,3 @@
-/* src/components/admin/home/ClientSettings.module.scss */
-
 /* === Section wrapper === */
 .section {
   margin-bottom: 2rem;
@@ -77,6 +75,18 @@
   }
 }
 
+/* === Two column helper inside a row card === */
+.twoCol {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 880px) {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* === Logos fieldset === */
 .fieldset {
   position: relative;
@@ -101,7 +111,7 @@
   }
 }
 
-/* === Each logo row card === */
+/* === Each client card === */
 .logoRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -131,7 +141,7 @@
   }
 }
 
-/* === Remove Logo button === */
+/* === Remove button === */
 .removeBtn {
   grid-column: 1 / -1;
   justify-self: end;
@@ -166,7 +176,7 @@
   }
 }
 
-/* === Add Logo button (floating in fieldset) === */
+/* === Add button (floating) === */
 .addBtn {
   position: absolute;
   bottom: 12px;

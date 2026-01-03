@@ -266,7 +266,15 @@ export default function About() {
             ) : null}
           </button>
 
-          <p className={styles.blurb}>{data.lead}</p>
+          <div className={styles.blurb}>
+            {data.lead
+              .split(/\n\s*\n/) // split by blank lines
+              .map((chunk, i) => (
+                <p key={i} className={styles.blurbLine}>
+                  {chunk.trim()}
+                </p>
+              ))}
+          </div>
 
           {/* ✅ BACK: 200+/UK-wide/DJs */}
           {data.quickFacts?.length ? (

@@ -1,38 +1,18 @@
+// src/components/home/enquire/EnquireModal.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useModals } from '../modals/ModalContext';
 import styles from './EnquireModal.module.scss';
+import HelpTip from '@/components/home/modals/HelpTip';
 
-const GOOGLE_BOOKING_URL = process.env.NEXT_PUBLIC_GOOGLE_BOOKING_URL || '';
-
-type FormFieldType =
-  | 'text'
-  | 'email'
-  | 'tel'
-  | 'textarea'
-  | 'select'
-  | 'multiselect'
-  | 'date'
-  | 'url';
-
-type FormField = {
-  id: string;
-  label: string;
-  name: string;
-  type: FormFieldType;
-  required: boolean;
-  placeholder?: string;
-  options?: string[];
-};
-
-type ApiConfig = {
-  title: string;
-  intro: string;
-  submitLabel: string;
-  successMessage: string;
-  fields: FormField[];
-};
+import type { ApiFormConfig, FormField } from '@/types/form-builder';
+import { normalizeFields } from '@/lib/form-builder';
+import {
+  renderFieldControl,
+  shouldShowField,
+  type Values,
+} from '@/components/home/modals/renderField';
 
 type EnquireConfig = {
   modalKicker: string;
@@ -46,20 +26,28 @@ type EnquireConfig = {
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
 const FALLBACK: EnquireConfig = {
-  modalKicker: 'Enquire Now',
-  modalTitle: 'Tell us about your venue or event.',
+  modalKicker: 'Enquire',
+  modalTitle: 'Tell us what you need.',
   modalLead:
-    'Share a few details about your space, schedule and music brief — we’ll match you with the right artists.',
-  submitLabel: 'Send enquiry',
+    'Send us your event details, dates and location. We’ll respond with availability and next steps.',
+  submitLabel: 'Send Enquiry',
   successMessage: 'Thanks — we’ll be in touch shortly.',
   formFields: [
     {
-      id: 'name',
-      label: 'Full name *',
-      name: 'name',
+      id: 'enq_type',
+      label: 'What are you enquiring about? *',
+      name: 'enq_type',
+      type: 'radio',
+      required: true,
+      options: ['Booking', 'Partnership', 'General'],
+    },
+    {
+      id: 'contact_name',
+      label: 'Your name *',
+      name: 'contact_name',
       type: 'text',
       required: true,
-      placeholder: 'Your full name',
+      placeholder: 'Full name',
     },
     {
       id: 'email',
@@ -71,107 +59,123 @@ const FALLBACK: EnquireConfig = {
     },
     {
       id: 'phone',
-      label: 'Mobile number *',
+      label: 'Phone number',
       name: 'phone',
       type: 'tel',
-      required: true,
+      required: false,
       placeholder: '+44…',
     },
     {
+      id: 'venue',
+      label: 'Venue / organisation',
+      name: 'venue',
+      type: 'text',
+      required: false,
+      placeholder: 'Venue name',
+    },
+    {
+      id: 'event_date',
+      label: 'Event date',
+      name: 'event_date',
+      type: 'date',
+      required: false,
+    },
+    {
+      id: 'event_time',
+      label: 'Event time',
+      name: 'event_time',
+      type: 'time',
+      required: false,
+    },
+    {
+      id: 'location',
+      label: 'Event location',
+      name: 'location',
+      type: 'text',
+      required: false,
+      placeholder: 'City / country',
+    },
+    {
+      id: 'budget',
+      label: 'Budget (optional)',
+      name: 'budget',
+      type: 'select',
+      required: false,
+      options: ['Under £500', '£500–£1,000', '£1,000–£2,500', '£2,500+'],
+    },
+    {
       id: 'message',
-      label: 'Message *',
+      label: 'Details *',
       name: 'message',
       type: 'textarea',
       required: true,
-      placeholder: 'Venue name, location, preferred days, music style, budget, tech notes…',
+      placeholder: 'Tell us about the event, audience, requirements…',
+    },
+    {
+      id: 'dj_count',
+      label: 'How many DJs / acts?',
+      name: 'dj_count',
+      type: 'number',
+      required: false,
+      min: 1,
+      max: 20,
+      step: 1,
+      showIf: { field: 'enq_type', equals: 'Booking' },
     },
   ],
 };
 
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return !!v && typeof v === 'object' && !Array.isArray(v);
-}
+function mapApiToModal(api: Partial<ApiFormConfig>): EnquireConfig {
+  const fields = normalizeFields(api.fields, 'enquire');
 
-function safeString(v: unknown): string {
-  return typeof v === 'string' ? v : '';
-}
-
-function ensureId(item: Record<string, unknown>, idx: number, prefix: string) {
-  const id = safeString(item.id).trim();
-  const name = safeString(item.name).trim();
-  if (id) return id;
-  if (name) return name;
-  return `${prefix}_${idx}_${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function normalizeFields(raw: unknown): FormField[] {
-  if (!Array.isArray(raw)) return [];
-
-  const allowed: readonly FormFieldType[] = [
-    'text',
-    'textarea',
-    'email',
-    'tel',
-    'date',
-    'url',
-    'select',
-    'multiselect',
-  ] as const;
-
-  const out: Array<FormField | null> = raw.map((item, idx) => {
-    if (!isRecord(item)) return null;
-
-    const typeRaw = safeString(item.type).trim() as FormFieldType;
-    const type: FormFieldType = allowed.includes(typeRaw) ? typeRaw : 'text';
-
-    const name = safeString(item.name).trim();
-    const label = safeString(item.label).trim();
-    if (!name || !label) return null;
-
-    const placeholder = safeString(item.placeholder).trim();
-
-    const options =
-      Array.isArray(item.options) && (type === 'select' || type === 'multiselect')
-        ? item.options.map((x) => safeString(x).trim()).filter(Boolean)
-        : undefined;
-
-    const field: FormField = {
-      id: ensureId(item, idx, 'enq'),
-      name,
-      label,
-      type,
-      required: Boolean(item.required),
-      ...(placeholder ? { placeholder } : {}),
-      ...(options && options.length ? { options } : {}),
-    };
-
-    return field;
-  });
-
-  return out.filter((x): x is FormField => x !== null);
-}
-
-function mapApiToModal(api: Partial<ApiConfig>): EnquireConfig {
-  const fields = normalizeFields(api.fields);
   return {
     ...FALLBACK,
-    modalTitle: safeString(api.title).trim() || FALLBACK.modalTitle,
-    modalLead: safeString(api.intro).trim() || FALLBACK.modalLead,
-    submitLabel: safeString(api.submitLabel).trim() || FALLBACK.submitLabel,
-    successMessage: safeString(api.successMessage).trim() || FALLBACK.successMessage,
+    modalTitle: (api.title ?? '').trim() || FALLBACK.modalTitle,
+    modalLead: (api.intro ?? '').trim() || FALLBACK.modalLead,
+    submitLabel: (api.submitLabel ?? '').trim() || FALLBACK.submitLabel,
+    successMessage: (api.successMessage ?? '').trim() || FALLBACK.successMessage,
     formFields: fields.length ? fields : FALLBACK.formFields,
   };
 }
 
 export default function EnquireModal() {
   const { open, close } = useModals();
+
   const [status, setStatus] = useState<FormState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<EnquireConfig>(FALLBACK);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [formValues, setFormValues] = useState<Values>({});
+
+  const closeTimerRef = useRef<number | null>(null);
 
   const visible = open === 'enquire';
 
+  function clearCloseTimer() {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }
+
+  function resetFormState() {
+    setStatus('idle');
+    setError(null);
+    setFormValues({});
+  }
+
+  // ESC handling
+  useEffect(() => {
+    if (!visible) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [visible, close]);
+
+  // Lock background scroll
   useEffect(() => {
     if (!visible) return;
     const prev = document.body.style.overflow;
@@ -181,22 +185,37 @@ export default function EnquireModal() {
     };
   }, [visible]);
 
+  // Hydrate config
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         const res = await fetch('/api/home/enquire', { cache: 'no-store' });
         if (!res.ok) return;
-        const json = (await res.json()) as Partial<ApiConfig>;
+        const json = (await res.json()) as Partial<ApiFormConfig>;
         if (!mounted) return;
         setConfig(mapApiToModal(json));
       } catch {
-        // fallback
+        // keep fallback
       }
     })();
+
     return () => {
       mounted = false;
     };
+  }, []);
+
+  // When modal closes, cleanup timer + reset state so it opens fresh next time
+  useEffect(() => {
+    if (visible) return;
+    clearCloseTimer();
+    resetFormState();
+  }, [visible]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => clearCloseTimer();
   }, []);
 
   if (!visible) return null;
@@ -215,162 +234,86 @@ export default function EnquireModal() {
 
       setStatus('success');
       form.reset();
-      setValues({});
+      setFormValues({});
+
+      // ✅ auto close after 5s
+      clearCloseTimer();
+      closeTimerRef.current = window.setTimeout(() => {
+        close();
+      }, 5000);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error submitting enquiry.');
+      setError(err instanceof Error ? err.message : 'Error sending enquiry.');
       setStatus('error');
     }
   }
 
-  const handleValueChange =
-    (field: FormField) =>
-    (
-      e:
-        | React.ChangeEvent<HTMLInputElement>
-        | React.ChangeEvent<HTMLTextAreaElement>
-        | React.ChangeEvent<HTMLSelectElement>
-    ) => {
-      let value = '';
-
-      if (field.type === 'multiselect' && e.target instanceof HTMLSelectElement) {
-        value = Array.from(e.target.selectedOptions)
-          .map((opt) => opt.value)
-          .join(',');
-      } else {
-        value = e.target.value;
-      }
-
-      setValues((prev) => ({
-        ...prev,
-        [field.name]: value,
-      }));
-    };
-
-  const renderField = (field: FormField) => {
-    const baseId = `enq-${field.id}`;
-
-    if (field.type === 'textarea') {
-      return (
-        <textarea
-          id={baseId}
-          name={field.name}
-          required={field.required}
-          placeholder={field.placeholder}
-          rows={4}
-          onChange={handleValueChange(field)}
-        />
-      );
-    }
-
-    if (field.type === 'select' || field.type === 'multiselect') {
-      const current = values[field.name] ?? '';
-      const isEmpty = field.type === 'select' ? current === '' : current.trim() === '';
-
-      return (
-        <select
-          id={baseId}
-          name={field.name}
-          required={field.required}
-          multiple={field.type === 'multiselect'}
-          onChange={handleValueChange(field)}
-          data-empty={isEmpty ? 'true' : 'false'}
-          value={field.type === 'multiselect' ? undefined : current}
-        >
-          {field.type === 'select' && (
-            <option value="" disabled={field.required} hidden>
-              Select…
-            </option>
-          )}
-
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
-    const inputType = field.type === 'date' ? 'date' : field.type === 'url' ? 'url' : field.type;
-
-    return (
-      <input
-        id={baseId}
-        name={field.name}
-        required={field.required}
-        placeholder={field.placeholder}
-        type={inputType}
-        onChange={handleValueChange(field)}
-      />
-    );
-  };
-
   return (
-    <div
-      className={styles.backdrop}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Enquire now"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
-      }}
-    >
+    <div className={styles.backdrop} role="dialog" aria-modal="true" aria-label="Enquire">
       <div className={styles.panel}>
-        <button
-          type="button"
-          className={styles.close}
-          onClick={close}
-          aria-label="Close enquiry form"
-        >
+        <button type="button" className={styles.close} onClick={close} aria-label="Close form">
           ✕
         </button>
 
         <div className={styles.scrollArea}>
-          <p className={styles.kicker}>{config.modalKicker}</p>
-          <h2 className={styles.title}>{config.modalTitle}</h2>
-          <p className={styles.lead}>{config.modalLead}</p>
+          {status === 'success' ? (
+            // ✅ compact thank-you view
+            <div className={styles.successWrap}>
+              <p className={styles.kicker}>{config.modalKicker}</p>
+              <h2 className={styles.successTitle}>Enquiry sent</h2>
+              <p className={styles.successLead}>{config.successMessage}</p>
+              <div className={styles.successPill}>
+                Closing in <span className={styles.successCount}>5s</span>
+              </div>
 
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.grid}>
-              {config.formFields.map((field) => {
-                const isWide = field.type === 'textarea';
-                return (
-                  <div
-                    key={field.id}
-                    className={`${styles.field} ${isWide ? styles.fieldFull : ''}`}
-                  >
-                    <label htmlFor={`enq-${field.id}`}>
-                      <span className={styles.labelText}>{field.label}</span>
-                      {renderField(field)}
-                    </label>
-                  </div>
-                );
-              })}
+              <button type="button" className={styles.successCloseBtn} onClick={close}>
+                Close now
+              </button>
             </div>
+          ) : (
+            <>
+              <p className={styles.kicker}>{config.modalKicker}</p>
+              <h2 className={styles.title}>{config.modalTitle}</h2>
+              <p className={styles.lead}>{config.modalLead}</p>
 
-            <button type="submit" className={styles.submit} disabled={status === 'submitting'}>
-              {status === 'submitting' ? 'Sending…' : config.submitLabel}
-            </button>
+              <form className={styles.form} onSubmit={handleSubmit}>
+                <div className={styles.grid}>
+                  {config.formFields.map((field) => {
+                    if (!shouldShowField(field, formValues)) return null;
 
-            {status === 'success' && (
-              <>
-                <p className={styles.success}>{config.successMessage}</p>
+                    const isWide =
+                      field.type === 'textarea' ||
+                      field.type === 'checkboxes' ||
+                      field.type === 'file';
 
-                {GOOGLE_BOOKING_URL && (
-                  <a
-                    href={GOOGLE_BOOKING_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={styles.bookingCta}
-                  >
-                    Book a call in our calendar
-                  </a>
-                )}
-              </>
-            )}
+                    return (
+                      <div
+                        key={field.id}
+                        className={`${styles.field} ${isWide ? styles.fieldFull : ''}`}
+                      >
+                        <div className={styles.labelRow}>
+                          <label htmlFor={`enquire-${field.id}`} className={styles.labelText}>
+                            {field.label}
+                          </label>
 
-            {status === 'error' && <p className={styles.error}>{error}</p>}
-          </form>
+                          {field.helpText ? (
+                            <HelpTip text={field.helpText} label={`Help for ${field.label}`} />
+                          ) : null}
+                        </div>
+
+                        {renderFieldControl(field, formValues, setFormValues, 'enquire')}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button type="submit" className={styles.submit} disabled={status === 'submitting'}>
+                  {status === 'submitting' ? 'Sending…' : config.submitLabel}
+                </button>
+
+                {status === 'error' && <p className={styles.error}>{error}</p>}
+              </form>
+            </>
+          )}
         </div>
       </div>
     </div>

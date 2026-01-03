@@ -1,4 +1,3 @@
-// src/components/admin/home/ServicesSettings.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,12 +11,13 @@ import styles from './ServicesSettings.module.scss';
 type Service = {
   key: string;
   title: string;
-  blurb: string; // front-of-card copy
+  blurb: string;
   href: string;
-  image: string; // front image
+  image: string;
   tag: string;
-  backImage?: string; // optional back image
-  detail?: string; // deeper explanation (back of card)
+  backImage?: string;
+  detail?: string;
+  includes?: string[];
 };
 
 type ServicesData = {
@@ -42,7 +42,14 @@ const FALLBACK: ServicesData = {
       tag: 'Nightlife energy',
       backImage: '/assets/services/djs-back.jpg',
       detail:
-        'From weekly residencies to one-off openings, we curate DJs who understand programming, volume discipline and guest flow across the whole night. We manage briefings, scheduling and reliable cover so your venue always has the right selector on the decks.',
+        'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
+      includes: [
+        'Programming aligned to time of day and atmosphere',
+        'DJs briefed on volume, tone, and venue context',
+        'Clear communication and artist alignment',
+        'One point of contact throughout',
+        'Reliable cover if availability changes',
+      ],
     },
     {
       key: 'musician',
@@ -54,7 +61,14 @@ const FALLBACK: ServicesData = {
       tag: 'Live atmosphere',
       backImage: '/assets/services/musicians-back.jpg',
       detail:
-        'For brunch, dinner or late-night lounges, we supply musicians who can read the room and adapt sets to brand, moment and space. We look after repertoire, logistics and simple tech so the performance feels intentional, not intrusive.',
+        'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
+      includes: [
+        'Set formats matched to service style and energy',
+        'Musicians briefed on volume, tone, and venue context',
+        'Clear communication and artist alignment',
+        'One point of contact throughout',
+        'Reliable cover if availability changes',
+      ],
     },
   ],
 };
@@ -69,28 +83,33 @@ export default function ServicesSettings() {
     (async () => {
       try {
         const res = await fetch('/api/home/services', { cache: 'no-store' });
-        if (res.ok) {
-          const data = (await res.json()) as Partial<ServicesData>;
+        if (!res.ok) return;
 
-          const itemsFromApi =
-            Array.isArray(data.items) && data.items.length ? data.items : FALLBACK.items;
+        const data = (await res.json()) as Partial<ServicesData>;
 
-          setForm({
-            kicker: data.kicker ?? FALLBACK.kicker,
-            title: data.title ?? FALLBACK.title,
-            lead: data.lead ?? FALLBACK.lead,
-            items: itemsFromApi.map((item, i) => ({
-              key: item.key || FALLBACK.items[i]?.key || `service-${i}`,
-              title: item.title || FALLBACK.items[i]?.title || '',
-              blurb: item.blurb || FALLBACK.items[i]?.blurb || '',
-              href: item.href || FALLBACK.items[i]?.href || '#enquire',
-              image: item.image || FALLBACK.items[i]?.image || '',
-              tag: item.tag || FALLBACK.items[i]?.tag || '',
-              backImage: item.backImage || FALLBACK.items[i]?.backImage || item.image || '',
-              detail: item.detail ?? FALLBACK.items[i]?.detail ?? '',
-            })),
-          });
-        }
+        const itemsFromApi =
+          Array.isArray(data.items) && data.items.length ? data.items : FALLBACK.items;
+
+        setForm({
+          kicker: data.kicker ?? FALLBACK.kicker,
+          title: data.title ?? FALLBACK.title,
+          lead: data.lead ?? FALLBACK.lead,
+          items: itemsFromApi.map((item, i) => ({
+            key: item.key || FALLBACK.items[i]?.key || `service-${i}`,
+            title: item.title || FALLBACK.items[i]?.title || '',
+            blurb: item.blurb || FALLBACK.items[i]?.blurb || '',
+            href: item.href || FALLBACK.items[i]?.href || '#enquire',
+            image: item.image || FALLBACK.items[i]?.image || '',
+            tag: item.tag || FALLBACK.items[i]?.tag || '',
+            backImage: item.backImage || FALLBACK.items[i]?.backImage || '',
+            detail: item.detail ?? FALLBACK.items[i]?.detail ?? '',
+            includes: Array.isArray(item.includes)
+              ? item.includes.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim())
+              : Array.isArray(FALLBACK.items[i]?.includes)
+                ? (FALLBACK.items[i]?.includes as string[])
+                : [],
+          })),
+        });
       } finally {
         setLoading(false);
       }
@@ -115,6 +134,13 @@ export default function ServicesSettings() {
       });
     };
 
+  const setItem = (idx: number, patch: Partial<Service>) =>
+    setForm((f) => {
+      const next = [...f.items];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...f, items: next };
+    });
+
   const addItem = () =>
     setForm((f) => ({
       ...f,
@@ -129,6 +155,7 @@ export default function ServicesSettings() {
           tag: '',
           backImage: '',
           detail: '',
+          includes: [],
         },
       ],
     }));
@@ -136,20 +163,70 @@ export default function ServicesSettings() {
   const removeItem = (idx: number) =>
     setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
 
+  /* =============================
+     Includes helpers (add/remove/reorder/edit)
+     ============================= */
+
+  const setIncludes = (idx: number, includes: string[]) => setItem(idx, { includes });
+
+  const addInclude = (idx: number) => {
+    const current = Array.isArray(form.items[idx]?.includes)
+      ? (form.items[idx].includes as string[])
+      : [];
+    setIncludes(idx, [...current, '']);
+  };
+
+  const updateInclude = (idx: number, j: number, value: string) => {
+    const current = Array.isArray(form.items[idx]?.includes)
+      ? [...(form.items[idx].includes as string[])]
+      : [];
+    current[j] = value;
+    setIncludes(idx, current);
+  };
+
+  const removeInclude = (idx: number, j: number) => {
+    const current = Array.isArray(form.items[idx]?.includes)
+      ? [...(form.items[idx].includes as string[])]
+      : [];
+    current.splice(j, 1);
+    setIncludes(idx, current);
+  };
+
+  const moveInclude = (idx: number, from: number, dir: -1 | 1) => {
+    const current = Array.isArray(form.items[idx]?.includes)
+      ? [...(form.items[idx].includes as string[])]
+      : [];
+    const to = from + dir;
+    if (to < 0 || to >= current.length) return;
+    const tmp = current[from];
+    current[from] = current[to];
+    current[to] = tmp;
+    setIncludes(idx, current);
+  };
+
   const save = async () => {
     setSaving(true);
     try {
+      // trim includes before save
+      const payload: ServicesData = {
+        ...form,
+        items: form.items.map((it) => ({
+          ...it,
+          includes: Array.isArray(it.includes)
+            ? it.includes.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean)
+            : [],
+        })),
+      };
+
       const res = await fetch('/api/home/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      const payload = await res.json().catch(() => ({}));
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const msg =
-          (payload as { error?: string }).error || `Failed to save (status ${res.status}).`;
-        alert(msg);
+        alert((json as { error?: string }).error || `Failed to save (status ${res.status}).`);
         return;
       }
 
@@ -216,23 +293,74 @@ export default function ServicesSettings() {
 
               <label className={styles.full}>
                 Front description
-                <textarea
-                  rows={3}
-                  value={item.blurb}
-                  onChange={updateItem(i, 'blurb')}
-                  placeholder="Short front-of-card copy…"
-                />
+                <textarea rows={3} value={item.blurb} onChange={updateItem(i, 'blurb')} />
               </label>
 
               <label className={styles.full}>
                 Deeper explanation (back of card)
-                <textarea
-                  rows={3}
-                  value={item.detail ?? ''}
-                  onChange={updateItem(i, 'detail')}
-                  placeholder="Optional: slightly longer explanation shown when the card flips."
-                />
+                <textarea rows={3} value={item.detail ?? ''} onChange={updateItem(i, 'detail')} />
               </label>
+
+              {/* ✅ INCLUDES (editable + reorder) */}
+              <div className={`${styles.full} ${styles.includesEditor}`}>
+                <div className={styles.includesHeader}>
+                  <div>
+                    <strong>What’s included</strong>
+                    <div className={styles.includesSub}>
+                      Bullets shown on hover/tap (back of card).
+                    </div>
+                  </div>
+                  <button type="button" className={styles.smallBtn} onClick={() => addInclude(i)}>
+                    + Add bullet
+                  </button>
+                </div>
+
+                {(item.includes?.length ?? 0) > 0 ? (
+                  <div className={styles.includesList}>
+                    {(item.includes ?? []).map((line, j) => (
+                      <div key={j} className={styles.includeRow}>
+                        <input
+                          value={line}
+                          onChange={(e) => updateInclude(i, j, e.currentTarget.value)}
+                          placeholder="e.g. Programming aligned to time of day and atmosphere"
+                        />
+
+                        <div className={styles.includeBtns}>
+                          <button
+                            type="button"
+                            className={styles.iconBtn}
+                            onClick={() => moveInclude(i, j, -1)}
+                            aria-label="Move up"
+                            title="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.iconBtn}
+                            onClick={() => moveInclude(i, j, 1)}
+                            aria-label="Move down"
+                            title="Move down"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.iconBtnDanger}
+                            onClick={() => removeInclude(i, j)}
+                            aria-label="Remove"
+                            title="Remove"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.includesEmpty}>No bullets yet. Click “Add bullet”.</div>
+                )}
+              </div>
 
               <label>
                 Link
@@ -254,16 +382,19 @@ export default function ServicesSettings() {
                   onClientUploadComplete={(res) => {
                     const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                     if (!url) return;
-
-                    setForm((prev) => {
-                      const next = [...prev.items];
-                      next[i] = { ...next[i], image: url, backImage: next[i].backImage || url };
-                      return { ...prev, items: next };
-                    });
+                    setItem(i, { image: url, backImage: item.backImage || url });
                   }}
                   onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                 />
-                <small>Upload an image only (PNG/JPG/WebP).</small>
+                <button
+                  type="button"
+                  className={styles.smallBtnDanger}
+                  onClick={() => setItem(i, { image: '' })}
+                  disabled={!item.image}
+                  title="Remove front image (leave blank)"
+                >
+                  Clear front image
+                </button>
               </div>
 
               <label>
@@ -281,16 +412,19 @@ export default function ServicesSettings() {
                   onClientUploadComplete={(res) => {
                     const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
                     if (!url) return;
-
-                    setForm((prev) => {
-                      const next = [...prev.items];
-                      next[i] = { ...next[i], backImage: url };
-                      return { ...prev, items: next };
-                    });
+                    setItem(i, { backImage: url });
                   }}
                   onUploadError={(err) => alert(humanUploadError(err, 'image'))}
                 />
-                <small>Optional: upload a different back image (images only).</small>
+                <button
+                  type="button"
+                  className={styles.smallBtnDanger}
+                  onClick={() => setItem(i, { backImage: '' })}
+                  disabled={!item.backImage}
+                  title="Remove back image (leave blank)"
+                >
+                  Clear back image
+                </button>
               </div>
 
               {(item.image || item.backImage) && (

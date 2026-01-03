@@ -1,8 +1,15 @@
 // src/app/api/contact/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { transporter, escapeHtml, BOOKING_URL, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
+import { prisma } from '@/lib/prisma';
+import { transporter, escapeHtml, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
 
-const CONTACT_FROM = process.env.CONTACT_FROM_EMAIL || 'Nocturna Support <help@nocturnagency.com>';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+const KEY = 'contact';
+
+const CONTACT_FROM =
+  process.env.CONTACT_FROM_EMAIL || 'Nocturna Contact <contact@nocturnagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
   ? `<tr>
@@ -17,33 +24,183 @@ const LOGO_ROW = EMAIL_LOGO_URL
      </tr>`
   : '';
 
+type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'tel'
+  | 'url'
+  | 'number'
+  | 'date'
+  | 'time'
+  | 'datetime'
+  | 'select'
+  | 'multiselect'
+  | 'checkbox'
+  | 'checkboxgroup'
+  | 'radio'
+  | 'file';
+
+type FormField = {
+  id: string;
+  name: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  multipleFiles?: boolean;
+};
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+function parseJsonArray(v: unknown): unknown[] {
+  return Array.isArray(v) ? v : [];
+}
+function s(v: unknown) {
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+function safeFieldsFromRow(row: unknown): FormField[] {
+  if (!isRecord(row)) return [];
+  const arr = parseJsonArray((row as Record<string, unknown>).formFields);
+  return arr
+    .map((x) => (isRecord(x) ? x : null))
+    .filter(Boolean)
+    .map((x) => {
+      const r = x as Record<string, unknown>;
+      return {
+        id: s(r.id) || s(r.name) || 'field',
+        name: s(r.name),
+        label: s(r.label) || s(r.name),
+        type: (s(r.type) as FieldType) || 'text',
+        required: Boolean(r.required),
+        multipleFiles: Boolean(r.multipleFiles) || undefined,
+      } satisfies FormField;
+    })
+    .filter((f) => Boolean(f.name));
+}
+
+async function filesToAttachments(files: File[]) {
+  const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB each
+  const MAX_FILES = 3;
+
+  const picked = files.slice(0, MAX_FILES);
+  const attachments: { filename: string; content: Buffer; contentType?: string }[] = [];
+
+  for (const f of picked) {
+    if (!f?.name) continue;
+    if (f.size > MAX_FILE_BYTES) continue;
+
+    const ab = await f.arrayBuffer();
+    attachments.push({
+      filename: f.name,
+      content: Buffer.from(ab),
+      contentType: f.type || undefined,
+    });
+  }
+
+  return attachments;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    if (!transporter || !INTERNAL_EMAIL) {
+    if (!transporter) {
       return NextResponse.json({ error: 'Email transport not configured.' }, { status: 500 });
     }
 
-    const formData = await req.formData();
+    // Load config (recipient + required fields)
+    const row = await prisma.homeContact.findUnique({ where: { key: KEY } });
 
-    const name = String(formData.get('name') ?? '').trim();
-    const email = String(formData.get('email') ?? '').trim();
-    const message = String(formData.get('message') ?? '').trim();
+    const recipientEmail =
+      (row?.recipientEmail ?? '').trim() || INTERNAL_EMAIL || (row?.contactEmail ?? '').trim();
 
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    if (!recipientEmail) {
+      return NextResponse.json({ error: 'No recipient configured.' }, { status: 500 });
     }
 
-    const subject = `New contact message from ${name}`;
+    const fields = safeFieldsFromRow(row ?? {});
+    const fallbackRequired = ['name', 'email', 'message']; // in case config is empty
 
-    const textBody = [
-      'New contact message',
-      '',
-      `Name: ${name}`,
-      `Email: ${email}`,
-      '',
-      'Message:',
-      message,
-    ].join('\n');
+    // IMPORTANT: read as FormData (your modal sends FormData)
+    const formData = await req.formData();
+
+    const payload: Record<string, string | string[]> = {};
+    const uploaded: Record<string, File[]> = {};
+
+    for (const [key, val] of formData.entries()) {
+      if (val instanceof File) {
+        if (!uploaded[key]) uploaded[key] = [];
+        uploaded[key].push(val);
+        continue;
+      }
+
+      const v = String(val).trim();
+      if (key in payload) {
+        const prev = payload[key];
+        payload[key] = Array.isArray(prev) ? [...prev, v] : [prev, v];
+      } else {
+        payload[key] = v;
+      }
+    }
+
+    // Validate required fields based on DB config (or fallback if no config)
+    const requiredFields = fields.length
+      ? fields.filter((f) => f.required).map((f) => f.name)
+      : fallbackRequired;
+
+    const missing: string[] = [];
+    for (const key of requiredFields) {
+      const v = payload[key];
+      const empty =
+        v === undefined ||
+        v === null ||
+        (typeof v === 'string' && v.trim() === '') ||
+        (Array.isArray(v) && v.length === 0);
+      if (empty) missing.push(key);
+    }
+    if (missing.length) {
+      return NextResponse.json(
+        { error: `Missing required fields: ${missing.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    const senderName = typeof payload.name === 'string' ? payload.name : '';
+    const senderEmail = typeof payload.email === 'string' ? payload.email : '';
+
+    const subject = `New contact message${senderName ? ` from ${senderName}` : ''}`;
+
+    const ordered = fields.length
+      ? fields.map((f) => ({ key: f.name, label: f.label || f.name }))
+      : Object.keys(payload).map((k) => ({ key: k, label: k }));
+
+    const rowsText: string[] = [];
+    const rowsHtml: string[] = [];
+
+    for (const def of ordered) {
+      const raw = payload[def.key];
+      if (raw === undefined) continue;
+
+      const val = Array.isArray(raw) ? raw.join(', ') : raw;
+      if (!String(val).trim()) continue;
+
+      rowsText.push(`${def.label}: ${val}`);
+      rowsHtml.push(`
+        <tr>
+          <td style="padding:4px 0;color:rgba(148,163,184,0.95);vertical-align:top;width:160px;">
+            ${escapeHtml(def.label)}
+          </td>
+          <td style="padding:4px 0;color:#f9fafb;white-space:pre-wrap;">
+            ${escapeHtml(val)}
+          </td>
+        </tr>
+      `);
+    }
+
+    const allFiles = Object.values(uploaded).flat();
+    const attachments = await filesToAttachments(allFiles);
+
+    const textBody = ['New contact message', '', ...rowsText].join('\n');
 
     const htmlBody = `
       <!doctype html>
@@ -54,34 +211,39 @@ export async function POST(req: NextRequest) {
             <tr>
               <td align="center">
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
+                  style="max-width:720px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
                   ${LOGO_ROW}
                   <tr>
                     <td style="padding-bottom:12px;">
                       <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">New contact message</h1>
+                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">A visitor submitted the contact form.</p>
                     </td>
                   </tr>
+
                   <tr>
-                    <td>
-                      <p style="margin:6px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
-                        <strong>${escapeHtml(name)}</strong> has sent a message from the website.
-                      </p>
-                      <p style="margin:10px 0 0;font-size:13px;">
-                        <strong>Email:</strong>
-                        <a href="mailto:${escapeHtml(email)}" style="color:#facc6b;text-decoration:none;">${escapeHtml(
-                          email
-                        )}</a>
-                      </p>
-                      <div style="margin-top:12px;">
-                        <div style="font-size:12px;color:rgba(148,163,184,0.95);margin-bottom:4px;">Message</div>
-                        <div style="white-space:pre-wrap;font-size:13px;line-height:1.5;color:#e5e7eb;background:rgba(15,23,42,0.9);border-radius:10px;padding:10px 11px;border:1px solid rgba(55,65,81,0.9);">
-                          ${escapeHtml(message)}
-                        </div>
-                      </div>
-                      <p style="margin:14px 0 0;font-size:11px;color:rgba(148,163,184,0.75);">
-                        You can reply directly to this email to contact them.
-                      </p>
+                    <td style="padding-top:10px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;font-size:13px;">
+                        <tr>
+                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
+                            Message details
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:10px 14px 10px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+                              ${rowsHtml.join('')}
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td style="padding-top:12px;font-size:11px;color:rgba(148,163,184,0.75);">
+                      Reply directly to this email to respond to the sender (if they provided an email).
                     </td>
                   </tr>
                 </table>
@@ -92,94 +254,73 @@ export async function POST(req: NextRequest) {
       </html>
     `;
 
-    // ✅ Internal notification
+    // Internal email
     await transporter.sendMail({
       from: CONTACT_FROM,
-      to: INTERNAL_EMAIL,
-      replyTo: email,
+      to: recipientEmail,
+      replyTo: senderEmail || undefined,
       subject,
       text: textBody,
       html: htmlBody,
+      ...(attachments.length ? { attachments } : {}),
     });
 
-    // ✅ Auto-reply to customer
-    const thanksSubject = 'We’ve received your message – Nocturna';
+    // Auto-reply (only if user provided email)
+    if (senderEmail) {
+      const thanksSubject = 'Thanks — we got your message (Nocturna)';
+      const thanksText = [
+        `Hi ${senderName || 'there'},`,
+        '',
+        'Thanks for reaching out.',
+        'We’ve received your message and will get back to you shortly.',
+        '',
+        '— The Nocturna team',
+      ].join('\n');
 
-    const thanksText = [
-      `Hi ${name || 'there'},`,
-      '',
-      'Thanks for getting in touch.',
-      'We’ve received your message and will get back to you as soon as we can.',
-      '',
-      BOOKING_URL ? 'If you prefer to talk things through live, you can book a call here:' : '',
-      BOOKING_URL ? BOOKING_URL : '',
-      '',
-      '— The Nocturna team',
-    ]
-      .filter(Boolean)
-      .join('\n');
+      const thanksHtml = `
+        <!doctype html>
+        <html lang="en">
+          <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
+          <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
+              <tr>
+                <td align="center">
+                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                    style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
+                    ${LOGO_ROW}
+                    <tr>
+                      <td>
+                        <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your message</h1>
+                        <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
+                          Hi ${escapeHtml(senderName || 'there')},<br/>
+                          We’ve received your message and will get back to you shortly.
+                        </p>
+                        <p style="margin:16px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
+                          — The Nocturna team
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>
+      `;
 
-    const thanksHtml = `
-      <!doctype html>
-      <html lang="en">
-        <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
-        <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
-            <tr>
-              <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
-                  ${LOGO_ROW}
-                  <tr>
-                    <td>
-                      <h1 style="margin:0;font-size:22px;line-height:1.3;">We’re here to help</h1>
-                      <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
-                        Hi ${escapeHtml(name || 'there')},<br/>
-                        We’ve received your message and will get back to you as soon as we can.
-                      </p>
-
-                      ${
-                        BOOKING_URL
-                          ? `<p style="margin:14px 0 0;font-size:14px;color:rgba(209,213,219,0.95);">
-                               If you’d prefer to speak directly, you can choose a time for a call:
-                             </p>
-                             <p style="margin:10px 0 0;">
-                               <a href="${BOOKING_URL}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#facc6b;color:#020617;font-weight:600;font-size:13px;text-decoration:none;">
-                                 Book a call with Nocturna
-                               </a>
-                             </p>`
-                          : ''
-                      }
-
-                      <p style="margin:18px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
-                        — The Nocturna team
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
-
-    await transporter.sendMail({
-      from: CONTACT_FROM,
-      to: email,
-      subject: thanksSubject,
-      text: thanksText,
-      html: thanksHtml,
-      // ✅ If customer replies, it routes back to your support inbox/alias
-      replyTo: CONTACT_FROM,
-      headers: {
-        ...(INTERNAL_EMAIL ? { 'List-Unsubscribe': `<mailto:${INTERNAL_EMAIL}>` } : {}),
-      },
-    });
+      await transporter.sendMail({
+        from: CONTACT_FROM,
+        to: senderEmail,
+        subject: thanksSubject,
+        text: thanksText,
+        html: thanksHtml,
+        replyTo: recipientEmail,
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[contact] error:', err);
-    return NextResponse.json({ error: 'Server error while sending message.' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error while sending contact.' }, { status: 500 });
   }
 }

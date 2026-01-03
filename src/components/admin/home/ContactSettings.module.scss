@@ -1,4 +1,4 @@
-/* src/components/admin/home/EnquireSettings.module.scss */
+/* src/components/admin/home/ContactSettings.module.scss */
 
 .section {
   padding: 18px;
@@ -105,4 +105,39 @@
   color: #fca5a5;
   font-size: 0.85rem;
   margin-top: 0.55rem;
+}
+
+/* ===== Social links UI ===== */
+
+.socialList {
+  display: grid;
+  gap: 10px;
+}
+
+.socialRow {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  gap: 10px;
+  align-items: end;
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+
+.socialUrl {
+  grid-column: span 1;
+}
+
+.socialActions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.muted {
+  opacity: 0.75;
+  font-size: 0.9rem;
+  margin-top: 8px;
 }

@@ -132,7 +132,15 @@
 
 .blurb {
   color: #eaeaea;
+}
+
+.blurbLine {
+  margin: 0;
   line-height: 1.7;
+}
+
+.blurbLine + .blurbLine {
+  margin-top: 12px; /* spacing between sentences/paragraphs */
 }
 
 /* ---- STATS (200+/UK-wide/...) ---- */

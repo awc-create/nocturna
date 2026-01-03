@@ -1,3 +1,4 @@
+// src/components/home/hero/Hero.tsx
 'use client';
 
 import Head from 'next/head';

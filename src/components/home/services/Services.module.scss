@@ -1,3 +1,5 @@
+/* src/components/home/services/Services.module.scss */
+
 /* =========================
    SERVICES — Seamless + Hover/Tap Flip
    ========================= */
@@ -14,9 +16,7 @@
   padding: clamp(48px, 8vw, 120px) 24px clamp(64px, 10vw, 140px);
   opacity: 0;
   transform: translateY(24px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s ease;
+  transition: opacity 0.7s ease, transform 0.7s ease;
 }
 
 .visible {
@@ -69,7 +69,7 @@
   letter-spacing: 0.16em;
   color: rgba(226, 232, 240, 0.82);
   opacity: 0.85;
-  display: none; /* enabled on small / desktop differently below */
+  display: none;
 }
 
 .mobileHintTap {
@@ -93,7 +93,7 @@
   }
 }
 
-/* Card with tilt + state-driven face swap */
+/* Card with tilt */
 .card {
   position: relative;
   border-radius: 24px;
@@ -101,33 +101,36 @@
   isolation: isolate;
   perspective: 1200px;
   transform: rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg));
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-/* Inner wrapper */
-/* Stronger card outline + glow */
+/* ✅ Base closed height; open uses --openH */
 .cardInner {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  min-height: min(58vw, 420px);
 
-  /* NEW — Stronger perimeter outline */
+  /* closed */
+  min-height: min(60vw, 460px);
+
   border: 1.5px solid rgba(255, 255, 255, 0.10);
-
-  /* NEW — Outer glow to lift the card visually from the background */
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),     /* crisp edge */
-    0 12px 30px rgba(0, 0, 0, 0.65),         /* existing depth */
-    0 0 20px rgba(229, 215, 167, 0.06);      /* soft warm outer glow */
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.65),
+    0 0 20px rgba(229, 215, 167, 0.06);
+
+  transition:
+    min-height 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
-/* On hover or active flip highlight even more */
+/* Hover (desktop) or flipped (mobile) */
 .card:hover .cardInner,
 .cardInnerActive {
+  /* ✅ FIX: use the computed height directly (no vw mixing) */
+  min-height: var(--openH, 560px);
+
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.12),
@@ -135,32 +138,27 @@
     0 0 26px rgba(229, 215, 167, 0.10);
 }
 
-
-/* Faces stack on top */
+/* Faces */
 .face {
   position: absolute;
   inset: 0;
   display: grid;
   opacity: 0;
   transform: translateY(6px) scale(0.98);
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
+  transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-/* Front: visible by default */
 .front {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
 }
 
-/* Back: hidden by default */
 .back {
   pointer-events: none;
 }
 
-/* ACTIVE STATE – applied by React (hover on desktop / tap on mobile) */
+/* ACTIVE state */
 .cardInnerActive .front {
   opacity: 0;
   transform: translateY(-4px) scale(0.98);
@@ -173,16 +171,27 @@
   pointer-events: auto;
 }
 
-/* Media + scrims shared */
+/* Media */
 .media {
   position: absolute;
   inset: 0;
-  background-position: center;
+  background-position: center center;
+  background-repeat: no-repeat;
   background-size: cover;
+
+  will-change: transform;
   transform: translateZ(0);
-  filter: saturate(1.05) contrast(1.05);
+
+  filter: saturate(1.06) contrast(1.06);
 }
 
+/* Optional: slightly reframe image when open so it "fills" better */
+.card:hover .media,
+.cardInnerActive .media {
+  background-position: center 35%;
+}
+
+/* Front scrim */
 .scrim {
   position: absolute;
   inset: 0;
@@ -203,33 +212,43 @@
   pointer-events: none;
 }
 
-/* slightly different vibe for the back */
+/* Back scrim — readable on ANY image (white/bright backgrounds too) */
 .scrimBack {
   position: absolute;
   inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: normal;
+
+  /* 👇 clearer top, controlled bottom */
   background:
     radial-gradient(
-      130% 80% at 50% 0%,
-      rgba(231, 215, 167, 0.26),
-      transparent 40%
+      120% 85% at 30% 0%,
+      rgba(231, 215, 167, 0.14),
+      transparent 60%
     ),
     linear-gradient(
       180deg,
-      rgba(5, 9, 20, 0.6) 0%,
-      rgba(5, 9, 20, 0.96) 90%
+      rgba(2, 6, 16, 0.48) 0%,
+      rgba(2, 6, 16, 0.72) 55%,
+      rgba(2, 6, 16, 0.88) 100%
     );
-  z-index: 1;
-  mix-blend-mode: screen;
-  pointer-events: none;
 }
 
+/* Content */
 .info {
   position: relative;
   z-index: 2;
   display: grid;
   gap: 10px;
   padding: clamp(18px, 3.5vw, 28px);
-  align-content: end;
+  align-content: end; /* front wants this */
+}
+
+/* ✅ Back content: start from top so extra height doesn't look like a huge gap */
+.back .info {
+  align-content: start;
+  padding-bottom: 22px;
 }
 
 .tag {
@@ -254,15 +273,49 @@
 .blurb {
   color: #efefef;
   line-height: 1.65;
-  max-width: 60ch;
-  opacity: 0.95;
+  max-width: 62ch;
+  opacity: 0.96;
 }
 
+/* ✅ WHAT’S INCLUDED — no black background (your request)
+   Still readable because scrimBack darkens the whole image.
+*/
+.includesBox {
+  margin-top: 10px;
+  padding: 10px 2px 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.includesTitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(231, 215, 167, 0.92);
+  margin-bottom: 10px;
+}
+
+.includesList {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 10px;
+  color: #f3f4f6;
+
+  li {
+    line-height: 1.45;
+  }
+}
+
+/* Actions */
 .actions {
   margin-top: 4px;
 }
 
-/* Flip hints (Tap vs Hover) */
+/* Flip hints */
 .flipHint {
   margin-top: 8px;
   font-size: 0.78rem;
@@ -296,9 +349,7 @@
   box-shadow:
     0 10px 28px rgba(0, 0, 0, 0.35),
     inset 0 -2px 0 rgba(0, 0, 0, 0.12);
-  transition:
-    transform 0.08s ease,
-    filter 0.15s ease;
+  transition: transform 0.08s ease, filter 0.15s ease;
 }
 
 .cta {
@@ -307,12 +358,12 @@
 }
 
 .ctaSecondary {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.06);
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.26);
   box-shadow:
     0 10px 24px rgba(0, 0, 0, 0.5),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .cta:hover,
@@ -326,27 +377,6 @@
   transform: translateY(0);
 }
 
-/* Footer */
-.footerRow {
-  max-width: 1160px;
-  margin: 14px auto 0;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.viewAll {
-  color: #fff;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 2px;
-  opacity: 0.9;
-}
-
-.viewAll:hover {
-  opacity: 1;
-}
-
-/* No bottom vignette in seamless layout */
 .vignette {
   display: none;
 }
@@ -358,10 +388,7 @@
   padding-top: clamp(32px, 6vw, 56px);
 }
 
-/* =========================
-   Responsive polish
-   ========================= */
-
+/* Responsive */
 @media (max-width: 900px) {
   .section {
     padding-inline: 16px;
@@ -376,7 +403,7 @@
   }
 
   .cardInner {
-    min-height: 360px;
+    min-height: 460px;
   }
 
   .flipHint {
@@ -385,7 +412,7 @@
   }
 }
 
-/* Desktop: show hover copy instead of tap */
+/* Desktop: show hover copy */
 @media (min-width: 901px) {
   .mobileHint {
     display: block;

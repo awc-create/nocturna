@@ -1,18 +1,17 @@
 /* ===============================
    src/components/home/enquire/EnquireModal.module.scss
-   FULL (same exact control styling)
+   FULL (matches Join styling + radio/checkbox group support)
    =============================== */
 
 .backdrop {
   position: fixed;
   inset: 0;
-  z-index: 9999; /* ensure it's above EVERYTHING */
+  z-index: 9999;
   background: radial-gradient(circle at top, rgba(15, 23, 42, 0.92), rgba(0, 0, 0, 0.9));
   backdrop-filter: blur(10px);
   display: grid;
   place-items: center;
   padding: 16px;
-
   isolation: isolate;
 }
 
@@ -33,7 +32,6 @@
   animation: riseIn 0.22s ease-out;
 }
 
-/* pinned X button */
 .close {
   position: absolute;
   top: 12px;
@@ -66,14 +64,12 @@
   }
 }
 
-/* scrollable content area */
 .scrollArea {
   padding: 26px 24px 28px;
-  padding-top: 38px; /* space under X */
+  padding-top: 38px;
   overflow-y: auto;
 }
 
-/* header text */
 .kicker {
   margin-top: 4px;
   font-size: 0.75rem;
@@ -96,7 +92,6 @@
   color: rgba(226, 232, 240, 0.78);
 }
 
-/* form layout */
 .form {
   display: grid;
   gap: 20px;
@@ -128,11 +123,12 @@
   color: rgba(226, 232, 240, 0.8);
 }
 
-/* ============================
-   ONE TRUE CONTROL STYLE
-   input / textarea / select
-   (includes select chevron + chrome autofill fix)
-   ============================ */
+.help {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.65);
+}
 
 .field input,
 .field textarea,
@@ -181,13 +177,22 @@
   }
 }
 
+.field input[type='date']::-webkit-calendar-picker-indicator,
+.field input[type='time']::-webkit-calendar-picker-indicator,
+.field input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.9;
+  filter: invert(1); /* makes the icon visible on dark inputs */
+}
+
 .field textarea {
   height: auto;
   min-height: 110px;
   resize: vertical;
 }
 
-/* SELECT: remove native UI & enforce same look + chevron */
+/* select chevron */
 .field select {
   padding-right: 44px;
   cursor: pointer;
@@ -226,9 +231,32 @@
   overflow-y: auto;
 }
 
-/* ============================
-   CHROME AUTOFILL FIX (white fields)
-   ============================ */
+/* radio/checkbox groups from renderFieldControl */
+.field :global(.controlGroup) {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  background: rgba(2, 6, 23, 0.98);
+}
+
+.field :global(.choiceRow) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  color: rgba(249, 250, 251, 0.95);
+}
+
+.field input[type='checkbox'],
+.field input[type='radio'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #e7d7a7;
+}
+
+/* autofill fix */
 .field input:-webkit-autofill,
 .field textarea:-webkit-autofill,
 .field select:-webkit-autofill {
@@ -256,7 +284,6 @@
   border-color: #e7d7a7;
 }
 
-/* submit + messages */
 .submit {
   margin-top: 6px;
   padding: 12px 18px;
@@ -305,7 +332,85 @@
   font-size: 0.85rem;
 }
 
-/* entrance animation */
+/* success state */
+.successWrap {
+  padding-top: 6px;
+  display: grid;
+  gap: 10px;
+}
+
+.successTitle {
+  margin-top: 6px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.successLead {
+  margin-top: 4px;
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.successPill {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 215, 167, 0.45);
+  background: rgba(2, 6, 23, 0.7);
+  color: rgba(231, 215, 167, 0.95);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.successCount {
+  font-weight: 900;
+}
+
+.successCloseBtn {
+  margin-top: 12px;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(15, 23, 42, 0.55);
+  color: #f9fafb;
+  font-weight: 750;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.75);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px; // 👈 top padding before fields
+}
+
+.labelText {
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+
 @keyframes riseIn {
   from {
     opacity: 0;

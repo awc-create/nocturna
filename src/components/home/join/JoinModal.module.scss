@@ -1,6 +1,6 @@
 /* ===============================
    src/components/home/join/JoinModal.module.scss
-   FULL (clean + consistent controls + select + autofill)
+   FULL (clean + consistent controls + select + autofill + radio/checkbox groups)
    =============================== */
 
 .backdrop {
@@ -12,8 +12,6 @@
   display: grid;
   place-items: center;
   padding: 16px;
-
-  /* prevents weird blending + keeps overlay isolated */
   isolation: isolate;
 }
 
@@ -34,7 +32,6 @@
   animation: riseIn 0.22s ease-out;
 }
 
-/* pinned X button */
 .close {
   position: absolute;
   top: 12px;
@@ -67,14 +64,12 @@
   }
 }
 
-/* scrollable content area */
 .scrollArea {
   padding: 26px 24px 28px;
   padding-top: 38px; /* space under X */
   overflow-y: auto;
 }
 
-/* header text */
 .kicker {
   margin-top: 4px;
   font-size: 0.75rem;
@@ -97,7 +92,6 @@
   color: rgba(226, 232, 240, 0.78);
 }
 
-/* form layout */
 .form {
   display: grid;
   gap: 20px;
@@ -129,10 +123,16 @@
   color: rgba(226, 232, 240, 0.8);
 }
 
+.help {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: rgba(226, 232, 240, 0.65);
+}
+
 /* ============================
    ONE TRUE CONTROL STYLE
    input / textarea / select
-   (includes select chevron + chrome autofill fix)
    ============================ */
 
 .field input,
@@ -148,7 +148,6 @@
   font-size: 0.9rem;
   line-height: 1.25;
 
-  /* IMPORTANT: background-color + background-image */
   background-color: rgba(2, 6, 23, 0.98);
   background-image: radial-gradient(
     circle at 0 0,
@@ -183,14 +182,22 @@
   }
 }
 
-/* TEXTAREA */
+.field input[type='date']::-webkit-calendar-picker-indicator,
+.field input[type='time']::-webkit-calendar-picker-indicator,
+.field input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0.9;
+  filter: invert(1); /* makes the icon visible on dark inputs */
+}
+
 .field textarea {
   height: auto;
   min-height: 110px;
   resize: vertical;
 }
 
-/* SELECT: remove native UI & enforce same look + chevron */
+/* SELECT chevron */
 .field select {
   padding-right: 44px;
   cursor: pointer;
@@ -207,24 +214,20 @@
     18px 18px,
     auto;
 
-  /* chevron + same gradient */
   background-image:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M7 10l5 5 5-5' stroke='rgba(231,215,167,0.9)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
     radial-gradient(circle at 0 0, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.98));
 }
 
-/* placeholder for select (needs option value="") */
 .field select:required:invalid {
   color: rgba(148, 163, 184, 0.9);
 }
 
-/* dropdown option paint */
 .field select option {
   background-color: #0b1020;
   color: #f9fafb;
 }
 
-/* MULTISELECT */
 .field select[multiple] {
   height: auto;
   min-height: 110px;
@@ -234,7 +237,36 @@
 }
 
 /* ============================
-   CHROME AUTOFILL FIX (white fields)
+   RADIO / CHECKBOX GROUPS
+   (renderFieldControl outputs .controlGroup/.choiceRow via global classNames)
+   ============================ */
+
+.field :global(.controlGroup) {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  background: rgba(2, 6, 23, 0.98);
+}
+
+.field :global(.choiceRow) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  color: rgba(249, 250, 251, 0.95);
+}
+
+.field input[type='checkbox'],
+.field input[type='radio'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #e7d7a7;
+}
+
+/* ============================
+   CHROME AUTOFILL FIX
    ============================ */
 .field input:-webkit-autofill,
 .field textarea:-webkit-autofill,
@@ -242,13 +274,10 @@
   -webkit-text-fill-color: #f9fafb !important;
   caret-color: #f9fafb;
 
-  /* kill Chrome's injected white bg */
   -webkit-box-shadow: 0 0 0px 1000px rgba(2, 6, 23, 0.98) inset !important;
   box-shadow: 0 0 0px 1000px rgba(2, 6, 23, 0.98) inset !important;
 
   border: 1px solid rgba(148, 163, 184, 0.65);
-
-  /* prevent flash */
   transition: background-color 9999s ease-out 0s;
 }
 
@@ -266,7 +295,6 @@
   border-color: #e7d7a7;
 }
 
-/* submit + messages */
 .submit {
   margin-top: 6px;
   padding: 12px 18px;
@@ -315,7 +343,88 @@
   font-size: 0.85rem;
 }
 
-/* entrance animation */
+/* =========================
+   SUCCESS SCREEN (THEME)
+   ========================= */
+
+/* success state */
+.successWrap {
+  padding-top: 6px;
+  display: grid;
+  gap: 10px;
+}
+
+.successTitle {
+  margin-top: 6px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.successLead {
+  margin-top: 4px;
+  color: rgba(226, 232, 240, 0.82);
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.successPill {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(231, 215, 167, 0.45);
+  background: rgba(2, 6, 23, 0.7);
+  color: rgba(231, 215, 167, 0.95);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.successCount {
+  font-weight: 900;
+}
+
+.successCloseBtn {
+  margin-top: 12px;
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(15, 23, 42, 0.55);
+  color: #f9fafb;
+  font-weight: 750;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.16s ease, background 0.16s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.75);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px; // 👈 top padding before fields
+}
+
+.labelText {
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
 @keyframes riseIn {
   from {
     opacity: 0;
