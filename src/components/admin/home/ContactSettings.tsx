@@ -372,7 +372,10 @@ export default function ContactSettings() {
       const payload: ContactConfig = {
         ...config,
         socialLinks: socialRows
-          .map(({ _id, ...s }) => ({ ...s, url: s.url.trim() }))
+          .map((row) => {
+            const { platform, url } = row; // pick only what you want
+            return { platform, url: url.trim() };
+          })
           .filter((s) => s.url.length > 0),
       };
 
