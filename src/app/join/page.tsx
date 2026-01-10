@@ -1,4 +1,4 @@
-// src/app/contact/page.tsx
+// src/app/join/page.tsx
 import Home from '../page';
 
 export default Home;

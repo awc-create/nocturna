@@ -1,6 +1,9 @@
 // src/app/HomeClient.tsx
 'use client';
 
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+
 import Hero from '@/components/home/hero/Hero';
 import About from '@/components/home/about/About';
 import Services from '@/components/home/services/Services';
@@ -50,7 +53,27 @@ type HomeClientProps = {
   };
 };
 
+const SECTION_IDS = new Set(['top', 'about', 'services', 'clients', 'enquire', 'join', 'contact']);
+
 export default function HomeClient({ services, clients }: HomeClientProps) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Only scroll for routes like /about, /services, etc.
+    if (!pathname || pathname === '/') return;
+
+    const sectionId = pathname.replace('/', '').split('/')[0]; // defensive
+    if (!SECTION_IDS.has(sectionId)) return;
+
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+
+    // Ensure DOM/layout is ready
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [pathname]);
+
   return (
     <ModalProvider>
       <main className={styles.homeContainer}>

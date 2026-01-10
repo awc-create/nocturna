@@ -12,9 +12,10 @@ export type Service = {
   href: string;
   image: string;
   tag: string;
-  backImage?: string;
   detail?: string;
   includes?: string[];
+  /** Front image darkness (0 → 0.8). Higher = darker. */
+  overlay?: number;
 };
 
 type ServicesResponse = {
@@ -35,6 +36,8 @@ type ServicesProps = {
   enableClientRefresh?: boolean;
 };
 
+const DEFAULT_OVERLAY = 0.55;
+
 const DEFAULTS: Service[] = [
   {
     key: 'dj',
@@ -44,7 +47,6 @@ const DEFAULTS: Service[] = [
     href: '#enquire',
     image: '/assets/services/djs.jpg',
     tag: 'Nightlife energy',
-    backImage: '/assets/services/djs-back.jpg',
     detail:
       'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
     includes: [
@@ -54,6 +56,7 @@ const DEFAULTS: Service[] = [
       'One point of contact throughout',
       'Reliable cover if availability changes',
     ],
+    overlay: DEFAULT_OVERLAY,
   },
   {
     key: 'musician',
@@ -63,7 +66,6 @@ const DEFAULTS: Service[] = [
     href: '#enquire',
     image: '/assets/services/musicians.jpg',
     tag: 'Live atmosphere',
-    backImage: '/assets/services/musicians-back.jpg',
     detail:
       'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
     includes: [
@@ -73,6 +75,7 @@ const DEFAULTS: Service[] = [
       'One point of contact throughout',
       'Reliable cover if availability changes',
     ],
+    overlay: DEFAULT_OVERLAY,
   },
 ];
 
@@ -81,6 +84,11 @@ type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 
 function s(v: unknown) {
   return typeof v === 'string' ? v.trim() : '';
+}
+
+function clampOverlay(v: unknown, fallback = DEFAULT_OVERLAY) {
+  if (typeof v !== 'number' || Number.isNaN(v)) return fallback;
+  return Math.min(0.8, Math.max(0, v));
 }
 
 function normalizeItems(items: unknown): Service[] {
@@ -100,13 +108,14 @@ function normalizeItems(items: unknown): Service[] {
 
     if (!key || !title || !blurb || !image || !tag) continue;
 
-    const backImage = s(r.backImage) || undefined;
     const detail = s(r.detail) || undefined;
 
     const includesRaw = r.includes;
     const includes = Array.isArray(includesRaw)
       ? includesRaw.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean)
       : undefined;
+
+    const overlay = clampOverlay(r.overlay, DEFAULT_OVERLAY);
 
     out.push({
       key,
@@ -115,9 +124,9 @@ function normalizeItems(items: unknown): Service[] {
       href,
       image,
       tag,
-      backImage,
       detail,
       includes,
+      overlay,
     });
   }
 
@@ -327,12 +336,14 @@ export default function Services({
           const extra = Math.max(0, bulletCount - BASELINE_BULLETS);
           const openH = Math.min(720, CLOSED + CUSHION + extra * PER_EXTRA_BULLET);
 
-          /**
-           * ✅ Hydration-safe:
-           * - On the server + first client render: style is undefined (no CSS var)
-           * - After mount: we apply --openH
-           */
-          const cardVars: CSSVars | undefined = mounted ? { '--openH': `${openH}px` } : undefined;
+          const overlay = clampOverlay(srv.overlay, DEFAULT_OVERLAY);
+
+          const cardVars: CSSVars | undefined = mounted
+            ? {
+                '--openH': `${openH}px`,
+                '--frontOverlay': `${overlay}`,
+              }
+            : undefined;
 
           return (
             <article key={srv.key} className={styles.card}>
@@ -350,7 +361,10 @@ export default function Services({
                     style={{ backgroundImage: `url(${srv.image})` }}
                     aria-hidden="true"
                   />
+
+                  <div className={styles.scrimGlow} aria-hidden="true" />
                   <div className={styles.scrim} aria-hidden="true" />
+
                   <div className={styles.info}>
                     <span className={styles.tag}>{srv.tag}</span>
                     <h3 className={styles.cardTitle}>{srv.title}</h3>
@@ -375,7 +389,7 @@ export default function Services({
                 <div className={`${styles.face} ${styles.back}`}>
                   <div
                     className={styles.media}
-                    style={{ backgroundImage: `url(${srv.backImage || srv.image})` }}
+                    style={{ backgroundImage: `url(${srv.image})` }}
                     aria-hidden="true"
                   />
                   <div className={styles.scrimBack} aria-hidden="true" />

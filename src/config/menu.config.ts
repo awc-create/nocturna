@@ -2,7 +2,7 @@
 
 export type NavLink = {
   id: string; // matches <section id="...">
-  label: string; // text in the navbar
+  label: string;
 };
 
 export const NAV_LINKS: NavLink[] = [

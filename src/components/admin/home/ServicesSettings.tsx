@@ -1,3 +1,5 @@
+// ✅ FULL: src/components/admin/home/ServicesSettings.tsx
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,9 +17,10 @@ type Service = {
   href: string;
   image: string;
   tag: string;
-  backImage?: string;
   detail?: string;
   includes?: string[];
+  /** Front image darkness (0 → 0.8). Higher = darker. */
+  overlay?: number;
 };
 
 type ServicesData = {
@@ -26,6 +29,11 @@ type ServicesData = {
   lead: string;
   items: Service[];
 };
+
+const DEFAULT_OVERLAY = 0.55;
+
+// ✅ Type-safe CSS vars for inline style
+type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 
 const FALLBACK: ServicesData = {
   kicker: 'Our Services',
@@ -40,7 +48,6 @@ const FALLBACK: ServicesData = {
       href: '#enquire',
       image: '/assets/services/djs.jpg',
       tag: 'Nightlife energy',
-      backImage: '/assets/services/djs-back.jpg',
       detail:
         'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
       includes: [
@@ -50,6 +57,7 @@ const FALLBACK: ServicesData = {
         'One point of contact throughout',
         'Reliable cover if availability changes',
       ],
+      overlay: DEFAULT_OVERLAY,
     },
     {
       key: 'musician',
@@ -59,7 +67,6 @@ const FALLBACK: ServicesData = {
       href: '#enquire',
       image: '/assets/services/musicians.jpg',
       tag: 'Live atmosphere',
-      backImage: '/assets/services/musicians-back.jpg',
       detail:
         'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
       includes: [
@@ -69,9 +76,15 @@ const FALLBACK: ServicesData = {
         'One point of contact throughout',
         'Reliable cover if availability changes',
       ],
+      overlay: DEFAULT_OVERLAY,
     },
   ],
 };
+
+function clampOverlay(v: unknown, fallback: number) {
+  if (typeof v !== 'number' || Number.isNaN(v)) return fallback;
+  return Math.min(0.8, Math.max(0, v));
+}
 
 export default function ServicesSettings() {
   const [form, setForm] = useState<ServicesData>(FALLBACK);
@@ -101,13 +114,16 @@ export default function ServicesSettings() {
             href: item.href || FALLBACK.items[i]?.href || '#enquire',
             image: item.image || FALLBACK.items[i]?.image || '',
             tag: item.tag || FALLBACK.items[i]?.tag || '',
-            backImage: item.backImage || FALLBACK.items[i]?.backImage || '',
             detail: item.detail ?? FALLBACK.items[i]?.detail ?? '',
             includes: Array.isArray(item.includes)
               ? item.includes.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim())
               : Array.isArray(FALLBACK.items[i]?.includes)
                 ? (FALLBACK.items[i]?.includes as string[])
                 : [],
+            overlay: clampOverlay(
+              (item as Service).overlay,
+              FALLBACK.items[i]?.overlay ?? DEFAULT_OVERLAY
+            ),
           })),
         });
       } finally {
@@ -153,9 +169,9 @@ export default function ServicesSettings() {
           href: '#enquire',
           image: '',
           tag: '',
-          backImage: '',
           detail: '',
           includes: [],
+          overlay: DEFAULT_OVERLAY,
         },
       ],
     }));
@@ -207,7 +223,7 @@ export default function ServicesSettings() {
   const save = async () => {
     setSaving(true);
     try {
-      // trim includes before save
+      // trim includes + clamp overlay before save
       const payload: ServicesData = {
         ...form,
         items: form.items.map((it) => ({
@@ -215,6 +231,7 @@ export default function ServicesSettings() {
           includes: Array.isArray(it.includes)
             ? it.includes.map((x) => (typeof x === 'string' ? x.trim() : '')).filter(Boolean)
             : [],
+          overlay: clampOverlay(it.overlay, DEFAULT_OVERLAY),
         })),
       };
 
@@ -271,190 +288,180 @@ export default function ServicesSettings() {
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Service Cards</legend>
 
-          {form.items.map((item, i) => (
-            <div key={item.key || i} className={styles.itemRow}>
-              <label>
-                Title
-                <input
-                  value={item.title}
-                  onChange={updateItem(i, 'title')}
-                  placeholder="e.g. DJs"
-                />
-              </label>
+          {form.items.map((item, i) => {
+            const overlay = clampOverlay(item.overlay, DEFAULT_OVERLAY);
+            const previewVars: CSSVars = { '--previewOverlay': `${overlay}` };
 
-              <label>
-                Tagline
-                <input
-                  value={item.tag}
-                  onChange={updateItem(i, 'tag')}
-                  placeholder="e.g. Nightlife energy"
-                />
-              </label>
+            return (
+              <div key={item.key || i} className={styles.itemRow}>
+                <label>
+                  Title
+                  <input
+                    value={item.title}
+                    onChange={updateItem(i, 'title')}
+                    placeholder="e.g. DJs"
+                  />
+                </label>
 
-              <label className={styles.full}>
-                Front description
-                <textarea rows={3} value={item.blurb} onChange={updateItem(i, 'blurb')} />
-              </label>
+                <label>
+                  Tagline
+                  <input
+                    value={item.tag}
+                    onChange={updateItem(i, 'tag')}
+                    placeholder="e.g. Nightlife energy"
+                  />
+                </label>
 
-              <label className={styles.full}>
-                Deeper explanation (back of card)
-                <textarea rows={3} value={item.detail ?? ''} onChange={updateItem(i, 'detail')} />
-              </label>
+                <label className={styles.full}>
+                  Front description
+                  <textarea rows={3} value={item.blurb} onChange={updateItem(i, 'blurb')} />
+                </label>
 
-              {/* ✅ INCLUDES (editable + reorder) */}
-              <div className={`${styles.full} ${styles.includesEditor}`}>
-                <div className={styles.includesHeader}>
-                  <div>
-                    <strong>What’s included</strong>
-                    <div className={styles.includesSub}>
-                      Bullets shown on hover/tap (back of card).
+                <label className={styles.full}>
+                  Deeper explanation (back of card)
+                  <textarea rows={3} value={item.detail ?? ''} onChange={updateItem(i, 'detail')} />
+                </label>
+
+                {/* ✅ INCLUDES (editable + reorder) */}
+                <div className={`${styles.full} ${styles.includesEditor}`}>
+                  <div className={styles.includesHeader}>
+                    <div>
+                      <strong>What’s included</strong>
+                      <div className={styles.includesSub}>
+                        Bullets shown on hover/tap (back of card).
+                      </div>
                     </div>
+                    <button type="button" className={styles.smallBtn} onClick={() => addInclude(i)}>
+                      + Add bullet
+                    </button>
                   </div>
-                  <button type="button" className={styles.smallBtn} onClick={() => addInclude(i)}>
-                    + Add bullet
+
+                  {(item.includes?.length ?? 0) > 0 ? (
+                    <div className={styles.includesList}>
+                      {(item.includes ?? []).map((line, j) => (
+                        <div key={j} className={styles.includeRow}>
+                          <input
+                            value={line}
+                            onChange={(e) => updateInclude(i, j, e.currentTarget.value)}
+                            placeholder="e.g. Programming aligned to time of day and atmosphere"
+                          />
+
+                          <div className={styles.includeBtns}>
+                            <button
+                              type="button"
+                              className={styles.iconBtn}
+                              onClick={() => moveInclude(i, j, -1)}
+                              aria-label="Move up"
+                              title="Move up"
+                              disabled={j === 0}
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.iconBtn}
+                              onClick={() => moveInclude(i, j, 1)}
+                              aria-label="Move down"
+                              title="Move down"
+                              disabled={j === (item.includes?.length ?? 1) - 1}
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.iconBtnDanger}
+                              onClick={() => removeInclude(i, j)}
+                              aria-label="Remove"
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className={styles.includesEmpty}>No bullets yet. Click “Add bullet”.</div>
+                  )}
+                </div>
+
+                <label>
+                  Link
+                  <input
+                    value={item.href}
+                    onChange={updateItem(i, 'href')}
+                    placeholder="#enquire"
+                  />
+                </label>
+
+                <label>
+                  Image URL
+                  <input
+                    value={item.image}
+                    onChange={updateItem(i, 'image')}
+                    placeholder="/assets/services/djs.jpg"
+                  />
+                </label>
+
+                <div className={styles.uploadRow}>
+                  <UploadButton<OurFileRouter, 'imageUploader'>
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                      const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
+                      if (!url) return;
+                      setItem(i, { image: url });
+                    }}
+                    onUploadError={(err) => alert(humanUploadError(err, 'image'))}
+                  />
+                  <button
+                    type="button"
+                    className={styles.smallBtnDanger}
+                    onClick={() => setItem(i, { image: '' })}
+                    disabled={!item.image}
+                    title="Remove image (leave blank)"
+                  >
+                    Clear image
                   </button>
                 </div>
 
-                {(item.includes?.length ?? 0) > 0 ? (
-                  <div className={styles.includesList}>
-                    {(item.includes ?? []).map((line, j) => (
-                      <div key={j} className={styles.includeRow}>
-                        <input
-                          value={line}
-                          onChange={(e) => updateInclude(i, j, e.currentTarget.value)}
-                          placeholder="e.g. Programming aligned to time of day and atmosphere"
-                        />
+                {/* ✅ Darkness slider (live updates preview) */}
+                <label className={styles.full}>
+                  Image darkness
+                  <input
+                    type="range"
+                    min={0}
+                    max={0.8}
+                    step={0.05}
+                    value={overlay}
+                    onChange={(e) => setItem(i, { overlay: Number(e.currentTarget.value) })}
+                  />
+                  <small className={styles.helpText}>
+                    Controls the dark overlay on the front image. Higher = darker.
+                  </small>
+                </label>
 
-                        <div className={styles.includeBtns}>
-                          <button
-                            type="button"
-                            className={styles.iconBtn}
-                            onClick={() => moveInclude(i, j, -1)}
-                            aria-label="Move up"
-                            title="Move up"
-                          >
-                            ↑
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.iconBtn}
-                            onClick={() => moveInclude(i, j, 1)}
-                            aria-label="Move down"
-                            title="Move down"
-                          >
-                            ↓
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.iconBtnDanger}
-                            onClick={() => removeInclude(i, j)}
-                            aria-label="Remove"
-                            title="Remove"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                {/* ✅ Live preview that responds to slider */}
+                {item.image && (
+                  <div className={styles.previewRow}>
+                    <div className={styles.previewThumb} style={previewVars}>
+                      <Image
+                        src={item.image}
+                        alt="Service image preview"
+                        className={styles.imagePreview}
+                        width={260}
+                        height={160}
+                      />
+                      <div className={styles.previewOverlay} aria-hidden="true" />
+                    </div>
                   </div>
-                ) : (
-                  <div className={styles.includesEmpty}>No bullets yet. Click “Add bullet”.</div>
                 )}
-              </div>
 
-              <label>
-                Link
-                <input value={item.href} onChange={updateItem(i, 'href')} placeholder="#enquire" />
-              </label>
-
-              <label>
-                Front image URL
-                <input
-                  value={item.image}
-                  onChange={updateItem(i, 'image')}
-                  placeholder="/assets/services/djs.jpg"
-                />
-              </label>
-
-              <div className={styles.uploadRow}>
-                <UploadButton<OurFileRouter, 'imageUploader'>
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
-                    if (!url) return;
-                    setItem(i, { image: url, backImage: item.backImage || url });
-                  }}
-                  onUploadError={(err) => alert(humanUploadError(err, 'image'))}
-                />
-                <button
-                  type="button"
-                  className={styles.smallBtnDanger}
-                  onClick={() => setItem(i, { image: '' })}
-                  disabled={!item.image}
-                  title="Remove front image (leave blank)"
-                >
-                  Clear front image
+                <button type="button" className={styles.removeBtn} onClick={() => removeItem(i)}>
+                  ✕ Remove
                 </button>
               </div>
-
-              <label>
-                Back image URL (optional)
-                <input
-                  value={item.backImage ?? ''}
-                  onChange={updateItem(i, 'backImage')}
-                  placeholder="Defaults to front image if left empty."
-                />
-              </label>
-
-              <div className={styles.uploadRow}>
-                <UploadButton<OurFileRouter, 'imageUploader'>
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    const url = (res?.[0]?.ufsUrl ?? res?.[0]?.url ?? '').trim();
-                    if (!url) return;
-                    setItem(i, { backImage: url });
-                  }}
-                  onUploadError={(err) => alert(humanUploadError(err, 'image'))}
-                />
-                <button
-                  type="button"
-                  className={styles.smallBtnDanger}
-                  onClick={() => setItem(i, { backImage: '' })}
-                  disabled={!item.backImage}
-                  title="Remove back image (leave blank)"
-                >
-                  Clear back image
-                </button>
-              </div>
-
-              {(item.image || item.backImage) && (
-                <div className={styles.previewRow}>
-                  {item.image && (
-                    <Image
-                      src={item.image}
-                      alt="Front image preview"
-                      className={styles.imagePreview}
-                      width={260}
-                      height={160}
-                    />
-                  )}
-                  {item.backImage && item.backImage !== item.image && (
-                    <Image
-                      src={item.backImage}
-                      alt="Back image preview"
-                      className={styles.imagePreview}
-                      width={260}
-                      height={160}
-                    />
-                  )}
-                </div>
-              )}
-
-              <button type="button" className={styles.removeBtn} onClick={() => removeItem(i)}>
-                ✕ Remove
-              </button>
-            </div>
-          ))}
+            );
+          })}
 
           <button type="button" className={styles.addBtn} onClick={addItem}>
             + Add Service

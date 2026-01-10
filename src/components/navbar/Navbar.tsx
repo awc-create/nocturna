@@ -44,10 +44,23 @@ export default function Navbar() {
   const lastTime = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const raf = useRef<number | null>(null);
 
-  // === ACTIVE SECTION STATE (for home page) ===
+  // === ACTIVE SECTION STATE ===
   const [activeSection, setActiveSection] = useState<string>('top');
   const activeRef = useRef<string>('top');
+
+  // These are SECTION ids in the DOM
   const sectionIds = NAV_LINKS.map((l) => l.id);
+
+  // Helpers
+  const pathForId = (id: string) => (id === 'top' ? '/' : `/${id}`);
+  const idFromPath = (p: string) => {
+    if (!p || p === '/') return 'top';
+    return p.replace('/', '').split('/')[0];
+  };
+  const isSectionRoute = (() => {
+    const id = idFromPath(pathname);
+    return id === 'top' || sectionIds.includes(id);
+  })();
 
   // mobile breakpoint
   useEffect(() => {
@@ -80,7 +93,7 @@ export default function Navbar() {
       pos: React.MutableRefObject<number>,
       vel: React.MutableRefObject<number>,
       targetValue: number,
-      writer: (v: number) => void,
+      writer: (v2: number) => void,
       dt: number
     ) => {
       const w = NATURAL_FREQUENCY;
@@ -208,15 +221,44 @@ export default function Navbar() {
     };
   }, [hover, menuOpen, stepSpring, isMobile]);
 
-  // === ACTIVE SECTION TRACKING (home only) ===
+  // ✅ On mount / route change: if URL is /services, scroll to that section
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (pathname !== '/') return; // only track sections on home
+    if (!isSectionRoute) return;
+
+    const id = idFromPath(pathname);
+    if (!id || id === 'top') {
+      // Top
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      });
+      activeRef.current = 'top';
+      setActiveSection('top');
+      return;
+    }
+
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Auto-scroll (no animation to feel like normal page load)
+    requestAnimationFrame(() => {
+      const y = el.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: y, behavior: 'auto' });
+    });
+
+    activeRef.current = id;
+    setActiveSection(id);
+  }, [pathname, isSectionRoute]);
+
+  // ✅ ACTIVE SECTION TRACKING (works on / and /section routes)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isSectionRoute) return;
 
     const handle = () => {
       const y = window.scrollY || 0;
 
-      // very top of page => Home
+      // very top => Home
       if (y < 200) {
         if (activeRef.current !== 'top') {
           activeRef.current = 'top';
@@ -225,7 +267,7 @@ export default function Navbar() {
         return;
       }
 
-      const viewportOffset = 100; // approx nav height
+      const viewportOffset = 100;
       let bestId = 'top';
       let bestDelta = Infinity;
 
@@ -249,14 +291,14 @@ export default function Navbar() {
       }
     };
 
-    handle(); // run once on mount
+    handle();
     window.addEventListener('scroll', handle, { passive: true });
     window.addEventListener('resize', handle);
     return () => {
       window.removeEventListener('scroll', handle);
       window.removeEventListener('resize', handle);
     };
-  }, [pathname, sectionIds]);
+  }, [isSectionRoute, sectionIds]);
 
   const onEnter = () => setHover(true);
   const onLeave = () => setHover(false);
@@ -269,37 +311,47 @@ export default function Navbar() {
   const bottomStyle = { transform: `translateY(${handoff ? HIDE_PX : 0}px)` };
   const pillVars: CSSVars = { ['--links-count']: NAV_LINKS.length as number };
 
-  // smooth scroll to sections (home only)
+  // ✅ Smooth scroll + update URL path WITHOUT navigation
   const handleNavClick =
     (id: string) => (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
-      if (pathname !== '/') {
-        // if you ever add other pages with same nav, let Next.js route normally
-        return;
-      }
+      // Only intercept clicks when we're on home-like routes
+      if (!isSectionRoute) return;
 
       e.preventDefault();
 
+      const nextPath = pathForId(id);
+
       if (id === 'top') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.history.pushState(null, '', nextPath);
+        activeRef.current = 'top';
+        setActiveSection('top');
         closeMenu();
         return;
       }
 
       const target = document.getElementById(id);
       if (!target) {
+        // Still update URL if something is off
+        window.history.pushState(null, '', nextPath);
         closeMenu();
         return;
       }
 
       const y = target.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top: y, behavior: 'smooth' });
+
+      // ✅ update URL WITHOUT page load
+      window.history.pushState(null, '', nextPath);
+
+      activeRef.current = id;
+      setActiveSection(id);
+
       closeMenu();
     };
 
-  const isLinkActive = (id: string) => {
-    if (pathname !== '/') return false;
-    return activeSection === id;
-  };
+  // Active state
+  const isLinkActive = (id: string) => activeSection === id;
 
   // Desktop pill (links ⇄ logo)
   const CenterMorph = () => (
@@ -309,9 +361,12 @@ export default function Navbar() {
           <Image src="/assets/A_W.png" alt="Nocturna" width={34} height={48} priority />
         </Link>
       </div>
+
       <div className={styles.linksLayer}>
         {NAV_LINKS.map(({ id, label }) => {
-          const href = id === 'top' ? '#top' : `#${id}`;
+          // ✅ real, shareable URL paths
+          const href = pathForId(id);
+
           return (
             <Link
               key={id}
@@ -389,12 +444,15 @@ export default function Navbar() {
               ✕
             </button>
           </div>
+
           <h2 id="mobile-menu-title" className={styles.srOnly}>
             Navigation
           </h2>
+
           <nav className={styles.mobileNav}>
             {NAV_LINKS.map(({ id, label }) => {
-              const href = id === 'top' ? '#top' : `#${id}`;
+              const href = pathForId(id);
+
               return (
                 <Link
                   key={id}
@@ -415,10 +473,9 @@ export default function Navbar() {
   const topClass = `${styles.topWrapper} ${handoff ? styles.handoff : ''}`;
   const bottomClass = `${styles.bottomWrapper} ${handoff ? styles.handoff : ''}`;
 
-  const isHome = pathname === '/';
-
-  // 🔹 Non-home: simple sticky bar with Back to home
-  if (!isHome) {
+  // ✅ Keep full home navbar on / and /section
+  if (!isSectionRoute) {
+    // Non-home route: simple sticky bar
     return (
       <header className={styles.secondaryBar}>
         <div className={styles.secondaryInner}>
@@ -437,7 +494,7 @@ export default function Navbar() {
     );
   }
 
-  // 🔹 Home: full floating morph pill + mobile dock
+  // Home-like routes: full floating morph pill + mobile dock
   return (
     <>
       <div className={topClass} style={topStyle}>

@@ -1,4 +1,4 @@
-/* src/components/home/services/Services.module.scss */
+/* ✅ FULL: src/components/home/services/Services.module.scss */
 
 /* =========================
    SERVICES — Seamless + Hover/Tap Flip
@@ -6,6 +6,8 @@
 
 .section {
   --night-blue: 16, 34, 60;
+  /* default overlay if card var not set yet */
+  --frontOverlay: 0.55;
 
   position: relative;
   color: #fff;
@@ -104,7 +106,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-/* ✅ Base closed height; open uses --openH */
+/* ✅ Base closed height; open uses --openH (desktop) */
 .cardInner {
   position: relative;
   border-radius: 24px;
@@ -125,10 +127,9 @@
     border-color 0.2s ease;
 }
 
-/* Hover (desktop) or flipped (mobile) */
+/* Hover (desktop) or flipped (mobile baseline) */
 .card:hover .cardInner,
 .cardInnerActive {
-  /* ✅ FIX: use the computed height directly (no vw mixing) */
   min-height: var(--openH, 560px);
 
   border-color: rgba(255, 255, 255, 0.16);
@@ -191,28 +192,41 @@
   background-position: center 35%;
 }
 
-/* Front scrim */
+/* ✅ Glow layer (keeps your nice highlight, DOES NOT control darkness) */
+.scrimGlow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+
+  background: radial-gradient(
+    140% 80% at var(--glowX, 50%) var(--glowY, 50%),
+    rgba(255, 255, 255, 0.22),
+    transparent 42%
+  );
+
+  mix-blend-mode: screen;
+}
+
+/* ✅ Darkness layer (THIS is what the slider controls) */
 .scrim {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(
-      140% 80% at var(--glowX, 50%) var(--glowY, 50%),
-      rgba(255, 255, 255, 0.22),
-      transparent 42%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.15) 0%,
-      rgba(0, 0, 0, 0.78) 85%,
-      rgba(0, 0, 0, 0.92) 100%
-    );
-  z-index: 1;
-  mix-blend-mode: screen;
+  z-index: 2;
   pointer-events: none;
+
+  /* Stronger & actually dark (no screen blend) */
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, calc(0.20 + (var(--frontOverlay, 0.55) * 0.40))) 0%,
+    rgba(0, 0, 0, calc(0.40 + (var(--frontOverlay, 0.55) * 0.85))) 55%,
+    rgba(0, 0, 0, calc(0.62 + (var(--frontOverlay, 0.55) * 1.20))) 100%
+  );
+
+  mix-blend-mode: normal;
 }
 
-/* Back scrim — readable on ANY image (white/bright backgrounds too) */
+/* Back scrim — readable on ANY image */
 .scrimBack {
   position: absolute;
   inset: 0;
@@ -220,7 +234,6 @@
   pointer-events: none;
   mix-blend-mode: normal;
 
-  /* 👇 clearer top, controlled bottom */
   background:
     radial-gradient(
       120% 85% at 30% 0%,
@@ -238,14 +251,14 @@
 /* Content */
 .info {
   position: relative;
-  z-index: 2;
+  z-index: 3; /* ✅ above glow + darkness */
   display: grid;
   gap: 10px;
   padding: clamp(18px, 3.5vw, 28px);
   align-content: end; /* front wants this */
 }
 
-/* ✅ Back content: start from top so extra height doesn't look like a huge gap */
+/* ✅ Back content: start from top */
 .back .info {
   align-content: start;
   padding-bottom: 22px;
@@ -277,9 +290,6 @@
   opacity: 0.96;
 }
 
-/* ✅ WHAT’S INCLUDED — no black background (your request)
-   Still readable because scrimBack darkens the whole image.
-*/
 .includesBox {
   margin-top: 10px;
   padding: 10px 2px 0;
@@ -388,7 +398,10 @@
   padding-top: clamp(32px, 6vw, 56px);
 }
 
-/* Responsive */
+/* =========================
+   ✅ MOBILE FIX: expand by content height on tap
+   (desktop hover stays identical)
+   ========================= */
 @media (max-width: 900px) {
   .section {
     padding-inline: 16px;
@@ -404,6 +417,31 @@
 
   .cardInner {
     min-height: 460px;
+  }
+
+  /* ✅ The key fix: on mobile, don’t force openH — let content define height */
+  .cardInnerActive {
+    min-height: unset; /* content-driven */
+    height: auto;
+  }
+
+  /* ✅ Make the active face participate in layout so the card actually grows */
+  .cardInnerActive .face {
+    position: relative;
+    inset: auto;
+  }
+
+  /* ✅ Hide front entirely (removes invisible overlay space issues) */
+  .cardInnerActive .front {
+    display: none;
+  }
+
+  /* ✅ Show back as the only content */
+  .cardInnerActive .back {
+    display: grid;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
   }
 
   .flipHint {

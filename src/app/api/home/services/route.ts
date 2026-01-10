@@ -1,3 +1,4 @@
+// ✅ FULL: src/app/api/home/services/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
@@ -6,6 +7,7 @@ import type { Prisma } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 
 const KEY = 'services';
+const DEFAULT_OVERLAY = 0.55;
 
 export interface ServiceItem {
   key: string;
@@ -14,9 +16,10 @@ export interface ServiceItem {
   href: string;
   image: string;
   tag: string;
-  backImage?: string;
   detail?: string;
   includes?: string[];
+  /** Front image darkness (0 → 0.8). Higher = darker. */
+  overlay?: number;
 }
 
 const DEFAULTS = {
@@ -31,7 +34,6 @@ const DEFAULTS = {
         'Signature selectors for restaurants, bars and late-night venues. Floor-filling sets matched to brand, guest profile, and time of day.',
       href: '#enquire',
       image: '/assets/services/djs.jpg',
-      backImage: '/assets/services/djs-back.jpg',
       tag: 'Nightlife energy',
       detail:
         'Our DJ roster includes experienced selectors used to brand-fit programming, guest-flow control and multi-room setups.',
@@ -42,6 +44,7 @@ const DEFAULTS = {
         'One point of contact throughout',
         'Reliable cover if availability changes',
       ],
+      overlay: DEFAULT_OVERLAY,
     },
     {
       key: 'musician',
@@ -50,7 +53,6 @@ const DEFAULTS = {
         'Acoustic duos, sax, strings, vocalists — atmosphere-first performances curated for intimate dining and premium hospitality.',
       href: '#enquire',
       image: '/assets/services/musicians.jpg',
-      backImage: '/assets/services/musicians-back.jpg',
       tag: 'Live atmosphere',
       detail:
         'We supply adaptable musicians for brunch, dinner or lounges — artists who enhance the atmosphere without overwhelming the room.',
@@ -61,11 +63,19 @@ const DEFAULTS = {
         'One point of contact throughout',
         'Reliable cover if availability changes',
       ],
+      overlay: DEFAULT_OVERLAY,
     },
   ] as ServiceItem[],
 };
 
 const s = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
+
+function clampOverlay(v: unknown, fallback = DEFAULT_OVERLAY) {
+  const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : Number.NaN;
+
+  if (Number.isNaN(n)) return fallback;
+  return Math.min(0.8, Math.max(0, n));
+}
 
 function parseIncludes(input: unknown): string[] | undefined {
   if (!Array.isArray(input)) return undefined;
@@ -91,17 +101,21 @@ function parseItems(input: unknown): ServiceItem[] {
 
     const key = s(r.key) || title.toLowerCase().replace(/\s+/g, '-');
 
+    const image = s(r.image);
+    const tag = s(r.tag);
+
+    // keep your existing “required-ish” pattern:
+    // (you used to allow empty image/tag — but Services.tsx filters those out)
+    // We'll keep it consistent with your current route:
     const item: ServiceItem = {
       key,
       title,
       blurb,
       href: s(r.href) || '#enquire',
-      image: s(r.image),
-      tag: s(r.tag),
+      image,
+      tag,
+      overlay: clampOverlay(r.overlay, DEFAULT_OVERLAY),
     };
-
-    const backImage = s(r.backImage);
-    if (backImage) item.backImage = backImage;
 
     const detail = s(r.detail);
     if (detail) item.detail = detail;
