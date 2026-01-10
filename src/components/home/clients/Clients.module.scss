@@ -45,9 +45,15 @@
 
 .carousel {
   position: relative;
-  overflow: hidden;
   width: min(1160px, 92vw);
   margin: 0 auto;
+
+  /* ✅ only hide sideways overflow (keep vertical visible for the label expand) */
+  overflow-x: hidden;
+  overflow-y: visible;
+
+  /* ✅ space for the expanded label */
+  padding-bottom: 28px;
 }
 
 .track {
@@ -120,9 +126,11 @@
   display: grid;
   grid-template-rows: auto auto;
   justify-items: center;
-
-  /* keeps label aligned under same width */
   width: 240px;
+
+  /* ✅ allow stacking above neighbours */
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================
@@ -130,10 +138,14 @@
    ========================= */
 
 .card {
-  width: 240px; /* ✅ force fixed width */
+  width: 240px;
   height: 220px;
   border-radius: 24px;
   perspective: 1000px;
+
+  /* ✅ keep card above label area if needed */
+  position: relative;
+  z-index: 2;
 }
 
 .cardInner {
@@ -215,6 +227,9 @@
    ========================= */
 
 .cardLabel {
+  position: relative;
+  z-index: 3;
+
   margin-top: 14px;
   padding: 8px 14px;
 
