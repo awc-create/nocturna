@@ -315,12 +315,15 @@ export default function Clients({
             ›
           </button>
 
-          <div className={styles.track} style={{ transform: `translate3d(${-offset}px,0,0)` }}>
-            {glideList.map((l, i) => (
-              <div key={`${l.name}-${i}`} className={styles.slide}>
-                {renderCard(l)}
-              </div>
-            ))}
+          {/* ✅ NEW: viewport wrapper so vertical overflow can show */}
+          <div className={styles.viewport}>
+            <div className={styles.track} style={{ transform: `translate3d(${-offset}px,0,0)` }}>
+              {glideList.map((l, i) => (
+                <div key={`${l.name}-${i}`} className={styles.slide}>
+                  {renderCard(l)}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

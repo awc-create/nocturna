@@ -28,19 +28,16 @@
   margin: 0 auto;
 
   display: grid;
-
-  /* ✅ fixed card size always (no stretching when 1–4) */
   grid-template-columns: repeat(auto-fit, 240px);
-
   gap: 32px;
 
-  /* ✅ center the row when there are fewer cards */
   justify-content: center;
   justify-items: center;
 }
 
 /* =========================
    CAROUSEL (5+) — CONTINUOUS GLIDE
+   IMPORTANT: outer must be overflow: visible
    ========================= */
 
 .carousel {
@@ -48,26 +45,33 @@
   width: min(1160px, 92vw);
   margin: 0 auto;
 
-  /* ✅ only hide sideways overflow (keep vertical visible for the label expand) */
-  overflow-x: hidden;
-  overflow-y: visible;
+  /* ✅ allow label to expand outside */
+  overflow: visible;
 
-  /* ✅ space for the expanded label */
-  padding-bottom: 28px;
+  /* ✅ space for expanded label */
+  padding-bottom: 34px;
 }
 
+/* ✅ NEW: viewport handles horizontal clipping only */
+.viewport {
+  overflow: hidden; /* hides sideways */
+  overflow-y: visible; /* harmless, and label isn't inside this boundary now */
+  padding: 0;
+}
+
+/* Track stays the same */
 .track {
   display: flex;
   gap: 40px; /* keep aligned with GAP in TSX */
   will-change: transform;
 
-  /* optional: stops arrows overlaying cards too much */
-  padding: 0 56px;
+  /* space so arrows don't sit on cards */
+  padding: 0 56px 0;
 }
 
 .slide {
   flex: 0 0 auto;
-  width: 240px; /* ✅ fixed */
+  width: 240px;
 }
 
 /* =========================
@@ -78,7 +82,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
+  z-index: 20;
 
   width: 44px;
   height: 44px;
@@ -128,9 +132,14 @@
   justify-items: center;
   width: 240px;
 
-  /* ✅ allow stacking above neighbours */
   position: relative;
   z-index: 1;
+}
+
+/* Make hovered/focused item appear above neighbors */
+.item:hover,
+.item:focus-within {
+  z-index: 50;
 }
 
 /* =========================
@@ -143,7 +152,6 @@
   border-radius: 24px;
   perspective: 1000px;
 
-  /* ✅ keep card above label area if needed */
   position: relative;
   z-index: 2;
 }
@@ -156,7 +164,15 @@
   transition: transform 0.6s cubic-bezier(0.23, 0.9, 0.35, 1);
 }
 
+/* ✅ Desktop hover flip */
 .item:hover .cardInner {
+  transform: rotateY(180deg);
+}
+
+/* ✅ Keyboard + mobile tap support:
+   if user focuses the link/button on the back (or logo link),
+   the flip stays readable */
+.item:focus-within .cardInner {
   transform: rotateY(180deg);
 }
 
@@ -228,7 +244,7 @@
 
 .cardLabel {
   position: relative;
-  z-index: 3;
+  z-index: 10;
 
   margin-top: 14px;
   padding: 8px 14px;
@@ -246,7 +262,6 @@
 
   border: 1px solid rgba(255, 255, 255, 0.18);
 
-  /* default: single line */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -256,19 +271,17 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   transition:
-    max-width 0.25s ease,
     border-radius 0.25s ease,
     filter 0.2s ease;
 }
 
-/* expand to two lines on card hover */
-.item:hover .cardLabel {
+/* ✅ Expand to two lines on hover AND focus (mobile/keyboard friendly) */
+.item:hover .cardLabel,
+.item:focus-within .cardLabel {
   white-space: normal;
-
   display: -webkit-box;
   -webkit-box-orient: vertical;
 
-  /* vendor + standard */
   -webkit-line-clamp: 2;
   line-clamp: 2;
 
@@ -276,4 +289,51 @@
 
   border-radius: 16px;
   filter: brightness(1.06);
+}
+
+/* =========================
+   MOBILE IMPROVEMENTS
+   ========================= */
+
+@media (max-width: 640px) {
+  .section {
+    padding: 64px 16px 84px;
+  }
+
+  .grid {
+    width: 100%;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, 220px);
+  }
+
+  /* On mobile: keep arrows reachable but not annoying */
+  .track {
+    gap: 22px;
+    padding: 0 44px;
+  }
+
+  .slide,
+  .item,
+  .card {
+    width: 220px;
+  }
+
+  .card {
+    height: 210px;
+  }
+
+  .navBtn {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  /* Mobile: default label can be 2 lines (no “hover required”) */
+  .cardLabel {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
 }
