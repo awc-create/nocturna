@@ -20,18 +20,9 @@ type ClientLogo = {
 };
 
 type ClientsProps = {
-  /**
-   * If provided from server/page.tsx, the component renders these immediately
-   * (so there is NO “flash of DEFAULTS” on refresh).
-   */
   initialTitle?: string;
   initialLead?: string;
   initialLogos?: ClientLogo[];
-
-  /**
-   * Optional: allow turning off client-side refresh fetch if you want.
-   * Default true to keep existing behavior.
-   */
   enableClientRefresh?: boolean;
 };
 
@@ -80,11 +71,6 @@ const DEFAULTS: ClientLogo[] = [
   },
 ];
 
-/**
- * When admin API returns items, we merge each item over a default slot so:
- * - missing quote/blurb/name/title don’t break the back-face layout
- * - you still get stable styling even if admin only sets name+src
- */
 function mergeWithDefaults(items: ClientLogo[]) {
   return items.map((it, i) => ({
     ...DEFAULTS[i % DEFAULTS.length],
@@ -98,11 +84,6 @@ export default function Clients({
   initialLogos,
   enableClientRefresh = true,
 }: ClientsProps) {
-  /**
-   * KEY CHANGE:
-   * We do NOT start with DEFAULTS when server has provided initialLogos.
-   * This prevents any “defaults flash” on refresh.
-   */
   const [title, setTitle] = useState<string>(initialTitle ?? 'Our Clients');
   const [lead, setLead] = useState<string>(
     initialLead ?? 'Trusted by leading venues, bars and creative brands.'
@@ -115,16 +96,16 @@ export default function Clients({
 
   const [paused, setPaused] = useState(false);
 
-  const many = logos.length >= 5;
+  // ✅ Mobile/tap expansion: which card is expanded (by name)
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  // For seamless glide we duplicate the list only in carousel mode
+  const many = logos.length >= 5;
   const glideList = useMemo(() => (many ? [...logos, ...logos] : logos), [many, logos]);
 
   // keep in sync with SCSS fixed sizing
   const CARD_W = 240;
   const GAP = 40;
 
-  // eslint-friendly stable constants
   const STEP = useMemo(() => CARD_W + GAP, []);
   const SPEED = useMemo(() => 30, []); // px/sec
 
@@ -138,15 +119,6 @@ export default function Clients({
     pausedRef.current = paused;
   }, [paused]);
 
-  /**
-   * Client-side refresh:
-   * You can keep this enabled to reflect admin changes after hydration.
-   *
-   * IMPORTANT:
-   * - We do NOT set DEFAULTS first anymore (server already delivered initial)
-   * - We only update state if the API returns items
-   * - We merge with defaults so missing fields still render nicely
-   */
   useEffect(() => {
     if (!enableClientRefresh) return;
 
@@ -165,11 +137,9 @@ export default function Clients({
 
         if (!mounted) return;
 
-        // If API provides title/lead, use them
         if (typeof data?.title === 'string' && data.title.trim()) setTitle(data.title.trim());
         if (typeof data?.lead === 'string' && data.lead.trim()) setLead(data.lead.trim());
 
-        // If items exist, use them (merged with defaults for missing fields)
         if (Array.isArray(data?.items) && data.items.length) {
           setLogos(mergeWithDefaults(data.items));
         }
@@ -183,9 +153,7 @@ export default function Clients({
     };
   }, [enableClientRefresh]);
 
-  /**
-   * Continuous glide carousel
-   */
+  // Continuous glide
   useEffect(() => {
     if (!many) return;
 
@@ -217,11 +185,6 @@ export default function Clients({
     };
   }, [many, logos.length, STEP, SPEED]);
 
-  /**
-   * Arrow controls:
-   * - Pause the glide immediately so user interaction feels “in control”
-   * - Step exactly one card
-   */
   const shiftBy = (dir: 1 | -1) => {
     pausedRef.current = true;
     setPaused(true);
@@ -236,43 +199,78 @@ export default function Clients({
     setOffset(next);
   };
 
-  const renderCard = (logo: ClientLogo) => (
-    <div className={styles.item}>
-      <div className={styles.card}>
-        <div className={styles.cardInner}>
-          {/* FRONT */}
-          <div className={styles.face}>
-            {logo.href ? (
-              <a href={logo.href} aria-label={logo.name} title={logo.name}>
+  const toggleExpanded = (key: string) => {
+    // Pause glide so interaction feels solid
+    pausedRef.current = true;
+    setPaused(true);
+    setExpanded((prev) => (prev === key ? null : key));
+  };
+
+  const renderCard = (logo: ClientLogo) => {
+    const isExpanded = expanded === logo.name;
+
+    return (
+      <div
+        className={`${styles.item} ${isExpanded ? styles.expanded : ''}`}
+        // ✅ mobile/touch: tap to expand
+        onClick={() => toggleExpanded(logo.name)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpanded(logo.name);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+      >
+        <div className={styles.card} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.cardInner}>
+            {/* FRONT */}
+            <div className={styles.face}>
+              {logo.href ? (
+                <a href={logo.href} aria-label={logo.name} title={logo.name}>
+                  <Image src={logo.src} alt={logo.name} width={180} height={80} />
+                </a>
+              ) : (
                 <Image src={logo.src} alt={logo.name} width={180} height={80} />
-              </a>
-            ) : (
-              <Image src={logo.src} alt={logo.name} width={180} height={80} />
-            )}
-          </div>
-
-          {/* BACK */}
-          <div className={`${styles.face} ${styles.back}`}>
-            <blockquote>{logo.quote}</blockquote>
-
-            <div className={styles.meta}>
-              <strong>{logo.personName}</strong>
-              <span>{logo.personTitle}</span>
+              )}
             </div>
 
-            {logo.storyUrl ? (
-              <a href={logo.storyUrl} className={styles.storyBtn}>
-                {logo.storyLabel ?? 'Watch the story'}
-              </a>
-            ) : null}
+            {/* BACK */}
+            <div className={`${styles.face} ${styles.back}`}>
+              <blockquote>{logo.quote}</blockquote>
+
+              <div className={styles.meta}>
+                <strong>{logo.personName}</strong>
+                <span>{logo.personTitle}</span>
+              </div>
+
+              {logo.storyUrl ? (
+                <a href={logo.storyUrl} className={styles.storyBtn}>
+                  {logo.storyLabel ?? 'Watch the story'}
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Under-card blurb pill */}
-      {logo.blurb ? <div className={styles.cardLabel}>{logo.blurb}</div> : null}
-    </div>
-  );
+        {/* Under-card blurb pill */}
+        {logo.blurb ? (
+          <div
+            className={styles.cardLabel}
+            // ✅ keep tap on label from triggering link clicks inside card
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleExpanded(logo.name);
+            }}
+          >
+            {logo.blurb}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <section className={styles.section} aria-labelledby="clients-heading">
@@ -295,7 +293,6 @@ export default function Clients({
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          {/* LEFT ARROW */}
           <button
             type="button"
             className={`${styles.navBtn} ${styles.prev}`}
@@ -305,7 +302,6 @@ export default function Clients({
             ‹
           </button>
 
-          {/* RIGHT ARROW */}
           <button
             type="button"
             className={`${styles.navBtn} ${styles.next}`}
@@ -315,7 +311,7 @@ export default function Clients({
             ›
           </button>
 
-          {/* ✅ NEW: viewport wrapper so vertical overflow can show */}
+          {/* ✅ Horizontal-only clipping container */}
           <div className={styles.viewport}>
             <div className={styles.track} style={{ transform: `translate3d(${-offset}px,0,0)` }}>
               {glideList.map((l, i) => (

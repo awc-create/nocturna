@@ -20,7 +20,7 @@
 }
 
 /* =========================
-   GRID (≤4) — FIXED TILE WIDTH
+   GRID (≤4)
    ========================= */
 
 .grid {
@@ -36,8 +36,8 @@
 }
 
 /* =========================
-   CAROUSEL (5+) — CONTINUOUS GLIDE
-   IMPORTANT: outer must be overflow: visible
+   CAROUSEL (5+)
+   KEY: don't clip vertical overflow
    ========================= */
 
 .carousel {
@@ -45,28 +45,25 @@
   width: min(1160px, 92vw);
   margin: 0 auto;
 
-  /* ✅ allow label to expand outside */
   overflow: visible;
 
-  /* ✅ space for expanded label */
-  padding-bottom: 34px;
+  /* room for expanded label */
+  padding-bottom: 76px;
 }
 
-/* ✅ NEW: viewport handles horizontal clipping only */
+/* ✅ Horizontal-only clipping */
 .viewport {
-  overflow: hidden; /* hides sideways */
-  overflow-y: visible; /* harmless, and label isn't inside this boundary now */
-  padding: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
-/* Track stays the same */
+/* Track glides; must not clip */
 .track {
   display: flex;
-  gap: 40px; /* keep aligned with GAP in TSX */
+  gap: 40px;
   will-change: transform;
 
-  /* space so arrows don't sit on cards */
-  padding: 0 56px 0;
+  padding: 0 56px;
 }
 
 .slide {
@@ -82,7 +79,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 20;
+  z-index: 30;
 
   width: 44px;
   height: 44px;
@@ -134,11 +131,16 @@
 
   position: relative;
   z-index: 1;
+
+  /* makes it feel tappable on mobile */
+  cursor: pointer;
+  outline: none;
 }
 
-/* Make hovered/focused item appear above neighbors */
+/* hovered/focused/expanded item should sit above neighbors */
 .item:hover,
-.item:focus-within {
+.item:focus-within,
+.expanded {
   z-index: 50;
 }
 
@@ -154,6 +156,9 @@
 
   position: relative;
   z-index: 2;
+
+  /* card click shouldn't feel like "button" */
+  cursor: default;
 }
 
 .cardInner {
@@ -164,14 +169,12 @@
   transition: transform 0.6s cubic-bezier(0.23, 0.9, 0.35, 1);
 }
 
-/* ✅ Desktop hover flip */
+/* hover flip (desktop) */
 .item:hover .cardInner {
   transform: rotateY(180deg);
 }
 
-/* ✅ Keyboard + mobile tap support:
-   if user focuses the link/button on the back (or logo link),
-   the flip stays readable */
+/* focus flip (keyboard) */
 .item:focus-within .cardInner {
   transform: rotateY(180deg);
 }
@@ -249,8 +252,9 @@
   margin-top: 14px;
   padding: 8px 14px;
 
-  border-radius: 999px;
+  width: 100%;
   max-width: 100%;
+  border-radius: 999px;
 
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -259,45 +263,43 @@
 
   background: linear-gradient(180deg, #0b1f3a, #07152b);
   color: #ffffff;
-
   border: 1px solid rgba(255, 255, 255, 0.18);
-
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 
   box-shadow:
     0 8px 18px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* ✅ default: one-line ellipsis */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   transition:
     border-radius 0.25s ease,
     filter 0.2s ease;
 }
 
-/* ✅ Expand to two lines on hover AND focus (mobile/keyboard friendly) */
+/* ✅ FULL EXPAND: remove clamp + remove overflow hiding */
 .item:hover .cardLabel,
-.item:focus-within .cardLabel {
+.item:focus-within .cardLabel,
+.expanded .cardLabel {
   white-space: normal;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
+  overflow: visible;
+  text-overflow: unset;
 
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-
-  overflow: hidden;
+  display: block;
 
   border-radius: 16px;
   filter: brightness(1.06);
 }
 
 /* =========================
-   MOBILE IMPROVEMENTS
+   MOBILE
    ========================= */
 
 @media (max-width: 640px) {
   .section {
-    padding: 64px 16px 84px;
+    padding: 64px 16px 92px;
   }
 
   .grid {
@@ -306,7 +308,6 @@
     grid-template-columns: repeat(auto-fit, 220px);
   }
 
-  /* On mobile: keep arrows reachable but not annoying */
   .track {
     gap: 22px;
     padding: 0 44px;
@@ -328,12 +329,22 @@
     font-size: 20px;
   }
 
-  /* Mobile: default label can be 2 lines (no “hover required”) */
+  /* Mobile default: show 2 lines (better), tap expands FULL */
   .cardLabel {
     white-space: normal;
+    overflow: hidden;
+    text-overflow: unset;
+
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
+  }
+
+  .expanded .cardLabel {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
   }
 }
