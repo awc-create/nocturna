@@ -2,6 +2,30 @@
 
 .section {
   padding: 18px;
+
+  /* ✅ Scope form element styles inside a local class (CSS Modules purity) */
+  input,
+  textarea,
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(2, 6, 23, 0.35);
+    color: #e5e7eb;
+    outline: none;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(148, 163, 184, 0.55);
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 44px;
+  }
 }
 
 .form {
@@ -142,10 +166,7 @@
   margin-top: 8px;
 }
 
-/* =========================
-   ✅ Added for "Clear" buttons + input rows
-   (No layout breaking changes)
-   ========================= */
+/* ===== Clear button UI (for inputs with "clear") ===== */
 
 .inputWrap {
   display: grid;
@@ -162,29 +183,6 @@
   }
 }
 
-/* Make all controls consistent */
-input,
-textarea,
-select {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.35);
-  color: #e5e7eb;
-  outline: none;
-
-  &:focus {
-    border-color: rgba(148, 163, 184, 0.55);
-  }
-}
-
-textarea {
-  resize: vertical;
-  min-height: 44px;
-}
-
-/* Clear button style */
 .clearBtn {
   padding: 8px 10px;
   border-radius: 12px;
@@ -204,7 +202,6 @@ textarea {
   }
 }
 
-/* Optional "clear all" helper button (used by socials/fields if you add it) */
 .clearAllBtn {
   padding: 10px 12px;
   border-radius: 12px;
@@ -218,19 +215,8 @@ textarea {
   }
 }
 
-/* Keep remove button visually consistent */
-.removeBtn {
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(2, 6, 23, 0.35);
-  color: rgba(226, 232, 240, 0.92);
-  cursor: pointer;
-
-  &:hover {
-    border-color: rgba(148, 163, 184, 0.5);
-  }
-}
-
-/* Make Save/Add buttons look consistent too */
+/* Make buttons consistent */
+.removeBtn,
 .save,
 .addBtn {
   border: 1px solid rgba(148, 163, 184, 0.25);
