@@ -2,14 +2,18 @@
 @use "@/styles/navbar.tokens.scss" as *;
 @use "@/styles/footer.tokens.scss" as *;
 
-// src/styles/Global.scss
 /* ======================= */
 /* 🌍 GLOBAL TOKENS        */
 /* ======================= */
 :root {
-  --color-bg: transparent;    /* let the sky be the canvas */
-  --color-text: #f7f7f7;      /* soft white for body copy */
-  --color-primary: #e7d7a7;   /* gold pill */
+  /* 🔒 LOCK COLOR MODE */
+  color-scheme: dark;
+  forced-color-adjust: none;
+
+  /* Core palette — DO NOT CHANGE BY SYSTEM */
+  --color-bg: transparent;
+  --color-text: #f7f7f7;
+  --color-primary: #e7d7a7;
   --color-accent: #007bff;
 
   --nav-height: 70px;
@@ -19,8 +23,8 @@
   --gutter: 5%;
 
   /* Sky controls */
-  --night-t: 0.20;            /* kept (not used for scroll) */
-  --doc-h: 100vh;             /* JS can override to full scroll height if needed */
+  --night-t: 0.20;
+  --doc-h: 100vh;
 }
 
 /* ======================= */
@@ -37,61 +41,71 @@
 html {
   width: 100%;
   min-height: 100%;
-  max-width: 100vw;           /* 🚫 never wider than viewport */
-  background: #0b0b0b;        /* overscroll color only */
+  max-width: 100vw;
+  background: #0b0b0b; /* overscroll color only */
   scroll-behavior: smooth;
-  scrollbar-width: none;      /* Firefox hide */
+  scrollbar-width: none;
+
+  /* ❌ stop browser colour guessing */
+  color-scheme: dark;
 }
 
 ::-webkit-scrollbar {
   width: 0;
-  height: 0;                  /* Chrome/Safari hide */
+  height: 0;
 }
 
-/* IMPORTANT: body is transparent so the sky shows through */
+/* IMPORTANT: body remains transparent for sky */
 body {
   width: 100%;
   min-height: 100vh;
-  max-width: 100vw;           /* 🚫 clamp horizontally */
+  max-width: 100vw;
   overflow-x: hidden;
 
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+    sans-serif;
 
-  background: var(--color-bg); /* transparent */
+  background: var(--color-bg);
   color: var(--color-text);
-  transition: background 0.3s ease, color 0.3s ease;
 
   display: flex;
   flex-direction: column;
+
   overscroll-behavior: none;
+
+  /* ❌ prevent auto theming */
+  color-scheme: dark;
+  forced-color-adjust: none;
 }
 
-/* ✅ IMPORTANT: remove "casting" feeling by making this very light (or comment out) */
+/* Subtle top cast (can be removed if needed) */
 body::before {
   content: "";
   position: fixed;
-  top: 0; left: 0; right: 0;
+  inset: 0 0 auto 0;
   height: 90px;
-  background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0));
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.35),
+    rgba(0, 0, 0, 0)
+  );
   pointer-events: none;
-  z-index: 1; /* above sky, below content */
+  z-index: 1;
 }
 
-/* Layout helpers */
-main { flex: 1; }
-main > *:first-child { margin-top: 0; }
-html, body { backface-visibility: hidden; }
+main {
+  flex: 1;
+}
+
+html,
+body {
+  backface-visibility: hidden;
+}
 
 /* ======================= */
 /* Layering (Z planes)     */
 /* ======================= */
-/*
-  app-shell is the positioning parent for:
-  - SkyOverlay (absolute + fixed internals)
-  - site-grain (absolute)
-  - content (nav/main/footer above)
-*/
+
 .app-shell {
   position: relative;
   min-height: 100vh;
@@ -99,10 +113,10 @@ html, body { backface-visibility: hidden; }
   max-width: 100vw;
   overflow-x: hidden;
   isolation: isolate;
-  z-index: 2; /* content plane */
+  z-index: 2;
 }
 
-/* Grain ABOVE sky, BELOW content — page-height */
+/* Grain above sky, below content */
 .site-grain {
   position: absolute;
   inset: 0;
@@ -114,17 +128,16 @@ html, body { backface-visibility: hidden; }
   background:
     repeating-linear-gradient(
       0deg,
-      rgba(255,255,255,0.012) 0 1px,
+      rgba(255, 255, 255, 0.012) 0 1px,
       transparent 1px 2px
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(255,255,255,0.012) 0 1px,
+      rgba(255, 255, 255, 0.012) 0 1px,
       transparent 1px 2px
     );
 }
 
-/* Ensure content stays above grain/sky */
 .app-shell > nav,
 .app-shell > main,
 .app-shell > footer {
@@ -135,37 +148,45 @@ html, body { backface-visibility: hidden; }
 /* ======================= */
 /* Utilities               */
 /* ======================= */
+
 .container {
-  box-sizing: border-box;
   width: 100%;
   max-width: var(--max-content-width);
   margin: 0 auto;
   padding: 0 var(--gutter);
 }
 
-.text-muted { color: #bfbfbf; }
+.text-muted {
+  color: #bfbfbf;
+}
+
+/* ======================= */
+/* Buttons                 */
+/* ======================= */
 
 .btn-gold {
-  --btn-bg: #e7d7a7;
-  --btn-fg: #0b0b0b;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 48px;
   padding: 0 20px;
   border-radius: 999px;
-  background: var(--btn-bg);
-  color: var(--btn-fg);
+
+  background: #e7d7a7;
+  color: #0b0b0b;
+
   font-weight: 900;
   letter-spacing: 0.02em;
   text-decoration: none;
-  border: 1px solid rgba(0,0,0,0.08);
+
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow:
-    0 10px 28px rgba(0,0,0,0.35),
-    inset 0 -2px 0 rgba(0,0,0,0.12);
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+
   transition: transform 150ms ease, filter 200ms ease;
 }
+
 .btn-gold:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
@@ -178,20 +199,24 @@ html, body { backface-visibility: hidden; }
   height: 48px;
   padding: 0 20px;
   border-radius: 999px;
+
   color: #ffffff;
   text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
   transition: transform 150ms ease, background 200ms ease;
 }
+
 .btn-ghost:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   transform: translateY(-1px);
 }
 
-.panel--nocturna {
-  --line: rgba(255,255,255,0.08);
-  --edge: rgba(255,255,255,0.06);
+/* ======================= */
+/* Panels                  */
+/* ======================= */
 
+.panel--nocturna {
   background:
     linear-gradient(
       180deg,
@@ -203,43 +228,52 @@ html, body { backface-visibility: hidden; }
 
   color: #f7f7f7;
   border-radius: 28px;
+
   box-shadow:
-    0 1px 0 var(--edge) inset,
-    0 -1px 0 rgba(255,255,255,0.03) inset;
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 -1px 0 rgba(255, 255, 255, 0.03) inset;
+
   backdrop-filter: blur(2px);
 }
 
-/* Optional: debug visual to prove z-planes */
-.__debug-proof {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    40% 30% at 50% 20%,
-    rgba(255,0,0,0.12),
-    transparent 60%
-  );
-}
+/* ======================= */
+/* Seamless sections       */
+/* ======================= */
 
-/* ======================= */
-/* Seamless sections helper */
-/* ======================= */
 .seamless-section {
   background: transparent !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+
   position: relative;
-  margin-block: 0 !important;
   padding-inline: clamp(16px, 4vw, 24px);
 }
 
-.seamless-section::before,
-.seamless-section::after {
-  content: none !important;
+section {
+  margin-block: 0;
 }
 
-/* Keep sections stacked with no seams */
-section { margin-block: 0; }
-section + section { margin-top: 0; }
+section + section {
+  margin-top: 0;
+}
+
+/* ======================= */
+/* 🚫 HARD STOP: THEMES    */
+/* ======================= */
+/* This prevents ANY future theme system from overriding colours */
+
+:root,
+:root[data-theme],
+:root[data-theme="dark"],
+:root[data-theme="light"],
+.dark,
+.light {
+  color-scheme: dark;
+  forced-color-adjust: none;
+
+  --color-bg: transparent;
+  --color-text: #f7f7f7;
+  --color-primary: #e7d7a7;
+  --color-accent: #007bff;
+}

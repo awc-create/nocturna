@@ -1,28 +1,34 @@
-// src/components/admin/home/ContactSettings.tsx
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import styles from './ContactSettings.module.scss';
 
-/* =========================
-   Types (match API)
-   ========================= */
+type SocialPlatform =
+  | 'instagram'
+  | 'x'
+  | 'tiktok'
+  | 'youtube'
+  | 'linkedin'
+  | 'facebook'
+  | 'soundcloud';
+
+type SocialLink = { platform: SocialPlatform; url: string };
 
 type FieldType =
   | 'text'
   | 'textarea'
   | 'email'
   | 'tel'
+  | 'url'
+  | 'number'
   | 'date'
   | 'time'
   | 'datetime'
-  | 'url'
-  | 'number'
   | 'select'
   | 'multiselect'
-  | 'radio'
   | 'checkbox'
   | 'checkboxgroup'
+  | 'radio'
   | 'file';
 
 type ShowIf = { field: string; equals: string };
@@ -49,20 +55,6 @@ type FormField = {
   showIf?: ShowIf;
 };
 
-type SocialPlatform =
-  | 'instagram'
-  | 'x'
-  | 'tiktok'
-  | 'youtube'
-  | 'linkedin'
-  | 'facebook'
-  | 'soundcloud';
-
-type SocialLink = {
-  platform: SocialPlatform;
-  url: string;
-};
-
 type ContactConfig = {
   // section
   eyebrow: string;
@@ -70,51 +62,43 @@ type ContactConfig = {
   lead: string;
   buttonLabel: string;
 
-  // public details (shown on site)
-  contactEmail: string;
+  // public details (shown on site as icons)
+  contactEmail: string; // empty string => hide email icon
   contactPhone?: string | null;
-  socialLinks: SocialLink[];
+
+  // delivery (where contact form submits to)
+  recipientEmail?: string | null;
 
   // modal
   modalKicker: string;
   modalTitle: string;
   modalLead: string;
-
   submitLabel: string;
   successMessage: string;
 
-  // delivery (submissions destination)
-  recipientEmail?: string | null;
-
-  // form fields
+  // socials + fields
+  socialLinks: SocialLink[];
   fields: FormField[];
 };
 
-/* =========================
-   Defaults
-   ========================= */
-
 const FALLBACK: ContactConfig = {
-  eyebrow: 'Contact',
-  title: 'Send us a message.',
-  lead: 'We’ll get back to you shortly.',
+  eyebrow: "LET'S CONNECT",
+  title: 'Get in touch',
+  lead: 'General enquiries',
   buttonLabel: 'Open contact form',
 
-  contactEmail: 'info@nocturna.com',
+  contactEmail: '',
   contactPhone: null,
-  socialLinks: [
-    { platform: 'instagram', url: 'https://www.instagram.com/nocturna_artist_agency' },
-    { platform: 'tiktok', url: 'https://www.tiktok.com/@nocturna_artist_agency' },
-  ],
+
+  recipientEmail: null,
 
   modalKicker: 'Contact',
   modalTitle: 'Send us a message.',
   modalLead: 'We’ll get back to you shortly.',
-
-  submitLabel: 'Send Message',
+  submitLabel: 'Send message',
   successMessage: 'Thanks — we’ll be in touch soon.',
 
-  recipientEmail: null,
+  socialLinks: [],
   fields: [],
 };
 
@@ -123,11 +107,11 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: 'textarea', label: 'Textarea' },
   { value: 'email', label: 'Email' },
   { value: 'tel', label: 'Phone' },
+  { value: 'url', label: 'URL' },
+  { value: 'number', label: 'Number' },
   { value: 'date', label: 'Date' },
   { value: 'time', label: 'Time' },
   { value: 'datetime', label: 'Date + time' },
-  { value: 'url', label: 'URL' },
-  { value: 'number', label: 'Number' },
   { value: 'select', label: 'Dropdown' },
   { value: 'multiselect', label: 'Multi-select' },
   { value: 'radio', label: 'Radio buttons' },
@@ -138,8 +122,8 @@ const FIELD_TYPES: { value: FieldType; label: string }[] = [
 
 const SOCIAL_PLATFORMS: { value: SocialPlatform; label: string }[] = [
   { value: 'instagram', label: 'Instagram' },
-  { value: 'tiktok', label: 'TikTok' },
   { value: 'x', label: 'X' },
+  { value: 'tiktok', label: 'TikTok' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'linkedin', label: 'LinkedIn' },
   { value: 'facebook', label: 'Facebook' },
@@ -149,12 +133,6 @@ const SOCIAL_PLATFORMS: { value: SocialPlatform; label: string }[] = [
 const makeId = () => `fld-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 const makeSocialId = () =>
   `soc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-
-type SocialRow = SocialLink & { _id: string };
-
-function withSocialIds(list: SocialLink[]): SocialRow[] {
-  return list.map((s) => ({ ...s, _id: makeSocialId() }));
-}
 
 const isOptionsType = (t: FieldType) =>
   t === 'select' || t === 'multiselect' || t === 'radio' || t === 'checkboxgroup';
@@ -174,7 +152,7 @@ function fieldErrors(field: FormField, allFields: FormField[]) {
     errs.push('Field name (key) is required.');
   } else {
     if (!isValidKey(name)) {
-      errs.push('Field name must be letters/numbers/underscore only (e.g. order_id).');
+      errs.push('Field name must be letters/numbers/underscore only (e.g. venue_city).');
     }
     const duplicates = allFields.filter((f) => normalizeKey(f.name) === name);
     if (duplicates.length > 1) errs.push('Field name (key) must be unique (duplicate found).');
@@ -194,19 +172,97 @@ function fieldErrors(field: FormField, allFields: FormField[]) {
   return errs;
 }
 
-/* =========================
-   Component
-   ========================= */
-
 export default function ContactSettings() {
   const [config, setConfig] = useState<ContactConfig>(FALLBACK);
-  const [socialRows, setSocialRows] = useState<SocialRow[]>(withSocialIds(FALLBACK.socialLinks));
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Options drafts for textarea “one-per-line” editing
   const [optionsDrafts, setOptionsDrafts] = useState<Record<string, string>>({});
 
+  // Social rows with stable keys (so adding/removing doesn’t glitch)
+  const [socialRows, setSocialRows] = useState<Array<SocialLink & { _id: string }>>([]);
+
+  const seedDrafts = (fields: FormField[]) => {
+    const seed: Record<string, string> = {};
+    for (const f of fields) {
+      if (isOptionsType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
+    }
+    setOptionsDrafts(seed);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/home/contact', { cache: 'no-store' });
+        if (!res.ok) return;
+
+        const data = (await res.json()) as Partial<ContactConfig>;
+        const merged: ContactConfig = {
+          ...FALLBACK,
+          ...data,
+          contactEmail: (data.contactEmail ?? FALLBACK.contactEmail) || '',
+          contactPhone: data.contactPhone ?? null,
+          recipientEmail: data.recipientEmail ?? null,
+          socialLinks: data.socialLinks ?? [],
+          fields: data.fields ?? [],
+        };
+
+        setConfig(merged);
+        seedDrafts(merged.fields);
+
+        // seed socials with stable ids
+        const seededSocials = (merged.socialLinks ?? []).map((s) => ({
+          ...s,
+          _id: makeSocialId(),
+        }));
+        setSocialRows(seededSocials);
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // keep config.socialLinks in sync with socialRows
+  useEffect(() => {
+    setConfig((prev) => ({
+      ...prev,
+      socialLinks: socialRows.map(({ platform, url }) => ({ platform, url })),
+    }));
+  }, [socialRows]);
+
+  const setText =
+    (key: keyof ContactConfig) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setConfig((prev) => ({ ...prev, [key]: e.target.value }));
+    };
+
+  const clearText = (key: keyof ContactConfig) => {
+    setConfig((prev) => ({ ...prev, [key]: '' as never }));
+  };
+
+  const clearNullable = (key: keyof ContactConfig) => {
+    setConfig((prev) => ({ ...prev, [key]: null as never }));
+  };
+
+  // ---------- Socials ----------
+  const addSocial = () => {
+    setSocialRows((prev) => [...prev, { _id: makeSocialId(), platform: 'instagram', url: '' }]);
+  };
+
+  const removeSocial = (id: string) => {
+    setSocialRows((prev) => prev.filter((s) => s._id !== id));
+  };
+
+  const updateSocial = (id: string, patch: Partial<SocialLink>) => {
+    setSocialRows((prev) => prev.map((s) => (s._id === id ? { ...s, ...patch } : s)));
+  };
+
+  const clearSocialUrl = (id: string) => updateSocial(id, { url: '' });
+
+  // ---------- Fields ----------
   const getOptionsDraft = (fieldId: string, options?: string[]) => {
     const existing = optionsDrafts[fieldId];
     if (typeof existing === 'string') return existing;
@@ -223,7 +279,7 @@ export default function ContactSettings() {
       const existing = next[idx];
       if (!existing) return prev;
 
-      // switching away from options type -> wipe options + draft
+      // If switching away from options-type, drop options + draft
       if (patch.type && !isOptionsType(patch.type) && isOptionsType(existing.type)) {
         setOptionsDrafts((d) => {
           const copy = { ...d };
@@ -234,13 +290,13 @@ export default function ContactSettings() {
         return { ...prev, fields: next };
       }
 
-      // switching away from number -> wipe min/max/step
+      // Number cleanup
       if (patch.type && patch.type !== 'number' && existing.type === 'number') {
         next[idx] = { ...existing, ...patch, min: undefined, max: undefined, step: undefined };
         return { ...prev, fields: next };
       }
 
-      // switching away from file -> wipe accept/multipleFiles
+      // File cleanup
       if (patch.type && patch.type !== 'file' && existing.type === 'file') {
         next[idx] = { ...existing, ...patch, accept: undefined, multipleFiles: undefined };
         return { ...prev, fields: next };
@@ -263,36 +319,6 @@ export default function ContactSettings() {
 
     updateField(idx, { options: lines });
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch('/api/home/contact', { cache: 'no-store' });
-        if (res.ok) {
-          const data = (await res.json()) as Partial<ContactConfig>;
-          const merged: ContactConfig = {
-            ...FALLBACK,
-            ...data,
-            socialLinks: data.socialLinks ?? FALLBACK.socialLinks,
-            fields: data.fields ?? [],
-          };
-
-          setConfig(merged);
-          setSocialRows(withSocialIds(merged.socialLinks));
-
-          const seed: Record<string, string> = {};
-          for (const f of merged.fields) {
-            if (isOptionsType(f.type)) seed[f.id] = (f.options ?? []).join('\n');
-          }
-          setOptionsDrafts(seed);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const addField = () => {
     const id = makeId();
@@ -337,14 +363,7 @@ export default function ContactSettings() {
     });
   };
 
-  const onText =
-    (key: keyof ContactConfig) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setConfig((prev) => ({ ...prev, [key]: e.target.value }));
-    };
-
   const validateAll = () => {
-    // commit options before validation/save
     config.fields.forEach((f, idx) => {
       if (isOptionsType(f.type)) commitOptions(idx);
     });
@@ -371,12 +390,25 @@ export default function ContactSettings() {
 
       const payload: ContactConfig = {
         ...config,
-        socialLinks: socialRows
-          .map((row) => {
-            const { platform, url } = row; // pick only what you want
-            return { platform, url: url.trim() };
-          })
-          .filter((s) => s.url.length > 0),
+        // trim strings a bit
+        eyebrow: config.eyebrow?.trim?.() || '',
+        title: config.title?.trim?.() || '',
+        lead: config.lead?.trim?.() || '',
+        buttonLabel: config.buttonLabel?.trim?.() || '',
+        contactEmail: (config.contactEmail ?? '').trim(), // empty => hide icon
+        contactPhone: (config.contactPhone ?? '').trim()
+          ? (config.contactPhone ?? '').trim()
+          : null,
+        recipientEmail: (config.recipientEmail ?? '').trim()
+          ? (config.recipientEmail ?? '').trim()
+          : null,
+        modalKicker: config.modalKicker?.trim?.() || '',
+        modalTitle: config.modalTitle?.trim?.() || '',
+        modalLead: config.modalLead?.trim?.() || '',
+        submitLabel: config.submitLabel?.trim?.() || '',
+        successMessage: config.successMessage?.trim?.() || '',
+        socialLinks: (config.socialLinks ?? []).filter((s) => s.platform && s.url?.trim()),
+        fields: config.fields ?? [],
       };
 
       const res = await fetch('/api/home/contact', {
@@ -388,7 +420,7 @@ export default function ContactSettings() {
       if (!res.ok) {
         const txt = await res.text();
         console.error('Save /api/home/contact failed:', res.status, txt);
-        throw new Error('Failed to save');
+        throw new Error('Failed to save Contact settings');
       }
 
       alert('Contact settings updated. Refresh the site to see changes.');
@@ -419,7 +451,7 @@ export default function ContactSettings() {
   return (
     <section className={styles.section}>
       <h2>Contact</h2>
-      <p>Control the contact section + modal content, public details, social icons, and fields.</p>
+      <p>Control the contact section + contact modal settings, icons, and fields.</p>
 
       <div className={styles.form}>
         {/* ===== Section copy ===== */}
@@ -427,73 +459,228 @@ export default function ContactSettings() {
           <legend>Section copy</legend>
 
           <div className={styles.fieldGrid}>
-            <label>
-              Eyebrow
-              <input value={config.eyebrow} onChange={onText('eyebrow')} />
-            </label>
+            <div className={styles.inputWrap}>
+              <label>Eyebrow</label>
+              <div className={styles.row}>
+                <input value={config.eyebrow} onChange={setText('eyebrow')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('eyebrow')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
 
-            <label>
-              Button label
-              <input value={config.buttonLabel} onChange={onText('buttonLabel')} />
-            </label>
+            <div className={styles.inputWrap}>
+              <label>Button label</label>
+              <div className={styles.row}>
+                <input value={config.buttonLabel} onChange={setText('buttonLabel')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('buttonLabel')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
 
-            <label className={styles.full}>
-              Title
-              <input value={config.title} onChange={onText('title')} />
-            </label>
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Title</label>
+              <div className={styles.row}>
+                <input value={config.title} onChange={setText('title')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('title')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
 
-            <label className={styles.full}>
-              Lead
-              <textarea rows={3} value={config.lead} onChange={onText('lead')} />
-            </label>
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Lead</label>
+              <div className={styles.row}>
+                <textarea rows={3} value={config.lead} onChange={setText('lead')} />
+                <button type="button" className={styles.clearBtn} onClick={() => clearText('lead')}>
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
         </fieldset>
 
-        {/* ===== Public contact details ===== */}
+        {/* ===== Public icons (email/phone) ===== */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
-          <legend>Public contact details</legend>
+          <legend>Public icons (shown on site)</legend>
 
           <div className={styles.fieldGrid}>
-            <label>
-              Email (shown on site)
-              <input
-                value={config.contactEmail ?? ''}
-                onChange={onText('contactEmail')}
-                placeholder="hello@nocturnaagency.com"
-              />
-            </label>
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Public email (shows email icon when filled)</label>
+              <div className={styles.row}>
+                <input
+                  value={config.contactEmail ?? ''}
+                  onChange={setText('contactEmail')}
+                  placeholder="info@nocturna.com"
+                />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('contactEmail')}
+                >
+                  Clear
+                </button>
+              </div>
+              <small>
+                Leave blank to hide the email icon. When filled, the site shows the email icon only
+                (no email text).
+              </small>
+            </div>
 
-            <label>
-              Phone number (shown on site)
-              <input
-                value={config.contactPhone ?? ''}
-                onChange={onText('contactPhone')}
-                placeholder="+44 7xxx xxx xxx"
-              />
-            </label>
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Public phone (shows phone icon when filled)</label>
+              <div className={styles.row}>
+                <input
+                  value={config.contactPhone ?? ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, contactPhone: e.target.value }))}
+                  placeholder="+44..."
+                />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearNullable('contactPhone')}
+                >
+                  Clear
+                </button>
+              </div>
+              <small>Leave blank to hide the phone icon.</small>
+            </div>
           </div>
         </fieldset>
 
-        {/* ===== Social links (array) ===== */}
+        {/* ===== Delivery ===== */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
-          <legend>Social links</legend>
+          <legend>Delivery (where contact form emails go)</legend>
 
-          {socialRows.length ? (
-            <div className={styles.socialList}>
-              {socialRows.map((s, idx) => (
-                <div key={s._id} className={styles.socialRow}>
-                  <label>
-                    Platform
+          <div className={styles.fieldGrid}>
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Recipient email (optional)</label>
+              <div className={styles.row}>
+                <input
+                  value={config.recipientEmail ?? ''}
+                  onChange={(e) => setConfig((p) => ({ ...p, recipientEmail: e.target.value }))}
+                  placeholder="bookings@nocturna.com"
+                />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearNullable('recipientEmail')}
+                >
+                  Clear
+                </button>
+              </div>
+              <small>
+                If blank, your contact email route will fall back to INTERNAL_EMAIL / contactEmail.
+              </small>
+            </div>
+          </div>
+        </fieldset>
+
+        {/* ===== Modal copy ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Modal copy</legend>
+
+          <div className={styles.fieldGrid}>
+            <div className={styles.inputWrap}>
+              <label>Modal kicker</label>
+              <div className={styles.row}>
+                <input value={config.modalKicker} onChange={setText('modalKicker')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('modalKicker')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.inputWrap}>
+              <label>Submit button label</label>
+              <div className={styles.row}>
+                <input value={config.submitLabel} onChange={setText('submitLabel')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('submitLabel')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Modal title</label>
+              <div className={styles.row}>
+                <input value={config.modalTitle} onChange={setText('modalTitle')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('modalTitle')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Modal lead</label>
+              <div className={styles.row}>
+                <textarea rows={3} value={config.modalLead} onChange={setText('modalLead')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('modalLead')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div className={`${styles.inputWrap} ${styles.full}`}>
+              <label>Success message</label>
+              <div className={styles.row}>
+                <input value={config.successMessage} onChange={setText('successMessage')} />
+                <button
+                  type="button"
+                  className={styles.clearBtn}
+                  onClick={() => clearText('successMessage')}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        {/* ===== Social icons ===== */}
+        <fieldset className={`${styles.fieldset} ${styles.full}`}>
+          <legend>Social icons</legend>
+
+          <div className={styles.socialList}>
+            {socialRows.map((s) => (
+              <div key={s._id} className={styles.socialRow}>
+                <div className={styles.socialGrid}>
+                  <div className={styles.inputWrap}>
+                    <label>Platform</label>
                     <select
                       value={s.platform}
-                      onChange={(e) => {
-                        const platform = e.target.value as SocialPlatform;
-                        setSocialRows((prev) => {
-                          const next = [...prev];
-                          next[idx] = { ...next[idx], platform };
-                          return next;
-                        });
-                      }}
+                      onChange={(e) =>
+                        updateSocial(s._id, { platform: e.target.value as SocialPlatform })
+                      }
                     >
                       {SOCIAL_PLATFORMS.map((p) => (
                         <option key={p.value} value={p.value}>
@@ -501,98 +688,55 @@ export default function ContactSettings() {
                         </option>
                       ))}
                     </select>
-                  </label>
+                  </div>
 
-                  <label className={styles.socialUrl}>
-                    URL
-                    <input
-                      value={s.url}
-                      onChange={(e) => {
-                        const url = e.target.value;
-                        setSocialRows((prev) => {
-                          const next = [...prev];
-                          next[idx] = { ...next[idx], url };
-                          return next;
-                        });
-                      }}
-                      placeholder="https://..."
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    className={styles.removeBtn}
-                    onClick={() => setSocialRows((prev) => prev.filter((_, i) => i !== idx))}
-                  >
-                    Remove
-                  </button>
+                  <div className={`${styles.inputWrap} ${styles.full}`}>
+                    <label>URL</label>
+                    <div className={styles.row}>
+                      <input
+                        value={s.url}
+                        onChange={(e) => updateSocial(s._id, { url: e.target.value })}
+                        placeholder="https://..."
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => clearSocialUrl(s._id)}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => removeSocial(s._id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              </div>
+            ))}
+
+            <div className={styles.socialActions}>
+              <button type="button" className={styles.addBtn} onClick={addSocial}>
+                + Add social
+              </button>
+
+              {socialRows.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.clearAllBtn}
+                  onClick={() => setSocialRows([])}
+                >
+                  Clear all socials
+                </button>
+              )}
             </div>
-          ) : (
-            <p className={styles.muted}>No social links yet.</p>
-          )}
-
-          <div className={styles.socialActions}>
-            <button
-              type="button"
-              className={styles.addBtn}
-              onClick={() =>
-                setSocialRows((prev) => [
-                  ...prev,
-                  { _id: makeSocialId(), platform: 'instagram', url: '' },
-                ])
-              }
-            >
-              + Add social link
-            </button>
-          </div>
-
-          <p className={styles.muted}>These render as icons on the site automatically.</p>
-        </fieldset>
-
-        {/* ===== Modal copy + delivery ===== */}
-        <fieldset className={`${styles.fieldset} ${styles.full}`}>
-          <legend>Modal copy + delivery</legend>
-
-          <div className={styles.fieldGrid}>
-            <label>
-              Modal kicker
-              <input value={config.modalKicker} onChange={onText('modalKicker')} />
-            </label>
-
-            <label>
-              Recipient email (submissions go here)
-              <input
-                value={config.recipientEmail ?? ''}
-                onChange={onText('recipientEmail')}
-                placeholder="bookings@nocturnaagency.com"
-              />
-            </label>
-
-            <label className={styles.full}>
-              Modal title
-              <input value={config.modalTitle} onChange={onText('modalTitle')} />
-            </label>
-
-            <label className={styles.full}>
-              Modal lead
-              <textarea rows={3} value={config.modalLead} onChange={onText('modalLead')} />
-            </label>
-
-            <label>
-              Submit label
-              <input value={config.submitLabel} onChange={onText('submitLabel')} />
-            </label>
-
-            <label>
-              Success message
-              <input value={config.successMessage} onChange={onText('successMessage')} />
-            </label>
           </div>
         </fieldset>
 
-        {/* ===== Form fields ===== */}
+        {/* ===== Fields ===== */}
         <fieldset className={`${styles.fieldset} ${styles.full}`}>
           <legend>Form fields</legend>
 
@@ -630,28 +774,46 @@ export default function ContactSettings() {
                 </div>
 
                 <div className={styles.fieldGrid}>
-                  <label>
-                    Label
-                    <input
-                      value={field.label}
-                      onChange={(e) => updateField(idx, { label: e.target.value })}
-                    />
-                  </label>
+                  <div className={styles.inputWrap}>
+                    <label>Label</label>
+                    <div className={styles.row}>
+                      <input
+                        value={field.label}
+                        onChange={(e) => updateField(idx, { label: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => updateField(idx, { label: '' })}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
 
-                  <label>
-                    Field name (key)
-                    <input
-                      value={field.name}
-                      onChange={(e) => updateField(idx, { name: e.target.value })}
-                      placeholder="order_id, message, etc."
-                    />
+                  <div className={styles.inputWrap}>
+                    <label>Field name (key)</label>
+                    <div className={styles.row}>
+                      <input
+                        value={field.name}
+                        onChange={(e) => updateField(idx, { name: e.target.value })}
+                        placeholder="name, email, message, etc."
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => updateField(idx, { name: '' })}
+                      >
+                        Clear
+                      </button>
+                    </div>
                     <small>
-                      Use letters/numbers/underscore only (e.g. <code>order_id</code>).
+                      Use letters/numbers/underscore only (e.g. <code>event_date</code>).
                     </small>
-                  </label>
+                  </div>
 
-                  <label>
-                    Type
+                  <div className={styles.inputWrap}>
+                    <label>Type</label>
                     <select
                       value={field.type}
                       onChange={(e) => updateField(idx, { type: e.target.value as FieldType })}
@@ -662,7 +824,7 @@ export default function ContactSettings() {
                         </option>
                       ))}
                     </select>
-                  </label>
+                  </div>
 
                   <label className={styles.checkboxRow}>
                     <input
@@ -675,91 +837,155 @@ export default function ContactSettings() {
                 </div>
 
                 <div className={styles.fieldGrid}>
-                  <label className={styles.full}>
-                    Placeholder (optional)
-                    <input
-                      value={field.placeholder ?? ''}
-                      onChange={(e) => updateField(idx, { placeholder: e.target.value })}
-                    />
-                  </label>
+                  <div className={`${styles.inputWrap} ${styles.full}`}>
+                    <label>Placeholder (optional)</label>
+                    <div className={styles.row}>
+                      <input
+                        value={field.placeholder ?? ''}
+                        onChange={(e) => updateField(idx, { placeholder: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => updateField(idx, { placeholder: '' })}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
 
-                  <label className={styles.full}>
-                    Help text (optional)
-                    <input
-                      value={field.helpText ?? ''}
-                      onChange={(e) => updateField(idx, { helpText: e.target.value })}
-                    />
-                  </label>
+                  <div className={`${styles.inputWrap} ${styles.full}`}>
+                    <label>Help text (optional)</label>
+                    <div className={styles.row}>
+                      <input
+                        value={field.helpText ?? ''}
+                        onChange={(e) => updateField(idx, { helpText: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => updateField(idx, { helpText: '' })}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {isOptionsType(field.type) && (
                   <div className={styles.fieldGrid}>
-                    <label className={styles.full}>
-                      Options (one per line)
-                      <textarea
-                        rows={4}
-                        value={optionsStr}
-                        onChange={(e) => setOptionsDraft(field.id, e.target.value)}
-                        onBlur={() => commitOptions(idx)}
-                      />
+                    <div className={`${styles.inputWrap} ${styles.full}`}>
+                      <label>Options (one per line)</label>
+                      <div className={styles.row}>
+                        <textarea
+                          rows={4}
+                          value={optionsStr}
+                          onChange={(e) => setOptionsDraft(field.id, e.target.value)}
+                          onBlur={() => commitOptions(idx)}
+                        />
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => {
+                            setOptionsDraft(field.id, '');
+                            updateField(idx, { options: [] });
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </div>
                       <small>Blank lines are ignored when you leave the box.</small>
-                    </label>
+                    </div>
                   </div>
                 )}
 
                 {field.type === 'number' && (
                   <div className={styles.fieldGrid}>
-                    <label>
-                      Min
-                      <input
-                        type="number"
-                        value={field.min ?? ''}
-                        onChange={(e) =>
-                          updateField(idx, {
-                            min: e.target.value === '' ? undefined : Number(e.target.value),
-                          })
-                        }
-                      />
-                    </label>
-
-                    <label>
-                      Max
-                      <input
-                        type="number"
-                        value={field.max ?? ''}
-                        onChange={(e) =>
-                          updateField(idx, {
-                            max: e.target.value === '' ? undefined : Number(e.target.value),
-                          })
-                        }
-                      />
-                    </label>
-
-                    <label>
-                      Step
-                      <input
-                        type="number"
-                        value={field.step ?? ''}
-                        onChange={(e) =>
-                          updateField(idx, {
-                            step: e.target.value === '' ? undefined : Number(e.target.value),
-                          })
-                        }
-                      />
-                    </label>
+                    <div className={styles.inputWrap}>
+                      <label>Min</label>
+                      <div className={styles.row}>
+                        <input
+                          type="number"
+                          value={field.min ?? ''}
+                          onChange={(e) =>
+                            updateField(idx, {
+                              min: e.target.value === '' ? undefined : Number(e.target.value),
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => updateField(idx, { min: undefined })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className={styles.inputWrap}>
+                      <label>Max</label>
+                      <div className={styles.row}>
+                        <input
+                          type="number"
+                          value={field.max ?? ''}
+                          onChange={(e) =>
+                            updateField(idx, {
+                              max: e.target.value === '' ? undefined : Number(e.target.value),
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => updateField(idx, { max: undefined })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div className={styles.inputWrap}>
+                      <label>Step</label>
+                      <div className={styles.row}>
+                        <input
+                          type="number"
+                          value={field.step ?? ''}
+                          onChange={(e) =>
+                            updateField(idx, {
+                              step: e.target.value === '' ? undefined : Number(e.target.value),
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => updateField(idx, { step: undefined })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {field.type === 'file' && (
                   <div className={styles.fieldGrid}>
-                    <label className={styles.full}>
-                      Accept (optional)
-                      <input
-                        value={field.accept ?? ''}
-                        onChange={(e) => updateField(idx, { accept: e.target.value })}
-                        placeholder="image/*,.pdf"
-                      />
-                    </label>
+                    <div className={`${styles.inputWrap} ${styles.full}`}>
+                      <label>Accept (optional)</label>
+                      <div className={styles.row}>
+                        <input
+                          value={field.accept ?? ''}
+                          onChange={(e) => updateField(idx, { accept: e.target.value })}
+                          placeholder="audio/*,image/*,.pdf"
+                        />
+                        <button
+                          type="button"
+                          className={styles.clearBtn}
+                          onClick={() => updateField(idx, { accept: '' })}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
 
                     <label className={styles.checkboxRow}>
                       <input
@@ -773,30 +999,39 @@ export default function ContactSettings() {
                 )}
 
                 <div className={styles.fieldGrid}>
-                  <label className={styles.full}>
-                    Show only if (optional) — format: <code>field=value</code>
-                    <input
-                      value={
-                        field.showIf?.field && field.showIf?.equals
-                          ? `${field.showIf.field}=${field.showIf.equals}`
-                          : ''
-                      }
-                      onChange={(e) => {
-                        const raw = e.target.value.trim();
-                        if (!raw) return updateField(idx, { showIf: undefined });
-                        const [f, ...rest] = raw.split('=');
-                        const eq = rest.join('=');
-                        const fieldKey = (f ?? '').trim();
-                        const equals = (eq ?? '').trim();
-                        if (!fieldKey || !equals) return updateField(idx, { showIf: undefined });
-                        updateField(idx, { showIf: { field: fieldKey, equals } });
-                      }}
-                      placeholder="preferred_contact=Phone"
-                    />
-                    <small>
-                      Example: preferred_contact=Phone (field appears only when Phone is chosen).
-                    </small>
-                  </label>
+                  <div className={`${styles.inputWrap} ${styles.full}`}>
+                    <label>
+                      Show only if (optional) — format: <code>field=value</code>
+                    </label>
+                    <div className={styles.row}>
+                      <input
+                        value={
+                          field.showIf?.field && field.showIf?.equals
+                            ? `${field.showIf.field}=${field.showIf.equals}`
+                            : ''
+                        }
+                        onChange={(e) => {
+                          const raw = e.target.value.trim();
+                          if (!raw) return updateField(idx, { showIf: undefined });
+                          const [f, ...rest] = raw.split('=');
+                          const eq = rest.join('=');
+                          const fieldKey = (f ?? '').trim();
+                          const equals = (eq ?? '').trim();
+                          if (!fieldKey || !equals) return updateField(idx, { showIf: undefined });
+                          updateField(idx, { showIf: { field: fieldKey, equals } });
+                        }}
+                        placeholder="enq_type=Booking"
+                      />
+                      <button
+                        type="button"
+                        className={styles.clearBtn}
+                        onClick={() => updateField(idx, { showIf: undefined })}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <small>Example: enq_type=Booking</small>
+                  </div>
                 </div>
 
                 {errs.length > 0 && (
@@ -813,6 +1048,19 @@ export default function ContactSettings() {
           <button type="button" className={styles.addBtn} onClick={addField}>
             + Add field
           </button>
+
+          {config.fields.length > 0 && (
+            <button
+              type="button"
+              className={styles.clearAllBtn}
+              onClick={() => {
+                setConfig((p) => ({ ...p, fields: [] }));
+                setOptionsDrafts({});
+              }}
+            >
+              Clear all fields
+            </button>
+          )}
         </fieldset>
 
         <div className={styles.actions}>

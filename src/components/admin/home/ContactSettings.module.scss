@@ -60,8 +60,8 @@
   }
 
   code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-      monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+      'Courier New', monospace;
     font-size: 0.85em;
   }
 }
@@ -140,4 +140,110 @@
   opacity: 0.75;
   font-size: 0.9rem;
   margin-top: 8px;
+}
+
+/* =========================
+   ✅ Added for "Clear" buttons + input rows
+   (No layout breaking changes)
+   ========================= */
+
+.inputWrap {
+  display: grid;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  @media (max-width: 860px) {
+    flex-wrap: wrap;
+  }
+}
+
+/* Make all controls consistent */
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  color: #e5e7eb;
+  outline: none;
+
+  &:focus {
+    border-color: rgba(148, 163, 184, 0.55);
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 44px;
+}
+
+/* Clear button style */
+.clearBtn {
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  color: rgba(226, 232, 240, 0.92);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Optional "clear all" helper button (used by socials/fields if you add it) */
+.clearAllBtn {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  color: rgba(226, 232, 240, 0.92);
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+  }
+}
+
+/* Keep remove button visually consistent */
+.removeBtn {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  color: rgba(226, 232, 240, 0.92);
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+  }
+}
+
+/* Make Save/Add buttons look consistent too */
+.save,
+.addBtn {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  color: rgba(226, 232, 240, 0.92);
+  cursor: pointer;
+
+  &:hover {
+    border-color: rgba(148, 163, 184, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }

@@ -1,15 +1,12 @@
 // src/app/api/home/contact/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { transporter, escapeHtml, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
+import { revalidatePath } from 'next/cache';
+import type { Prisma } from '@prisma/client';
 
-export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const KEY = 'contact';
-
-const CONTACT_FROM =
-  process.env.CONTACT_FROM_EMAIL || 'Nocturna Contact <contact@nocturnagency.com>';
 
 type SocialPlatform =
   | 'instagram'
@@ -20,7 +17,7 @@ type SocialPlatform =
   | 'facebook'
   | 'soundcloud';
 
-type SocialLink = { platform: SocialPlatform; url: string };
+export type SocialLink = { platform: SocialPlatform; url: string };
 
 type FieldType =
   | 'text'
@@ -39,333 +36,334 @@ type FieldType =
   | 'radio'
   | 'file';
 
-type FormField = {
+export type FormField = {
   id: string;
   name: string;
   label: string;
   type: FieldType;
   required: boolean;
+
+  placeholder?: string;
+  helpText?: string;
+
+  options?: string[];
+
+  min?: number;
+  max?: number;
+  step?: number;
+
+  accept?: string;
   multipleFiles?: boolean;
+
+  showIf?: { field: string; equals: string };
 };
 
-const LOGO_ROW = EMAIL_LOGO_URL
-  ? `<tr>
-       <td style="padding-bottom:18px;" align="center">
-         <img
-           src="${EMAIL_LOGO_URL}"
-           alt="Nocturna"
-           width="160"
-           style="display:block;width:160px;max-width:60%;height:auto;margin:0 auto;opacity:0.96;"
-         />
-       </td>
-     </tr>`
-  : '';
+export type ContactConfig = {
+  // section
+  eyebrow: string;
+  title: string;
+  lead: string;
+  buttonLabel: string;
 
+  // public details (shown on site)
+  contactEmail: string; // allow "" to mean “hidden”
+  contactPhone?: string | null;
+
+  // delivery (where emails go)
+  recipientEmail?: string | null;
+
+  // modal
+  modalKicker: string;
+  modalTitle: string;
+  modalLead: string;
+  submitLabel: string;
+  successMessage: string;
+
+  // socials + fields
+  socialLinks: SocialLink[];
+  fields: FormField[];
+};
+
+const DEFAULT_FIELDS: FormField[] = [
+  { id: 'name', name: 'name', label: 'Your name', type: 'text', required: true },
+  { id: 'email', name: 'email', label: 'Email address', type: 'email', required: true },
+  { id: 'message', name: 'message', label: 'Message', type: 'textarea', required: true },
+];
+
+const DEFAULT_CONFIG: ContactConfig = {
+  eyebrow: "LET'S CONNECT",
+  title: 'Get in touch',
+  lead: 'General enquiries',
+  buttonLabel: 'Open contact form',
+
+  contactEmail: '', // IMPORTANT: empty = hide
+  contactPhone: null,
+
+  recipientEmail: null,
+
+  modalKicker: 'Contact',
+  modalTitle: 'Send us a message.',
+  modalLead: 'We’ll get back to you shortly.',
+  submitLabel: 'Send message',
+  successMessage: 'Thanks — we’ll be in touch soon.',
+
+  socialLinks: [],
+  fields: DEFAULT_FIELDS,
+};
+
+/** -----------------------------
+ *  Guards / sanitizers
+ *  ---------------------------- */
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
-function parseJsonArray(v: unknown): unknown[] {
-  return Array.isArray(v) ? v : [];
-}
-function s(v: unknown) {
-  return typeof v === 'string' ? v.trim() : '';
-}
 
-function safeFieldsFromRow(row: unknown): FormField[] {
-  if (!isRecord(row)) return [];
-  const arr = parseJsonArray(row.formFields);
-  return arr
-    .map((x) => (isRecord(x) ? x : null))
-    .filter(Boolean)
-    .map((x) => {
-      const r = x as Record<string, unknown>;
-      return {
-        id: s(r.id) || s(r.name) || 'field',
-        name: s(r.name),
-        label: s(r.label) || s(r.name),
-        type: s(r.type) as FieldType,
-        required: Boolean(r.required),
-        multipleFiles: Boolean(r.multipleFiles) || undefined,
-      } satisfies FormField;
-    })
-    .filter((f) => !!f.name);
+const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+
+function num(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v);
+  return undefined;
 }
 
-function safeSocialsFromRow(row: unknown): SocialLink[] {
-  if (!isRecord(row)) return [];
-  const arr = parseJsonArray(row.socialLinks);
-  return arr
-    .map((x) => (isRecord(x) ? x : null))
-    .filter(Boolean)
-    .map((x) => {
-      const r = x as Record<string, unknown>;
-      return { platform: s(r.platform) as SocialPlatform, url: s(r.url) };
-    })
-    .filter((x) => !!x.platform && !!x.url);
+function isFieldType(v: string): v is FieldType {
+  return (
+    v === 'text' ||
+    v === 'textarea' ||
+    v === 'email' ||
+    v === 'tel' ||
+    v === 'url' ||
+    v === 'number' ||
+    v === 'date' ||
+    v === 'time' ||
+    v === 'datetime' ||
+    v === 'select' ||
+    v === 'multiselect' ||
+    v === 'checkbox' ||
+    v === 'checkboxgroup' ||
+    v === 'radio' ||
+    v === 'file'
+  );
 }
 
-async function filesToAttachments(files: File[]) {
-  // Keep this conservative; you can loosen later.
-  const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB each
-  const MAX_FILES = 3;
+function isSocialPlatform(v: string): v is SocialPlatform {
+  return (
+    v === 'instagram' ||
+    v === 'x' ||
+    v === 'tiktok' ||
+    v === 'youtube' ||
+    v === 'linkedin' ||
+    v === 'facebook' ||
+    v === 'soundcloud'
+  );
+}
 
-  const picked = files.slice(0, MAX_FILES);
-  const attachments: { filename: string; content: Buffer; contentType?: string }[] = [];
+function parseJsonArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [];
+}
 
-  for (const f of picked) {
-    if (!f || !f.name) continue;
-    if (f.size > MAX_FILE_BYTES) continue;
+function sanitizeField(raw: unknown, idx: number): FormField | null {
+  if (!isRecord(raw)) return null;
 
-    const ab = await f.arrayBuffer();
-    attachments.push({
-      filename: f.name,
-      content: Buffer.from(ab),
-      contentType: f.type || undefined,
-    });
+  const label = str(raw.label) || `Field ${idx + 1}`;
+  const name = str(raw.name) || label.toLowerCase().replace(/\s+/g, '_');
+  const typeRaw = str(raw.type);
+  const type: FieldType = isFieldType(typeRaw) ? typeRaw : 'text';
+
+  const out: FormField = {
+    id: str(raw.id) || `contact_${name}_${idx}`,
+    name,
+    label,
+    type,
+    required: Boolean(raw.required),
+  };
+
+  const placeholder = str(raw.placeholder);
+  const helpText = str(raw.helpText);
+  if (placeholder) out.placeholder = placeholder;
+  if (helpText) out.helpText = helpText;
+
+  const needsOptions = type === 'select' || type === 'multiselect' || type === 'radio';
+  if (needsOptions && Array.isArray(raw.options)) {
+    const opts = raw.options.map((x) => str(x)).filter(Boolean);
+    if (opts.length) out.options = opts;
   }
 
-  return attachments;
+  if (type === 'number') {
+    const min = num(raw.min);
+    const max = num(raw.max);
+    const step = num(raw.step);
+    if (min !== undefined) out.min = min;
+    if (max !== undefined) out.max = max;
+    if (step !== undefined) out.step = step;
+  }
+
+  if (type === 'file') {
+    const accept = str(raw.accept);
+    if (accept) out.accept = accept;
+    out.multipleFiles = Boolean(raw.multipleFiles) || undefined;
+  }
+
+  if (isRecord(raw.showIf)) {
+    const f = str(raw.showIf.field);
+    const eq = str(raw.showIf.equals);
+    if (f && eq) out.showIf = { field: f, equals: eq };
+  }
+
+  return out.name ? out : null;
 }
 
-export async function POST(req: NextRequest) {
+function sanitizeSocialLinks(raw: unknown): SocialLink[] {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr
+    .map((x) => (isRecord(x) ? x : null))
+    .filter(Boolean)
+    .map((x) => {
+      const r = x as Record<string, unknown>;
+      const platform = str(r.platform);
+      const url = str(r.url);
+      if (!platform || !url) return null;
+      if (!isSocialPlatform(platform)) return null;
+      return { platform, url } satisfies SocialLink;
+    })
+    .filter((x): x is SocialLink => Boolean(x));
+}
+
+function sanitizeConfig(body: unknown): ContactConfig {
+  const b = isRecord(body) ? body : {};
+
+  const fieldsRaw = Array.isArray(b.fields) ? b.fields : DEFAULT_FIELDS;
+  const fields = fieldsRaw
+    .map((f, i) => sanitizeField(f, i))
+    .filter((f): f is FormField => Boolean(f));
+
+  const socialLinks = sanitizeSocialLinks(b.socialLinks);
+
+  return {
+    eyebrow: str(b.eyebrow) || DEFAULT_CONFIG.eyebrow,
+    title: str(b.title) || DEFAULT_CONFIG.title,
+    lead: str(b.lead) || DEFAULT_CONFIG.lead,
+    buttonLabel: str(b.buttonLabel) || DEFAULT_CONFIG.buttonLabel,
+
+    // allow "" to hide email icon entirely
+    contactEmail: str(b.contactEmail),
+    contactPhone: str(b.contactPhone) || null,
+
+    recipientEmail: str(b.recipientEmail) || null,
+
+    modalKicker: str(b.modalKicker) || DEFAULT_CONFIG.modalKicker,
+    modalTitle: str(b.modalTitle) || DEFAULT_CONFIG.modalTitle,
+    modalLead: str(b.modalLead) || DEFAULT_CONFIG.modalLead,
+    submitLabel: str(b.submitLabel) || DEFAULT_CONFIG.submitLabel,
+    successMessage: str(b.successMessage) || DEFAULT_CONFIG.successMessage,
+
+    socialLinks,
+    fields: fields.length ? fields : DEFAULT_FIELDS,
+  };
+}
+
+/** -----------------------------
+ *  Handlers
+ *  ---------------------------- */
+export async function GET() {
   try {
-    if (!transporter) {
-      return NextResponse.json({ error: 'Email transport not configured.' }, { status: 500 });
-    }
-
-    // 1) Load config from DB (so required fields + recipient match admin)
     const row = await prisma.homeContact.findUnique({ where: { key: KEY } });
+    if (!row) return NextResponse.json(DEFAULT_CONFIG);
 
-    const recipientEmail =
-      (row?.recipientEmail ?? '').trim() ||
-      INTERNAL_EMAIL || // fallback to env internal inbox
-      (row?.contactEmail ?? '').trim();
+    const fieldsRaw = parseJsonArray(row.formFields);
+    const fields = (fieldsRaw.length ? fieldsRaw : DEFAULT_FIELDS)
+      .map((f, i) => sanitizeField(f, i))
+      .filter((f): f is FormField => Boolean(f));
 
-    if (!recipientEmail) {
-      return NextResponse.json({ error: 'No recipient configured.' }, { status: 500 });
-    }
+    const socialsRaw = parseJsonArray(row.socialLinks);
+    const socialLinks = sanitizeSocialLinks(socialsRaw);
 
-    const fields = safeFieldsFromRow(row ?? {});
-    const socials = safeSocialsFromRow(row ?? {});
-    const contactEmail = (row?.contactEmail ?? '').trim() || recipientEmail;
+    const config: ContactConfig = {
+      eyebrow: row.eyebrow || DEFAULT_CONFIG.eyebrow,
+      title: row.title || DEFAULT_CONFIG.title,
+      lead: row.lead || DEFAULT_CONFIG.lead,
+      buttonLabel: row.buttonLabel || DEFAULT_CONFIG.buttonLabel,
 
-    // 2) Read as FormData (THIS is the fix vs JSON.parse)
-    const formData = await req.formData();
+      // allow blank
+      contactEmail: (row.contactEmail ?? '').trim(),
+      contactPhone: row.contactPhone ?? null,
 
-    // Build key/value payload
-    const payload: Record<string, string | string[]> = {};
-    const uploaded: Record<string, File[]> = {};
+      recipientEmail: row.recipientEmail ?? null,
 
-    for (const [key, val] of formData.entries()) {
-      if (val instanceof File) {
-        if (!uploaded[key]) uploaded[key] = [];
-        uploaded[key].push(val);
-        continue;
-      }
+      modalKicker: row.modalKicker || DEFAULT_CONFIG.modalKicker,
+      modalTitle: row.modalTitle || DEFAULT_CONFIG.modalTitle,
+      modalLead: row.modalLead || DEFAULT_CONFIG.modalLead,
+      submitLabel: row.submitLabel || DEFAULT_CONFIG.submitLabel,
+      successMessage: row.successMessage || DEFAULT_CONFIG.successMessage,
 
-      const v = String(val).trim();
-      if (key in payload) {
-        const prev = payload[key];
-        payload[key] = Array.isArray(prev) ? [...prev, v] : [prev, v];
-      } else {
-        payload[key] = v;
-      }
-    }
+      socialLinks,
+      fields: fields.length ? fields : DEFAULT_FIELDS,
+    };
 
-    // 3) Validate required fields (based on admin config)
-    const missing: string[] = [];
-    for (const f of fields) {
-      if (!f.required) continue;
-      const v = payload[f.name];
-      const empty =
-        v === undefined ||
-        v === null ||
-        (typeof v === 'string' && v.trim() === '') ||
-        (Array.isArray(v) && v.length === 0);
+    return NextResponse.json(config);
+  } catch (e) {
+    console.error('GET /api/home/contact failed:', e);
+    return NextResponse.json({ error: 'Server error (GET contact).' }, { status: 500 });
+  }
+}
 
-      if (empty) missing.push(f.label || f.name);
-    }
-    if (missing.length) {
-      return NextResponse.json(
-        { error: `Missing required fields: ${missing.join(', ')}` },
-        { status: 400 }
-      );
-    }
+export async function POST(req: Request) {
+  try {
+    const body: unknown = await req.json();
+    const data = sanitizeConfig(body);
 
-    // 4) Determine "reply to" email if provided
-    const senderName = typeof payload.name === 'string' ? payload.name : '';
-    const senderEmail = typeof payload.email === 'string' ? payload.email : '';
+    const fieldsJson: Prisma.InputJsonValue = data.fields as unknown as Prisma.InputJsonValue;
+    const socialsJson: Prisma.InputJsonValue = data.socialLinks as unknown as Prisma.InputJsonValue;
 
-    const subject = `New contact message${senderName ? ` from ${senderName}` : ''}`;
+    const saved = await prisma.homeContact.upsert({
+      where: { key: KEY },
+      create: {
+        key: KEY,
 
-    // Render message rows in configured order (fallback to whatever was posted)
-    const ordered = fields.length
-      ? fields.map((f) => ({ key: f.name, label: f.label || f.name }))
-      : Object.keys(payload).map((k) => ({ key: k, label: k }));
+        eyebrow: data.eyebrow,
+        title: data.title,
+        lead: data.lead,
+        buttonLabel: data.buttonLabel,
 
-    const rowsText: string[] = [];
-    const rowsHtml: string[] = [];
+        contactEmail: data.contactEmail, // can be ""
+        contactPhone: data.contactPhone,
+        recipientEmail: data.recipientEmail,
 
-    for (const rowDef of ordered) {
-      const raw = payload[rowDef.key];
-      if (raw === undefined) continue;
+        modalKicker: data.modalKicker,
+        modalTitle: data.modalTitle,
+        modalLead: data.modalLead,
+        submitLabel: data.submitLabel,
+        successMessage: data.successMessage,
 
-      const val = Array.isArray(raw) ? raw.join(', ') : raw;
-      if (!String(val).trim()) continue;
+        socialLinks: socialsJson,
+        formFields: fieldsJson,
+      },
+      update: {
+        eyebrow: data.eyebrow,
+        title: data.title,
+        lead: data.lead,
+        buttonLabel: data.buttonLabel,
 
-      rowsText.push(`${rowDef.label}: ${val}`);
-      rowsHtml.push(`
-        <tr>
-          <td style="padding:4px 0;color:rgba(148,163,184,0.95);vertical-align:top;width:160px;">
-            ${escapeHtml(rowDef.label)}
-          </td>
-          <td style="padding:4px 0;color:#f9fafb;white-space:pre-wrap;">
-            ${escapeHtml(val)}
-          </td>
-        </tr>
-      `);
-    }
+        contactEmail: data.contactEmail, // can be ""
+        contactPhone: data.contactPhone,
+        recipientEmail: data.recipientEmail,
 
-    // Attachments (any file inputs)
-    const allFiles = Object.values(uploaded).flat();
-    const attachments = await filesToAttachments(allFiles);
+        modalKicker: data.modalKicker,
+        modalTitle: data.modalTitle,
+        modalLead: data.modalLead,
+        submitLabel: data.submitLabel,
+        successMessage: data.successMessage,
 
-    const textBody = ['New contact message', '', ...rowsText].join('\n');
-
-    const htmlBody = `
-      <!doctype html>
-      <html lang="en">
-        <head><meta charSet="utf-8" /><title>${escapeHtml(subject)}</title></head>
-        <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
-            <tr>
-              <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:720px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
-                  ${LOGO_ROW}
-                  <tr>
-                    <td style="padding-bottom:12px;">
-                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
-                      <h1 style="margin:0;font-size:22px;line-height:1.3;">New contact message</h1>
-                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">A visitor submitted the contact form.</p>
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td style="padding-top:10px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;font-size:13px;">
-                        <tr>
-                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
-                            Message details
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:10px 14px 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
-                              ${rowsHtml.join('')}
-                            </table>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
-
-                  ${
-                    socials.length
-                      ? `<tr>
-                           <td style="padding-top:14px;font-size:12px;color:rgba(148,163,184,0.9);">
-                             Social links configured: ${escapeHtml(
-                               socials.map((x) => `${x.platform}: ${x.url}`).join(' · ')
-                             )}
-                           </td>
-                         </tr>`
-                      : ''
-                  }
-
-                  <tr>
-                    <td style="padding-top:12px;font-size:11px;color:rgba(148,163,184,0.75);">
-                      Reply directly to this email to respond to the sender (if they provided an email).
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
-
-    // 5) Internal notification
-    await transporter.sendMail({
-      from: CONTACT_FROM,
-      to: recipientEmail,
-      replyTo: senderEmail || undefined,
-      subject,
-      text: textBody,
-      html: htmlBody,
-      ...(attachments.length ? { attachments } : {}),
+        socialLinks: socialsJson,
+        formFields: fieldsJson,
+      },
     });
 
-    // 6) Auto-reply (only if user provided email)
-    if (senderEmail) {
-      const thanksSubject = 'Thanks — we got your message (Nocturna)';
-      const thanksText = [
-        `Hi ${senderName || 'there'},`,
-        '',
-        'Thanks for reaching out.',
-        'We’ve received your message and will get back to you shortly.',
-        '',
-        '— The Nocturna team',
-      ].join('\n');
-
-      const thanksHtml = `
-        <!doctype html>
-        <html lang="en">
-          <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
-          <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
-            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
-              <tr>
-                <td align="center">
-                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                    style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
-                    ${LOGO_ROW}
-                    <tr>
-                      <td>
-                        <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your message</h1>
-                        <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
-                          Hi ${escapeHtml(senderName || 'there')},<br/>
-                          We’ve received your message and will get back to you shortly.
-                        </p>
-                        <p style="margin:16px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
-                          — The Nocturna team
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>
-      `;
-
-      await transporter.sendMail({
-        from: CONTACT_FROM,
-        to: senderEmail,
-        subject: thanksSubject,
-        text: thanksText,
-        html: thanksHtml,
-        replyTo: contactEmail, // replies go back to your inbox
-        headers: {
-          ...(INTERNAL_EMAIL ? { 'List-Unsubscribe': `<mailto:${INTERNAL_EMAIL}>` } : {}),
-        },
-      });
-    }
-
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error('[contact] error:', err);
-    return NextResponse.json({ error: 'Server error while sending contact.' }, { status: 500 });
+    // Revalidate whatever pages include Contact section
+    revalidatePath('/');
+    return NextResponse.json({ ok: true, id: saved.id });
+  } catch (e) {
+    console.error('POST /api/home/contact failed:', e);
+    return NextResponse.json({ error: 'Server error (POST contact).' }, { status: 500 });
   }
 }

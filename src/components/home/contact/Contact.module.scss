@@ -1,5 +1,5 @@
 /* =========================
-   CONTACT — Clean CTA
+   CONTACT — Hero + Button CTA
    ========================= */
 
 .section {
@@ -19,7 +19,7 @@
   margin: 0 auto;
   display: grid;
   place-items: center;
-  gap: 28px;
+  gap: 22px;
 }
 
 .kicker {
@@ -30,21 +30,13 @@
 }
 
 /* =========================
-   CTA — Text + Orb + Rail
+   HERO (NOT CLICKABLE)
    ========================= */
 
-.cta {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-
+.hero {
   display: grid;
   justify-items: center;
-  gap: 14px;
-
-  color: var(--ink);
-  transition: color 0.3s ease, transform 0.2s ease;
+  gap: 12px;
 }
 
 .labelWrap {
@@ -53,7 +45,7 @@
   align-items: center;
 }
 
-/* GET IN TOUCH — gold heartbeat / DJ beat */
+/* Keep the pulse always (no hover states here) */
 .ctaLabel {
   font-size: clamp(40px, 6vw, 80px);
   font-weight: 900;
@@ -61,16 +53,15 @@
   position: relative;
   z-index: 2;
 
-  /* idle pulse */
   animation: goldBeat 2.8s ease-out infinite;
 }
 
-/* Underline (visible but subtle idle) */
+/* Underline (idle subtle) */
 .ctaRail {
   position: absolute;
   bottom: -12px;
   left: 0;
-  right: 58px; /* stops before orb */
+  right: 58px;
   height: 2px;
   border-radius: 999px;
 
@@ -84,16 +75,9 @@
   opacity: 0.25;
   transform: scaleX(0.45);
   transform-origin: left;
-
-  transition:
-    transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.6s ease;
 }
 
-/* =========================
-   Orb — synced to the beat
-   ========================= */
-
+/* Orb — synced beat */
 .orbWrap {
   position: relative;
   width: 54px;
@@ -115,50 +99,7 @@
     0 0 120px rgba(231, 215, 167, 0.4);
 
   transform: translateX(2px) scale(0.9);
-  transition: transform 0.45s ease, box-shadow 0.45s ease;
-
-  /* DJ-beat style thump, synced with text */
   animation: orbBeat 2.8s ease-out infinite;
-}
-
-/* =========================
-   Hover State — layered on top of beat
-   ========================= */
-
-.cta:hover,
-.cta:focus-visible {
-  transform: translateY(-2px);
-}
-
-/* On hover:
-   - stop the idle pulse
-   - go solid gold
-   - add stronger glow */
-.cta:hover .ctaLabel,
-.cta:focus-visible .ctaLabel {
-  animation: none; /* << stop goldBeat while hovered */
-  color: var(--accent);
-  text-shadow:
-    0 0 20px rgba(231, 215, 167, 0.8),
-    0 0 40px rgba(231, 215, 167, 0.5);
-}
-
-/* Rail grows fully + brightens */
-.cta:hover .ctaRail,
-.cta:focus-visible .ctaRail {
-  transform: scaleX(1);
-  opacity: 1;
-}
-
-/* Orb brightens and shifts further;
-   also stop the beat animation while hovered */
-.cta:hover .orb,
-.cta:focus-visible .orb {
-  animation: none; /* << stop orbBeat while hovered */
-  transform: translateX(7px) scale(1);
-  box-shadow:
-    0 0 60px rgba(231, 215, 167, 1),
-    0 0 220px rgba(231, 215, 167, 0.65);
 }
 
 /* Sub label */
@@ -167,6 +108,46 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(226, 232, 240, 0.85);
+}
+
+/* =========================
+   REAL CTA BUTTON (like Enquire/Join)
+   ========================= */
+
+.ctaBtn {
+  margin-top: 4px;
+  align-self: center;
+  justify-self: center;
+
+  padding: 14px 24px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #0b0b0b;
+
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.12s ease,
+    filter 0.18s ease;
+}
+
+.ctaBtn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.ctaBtn:focus-visible {
+  outline: 2px solid #e7d7a7;
+  outline-offset: 2px;
 }
 
 /* =========================
@@ -202,7 +183,7 @@
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-top: 22px;
+  margin-top: 14px;
 
   a {
     color: var(--muted);
@@ -220,7 +201,6 @@
    Keyframes — DJ gold beat
    ========================= */
 
-/* Gold heartbeat / DJ beat for text */
 @keyframes goldBeat {
   0%,
   40%,
@@ -231,7 +211,6 @@
       0 0 0px rgba(231, 215, 167, 0);
   }
 
-  /* Main hit */
   16% {
     color: #fffef7;
     text-shadow:
@@ -239,7 +218,6 @@
       0 0 32px rgba(231, 215, 167, 0.35);
   }
 
-  /* Small echo */
   24% {
     color: #fdfaf0;
     text-shadow:
@@ -248,7 +226,6 @@
   }
 }
 
-/* Orb thump – synced with same beat timing */
 @keyframes orbBeat {
   0%,
   40%,
@@ -297,5 +274,10 @@
   .ctaRail {
     bottom: -6px;
     right: 46px;
+  }
+
+  /* make the hero feel less “dull” on mobile */
+  .ctaSub {
+    color: rgba(226, 232, 240, 0.92);
   }
 }

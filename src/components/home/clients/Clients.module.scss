@@ -57,12 +57,11 @@
   overflow-y: visible;
 }
 
-/* Track glides; must not clip */
+/* Track glides */
 .track {
   display: flex;
   gap: 40px;
   will-change: transform;
-
   padding: 0 56px;
 }
 
@@ -132,12 +131,10 @@
   position: relative;
   z-index: 1;
 
-  /* makes it feel tappable on mobile */
   cursor: pointer;
   outline: none;
 }
 
-/* hovered/focused/expanded item should sit above neighbors */
 .item:hover,
 .item:focus-within,
 .expanded {
@@ -157,7 +154,6 @@
   position: relative;
   z-index: 2;
 
-  /* card click shouldn't feel like "button" */
   cursor: default;
 }
 
@@ -169,12 +165,12 @@
   transition: transform 0.6s cubic-bezier(0.23, 0.9, 0.35, 1);
 }
 
-/* hover flip (desktop) */
+/* Desktop hover flip (unchanged) */
 .item:hover .cardInner {
   transform: rotateY(180deg);
 }
 
-/* focus flip (keyboard) */
+/* Keyboard flip (unchanged) */
 .item:focus-within .cardInner {
   transform: rotateY(180deg);
 }
@@ -269,7 +265,7 @@
     0 8px 18px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
-  /* ✅ default: one-line ellipsis */
+  /* ✅ default: ONE LINE (desktop + mobile) */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -279,14 +275,24 @@
     filter 0.2s ease;
 }
 
-/* ✅ FULL EXPAND: remove clamp + remove overflow hiding */
+/* Desktop expand on hover/focus (unchanged) */
 .item:hover .cardLabel,
-.item:focus-within .cardLabel,
-.expanded .cardLabel {
+.item:focus-within .cardLabel {
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
 
+  display: block;
+
+  border-radius: 16px;
+  filter: brightness(1.06);
+}
+
+/* Mobile tap expand (only when expanded class exists) */
+.expanded .cardLabel {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
   display: block;
 
   border-radius: 16px;
@@ -329,22 +335,7 @@
     font-size: 20px;
   }
 
-  /* Mobile default: show 2 lines (better), tap expands FULL */
-  .cardLabel {
-    white-space: normal;
-    overflow: hidden;
-    text-overflow: unset;
-
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-
-  .expanded .cardLabel {
-    display: block;
-    -webkit-line-clamp: unset;
-    line-clamp: unset;
-    overflow: visible;
-  }
+  /* ✅ IMPORTANT:
+     Do NOT override .cardLabel to 2 lines on mobile anymore.
+     This keeps mobile default identical to desktop (one-line ellipsis). */
 }

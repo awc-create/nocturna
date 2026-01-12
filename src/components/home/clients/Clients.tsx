@@ -96,16 +96,14 @@ export default function Clients({
 
   const [paused, setPaused] = useState(false);
 
-  // ✅ Mobile/tap expansion: which card is expanded (by name)
+  // ✅ mobile/tap expansion: which card is expanded (keyed by name)
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const many = logos.length >= 5;
   const glideList = useMemo(() => (many ? [...logos, ...logos] : logos), [many, logos]);
 
-  // keep in sync with SCSS fixed sizing
   const CARD_W = 240;
   const GAP = 40;
-
   const STEP = useMemo(() => CARD_W + GAP, []);
   const SPEED = useMemo(() => 30, []); // px/sec
 
@@ -153,7 +151,7 @@ export default function Clients({
     };
   }, [enableClientRefresh]);
 
-  // Continuous glide
+  // Continuous glide carousel
   useEffect(() => {
     if (!many) return;
 
@@ -200,7 +198,6 @@ export default function Clients({
   };
 
   const toggleExpanded = (key: string) => {
-    // Pause glide so interaction feels solid
     pausedRef.current = true;
     setPaused(true);
     setExpanded((prev) => (prev === key ? null : key));
@@ -212,7 +209,6 @@ export default function Clients({
     return (
       <div
         className={`${styles.item} ${isExpanded ? styles.expanded : ''}`}
-        // ✅ mobile/touch: tap to expand
         onClick={() => toggleExpanded(logo.name)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -224,12 +220,17 @@ export default function Clients({
         tabIndex={0}
         aria-expanded={isExpanded}
       >
-        <div className={styles.card} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.card}>
           <div className={styles.cardInner}>
             {/* FRONT */}
             <div className={styles.face}>
               {logo.href ? (
-                <a href={logo.href} aria-label={logo.name} title={logo.name}>
+                <a
+                  href={logo.href}
+                  aria-label={logo.name}
+                  title={logo.name}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Image src={logo.src} alt={logo.name} width={180} height={80} />
                 </a>
               ) : (
@@ -247,7 +248,11 @@ export default function Clients({
               </div>
 
               {logo.storyUrl ? (
-                <a href={logo.storyUrl} className={styles.storyBtn}>
+                <a
+                  href={logo.storyUrl}
+                  className={styles.storyBtn}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {logo.storyLabel ?? 'Watch the story'}
                 </a>
               ) : null}
@@ -256,18 +261,7 @@ export default function Clients({
         </div>
 
         {/* Under-card blurb pill */}
-        {logo.blurb ? (
-          <div
-            className={styles.cardLabel}
-            // ✅ keep tap on label from triggering link clicks inside card
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleExpanded(logo.name);
-            }}
-          >
-            {logo.blurb}
-          </div>
-        ) : null}
+        {logo.blurb ? <div className={styles.cardLabel}>{logo.blurb}</div> : null}
       </div>
     );
   };
