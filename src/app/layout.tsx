@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <div className="app-shell">
-            <SkyOverlay starDensityPct={18} />
+            <SkyOverlay />
             <div className="site-grain" aria-hidden="true" />
             <Navbar />
             <main>{children}</main>
