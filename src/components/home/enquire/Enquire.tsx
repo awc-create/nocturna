@@ -19,6 +19,8 @@ const FALLBACK: EnquireConfig = {
   buttonLabel: 'Open enquiry form',
 };
 
+const CONSULT_CALL_URL = 'https://calendar.app.google/hdvYediQuWn4wDQH6';
+
 export default function Enquire() {
   const { openEnquire } = useModals();
   const [cfg, setCfg] = useState<EnquireConfig>(FALLBACK);
@@ -41,14 +43,28 @@ export default function Enquire() {
       <section id="enquire" className={styles.section} aria-labelledby="enquire-heading">
         <div className={styles.inner}>
           <p className={styles.kicker}>{cfg.eyebrow}</p>
+
           <h2 id="enquire-heading" className={styles.title}>
             {cfg.title}
           </h2>
+
           <p className={styles.lead}>{cfg.lead}</p>
 
-          <button type="button" className={styles.cta} onClick={openEnquire}>
-            {cfg.buttonLabel}
-          </button>
+          <div className={styles.ctaRow}>
+            <button type="button" className={styles.cta} onClick={openEnquire}>
+              {cfg.buttonLabel}
+            </button>
+
+            <a
+              className={styles.ctaSecondary}
+              href={CONSULT_CALL_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Book a consultant call (opens in a new tab)"
+            >
+              Book consultant call
+            </a>
+          </div>
         </div>
       </section>
 

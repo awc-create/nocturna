@@ -6,12 +6,24 @@ import type { FormField } from '@/types/form-builder';
 import RadioPills from './RadioPills';
 import CheckboxPills from './CheckboxPills';
 
-export type Values = Record<string, string>;
+/**
+ * Values must support arrays for:
+ * - multiselect
+ * - checkboxes group
+ */
+export type Values = Record<string, string | string[]>;
 
 export function shouldShowField(field: FormField, values: Values) {
   if (!field.showIf) return true;
-  const controllingValue = values[field.showIf.field] ?? '';
-  return controllingValue === field.showIf.equals;
+
+  const controllingValue = values[field.showIf.field];
+
+  // If the controlling field is multi (array), check inclusion
+  if (Array.isArray(controllingValue)) {
+    return controllingValue.includes(field.showIf.equals);
+  }
+
+  return (controllingValue ?? '') === field.showIf.equals;
 }
 
 export function updateValueForField(
@@ -26,12 +38,11 @@ export function updateValueForField(
     return e.target.checked ? 'true' : 'false';
   }
 
-  // checkbox group + multiselect
+  // checkbox group + multiselect are handled in their own renderers
   if (
     (field.type === 'checkboxes' && e.target instanceof HTMLInputElement) ||
     (field.type === 'multiselect' && e.target instanceof HTMLSelectElement)
   ) {
-    // handled elsewhere (see renderers)
     return '';
   }
 
@@ -49,8 +60,7 @@ function tryShowPickerFromEvent(e: React.SyntheticEvent<HTMLInputElement>) {
   try {
     anyEl.showPicker();
   } catch {
-    // Browser denied it (no trusted gesture) — ignore.
-    // The native calendar icon / default behavior still works.
+    // ignore
   }
 }
 
@@ -61,7 +71,7 @@ export function renderFieldControl(
   idPrefix: string
 ) {
   const id = `${idPrefix}-${field.id}`;
-  const value = values[field.name] ?? '';
+  const raw = values[field.name];
 
   const baseProps = {
     id,
@@ -70,11 +80,14 @@ export function renderFieldControl(
     'aria-label': field.label,
   };
 
-  const set = (name: string, v: string) =>
+  const set = (name: string, v: string | string[]) =>
     setValues((prev) => ({
       ...prev,
       [name]: v,
     }));
+
+  const valueStr = typeof raw === 'string' ? raw : '';
+  const valueArr = Array.isArray(raw) ? raw : [];
 
   if (field.type === 'textarea') {
     return (
@@ -82,43 +95,38 @@ export function renderFieldControl(
         {...baseProps}
         placeholder={field.placeholder}
         rows={4}
-        value={value}
+        value={valueStr}
         onChange={(e) => set(field.name, e.target.value)}
       />
     );
   }
 
-  if (field.type === 'select' || field.type === 'multiselect') {
-    if (field.type === 'multiselect') {
-      const selected = value
-        ? value
-            .split(',')
-            .map((x) => x.trim())
-            .filter(Boolean)
-        : [];
-
-      return (
-        <select
-          {...baseProps}
-          multiple
-          value={selected}
-          onChange={(e) => {
-            const vals = Array.from(e.target.selectedOptions).map((o) => o.value);
-            set(field.name, vals.join(','));
-          }}
-        >
-          {(field.options ?? []).map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      );
-    }
-
+  if (field.type === 'select') {
     return (
-      <select {...baseProps} value={value} onChange={(e) => set(field.name, e.target.value)}>
+      <select {...baseProps} value={valueStr} onChange={(e) => set(field.name, e.target.value)}>
         <option value="">Select…</option>
+        {(field.options ?? []).map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (field.type === 'multiselect') {
+    return (
+      <select
+        {...baseProps}
+        multiple
+        value={valueArr}
+        onChange={(e) => {
+          const vals = Array.from(e.target.selectedOptions).map((o) => o.value);
+          set(field.name, vals);
+        }}
+        // Better UX: show a few options at once
+        size={Math.min(6, Math.max(3, field.options?.length ?? 3))}
+      >
         {(field.options ?? []).map((opt) => (
           <option key={opt} value={opt}>
             {opt}
@@ -133,7 +141,7 @@ export function renderFieldControl(
     return (
       <RadioPills
         name={field.name}
-        value={value}
+        value={valueStr}
         options={field.options ?? []}
         required={field.required}
         onChange={(v) => set(field.name, v)}
@@ -142,7 +150,7 @@ export function renderFieldControl(
   }
 
   if (field.type === 'checkbox') {
-    const checked = value === 'true';
+    const checked = valueStr === 'true';
     return (
       <input
         id={id}
@@ -155,11 +163,12 @@ export function renderFieldControl(
   }
 
   // ✅ CHECKBOX GROUP (pills)
+  // We keep your UI component, but store arrays instead of comma strings
   if (field.type === 'checkboxes') {
     return (
       <CheckboxPills
         name={field.name}
-        value={value}
+        value={valueArr}
         options={field.options ?? []}
         required={field.required}
         onChange={(v) => set(field.name, v)}
@@ -200,9 +209,8 @@ export function renderFieldControl(
       required={field.required}
       placeholder={field.placeholder}
       type={inputType}
-      value={value}
+      value={valueStr}
       onChange={(e) => set(field.name, e.target.value)}
-      // ✅ IMPORTANT: only attempt showPicker on pointerdown (trusted gesture)
       onPointerDown={isPickerType ? (e) => tryShowPickerFromEvent(e) : undefined}
       min={field.type === 'number' && typeof field.min === 'number' ? field.min : undefined}
       max={field.type === 'number' && typeof field.max === 'number' ? field.max : undefined}

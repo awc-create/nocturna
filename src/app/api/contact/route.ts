@@ -60,6 +60,14 @@ function s(v: unknown) {
   return typeof v === 'string' ? v.trim() : '';
 }
 
+// ✅ Keep values clean + single-line (no random newlines)
+function oneLine(v: string) {
+  return v
+    .replace(/\r?\n+/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function safeFieldsFromRow(row: unknown): FormField[] {
   if (!isRecord(row)) return [];
   const arr = parseJsonArray((row as Record<string, unknown>).formFields);
@@ -134,7 +142,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      const v = String(val).trim();
+      const v = oneLine(String(val));
       if (key in payload) {
         const prev = payload[key];
         payload[key] = Array.isArray(prev) ? [...prev, v] : [prev, v];
@@ -185,12 +193,14 @@ export async function POST(req: NextRequest) {
       if (!String(val).trim()) continue;
 
       rowsText.push(`${def.label}: ${val}`);
+
+      // ✅ Tight, clean, always-left rows
       rowsHtml.push(`
         <tr>
-          <td style="padding:4px 0;color:rgba(148,163,184,0.95);vertical-align:top;width:160px;">
+          <td valign="top" style="padding:4px 0;color:rgba(148,163,184,0.95);width:160px;line-height:16px;mso-line-height-rule:exactly;text-align:left;">
             ${escapeHtml(def.label)}
           </td>
-          <td style="padding:4px 0;color:#f9fafb;white-space:pre-wrap;">
+          <td valign="top" style="padding:4px 0;color:#f9fafb;font-weight:600;line-height:16px;mso-line-height-rule:exactly;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;">
             ${escapeHtml(val)}
           </td>
         </tr>
@@ -202,37 +212,39 @@ export async function POST(req: NextRequest) {
 
     const textBody = ['New contact message', '', ...rowsText].join('\n');
 
+    // ✅ Match Enquire’s look/structure
     const htmlBody = `
       <!doctype html>
       <html lang="en">
         <head><meta charSet="utf-8" /><title>${escapeHtml(subject)}</title></head>
         <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;mso-table-lspace:0pt;mso-table-rspace:0pt;">
             <tr>
               <td align="center">
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:720px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
+                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                   ${LOGO_ROW}
                   <tr>
-                    <td style="padding-bottom:12px;">
+                    <td style="padding-bottom:12px;text-align:left;">
                       <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">New contact message</h1>
-                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">A visitor submitted the contact form.</p>
+                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">Someone has submitted the contact form on the website.</p>
                     </td>
                   </tr>
 
                   <tr>
-                    <td style="padding-top:10px;">
+                    <td style="padding-top:10px;padding-bottom:10px;text-align:left;">
                       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;font-size:13px;">
+                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                         <tr>
-                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
+                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);text-align:left;">
                             Message details
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding:10px 14px 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+                          <td align="left" style="padding:10px 14px 10px;text-align:left;">
+                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                              style="border-collapse:collapse;font-size:13px;line-height:16px;text-align:left;table-layout:fixed;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                               ${rowsHtml.join('')}
                             </table>
                           </td>
@@ -242,8 +254,8 @@ export async function POST(req: NextRequest) {
                   </tr>
 
                   <tr>
-                    <td style="padding-top:12px;font-size:11px;color:rgba(148,163,184,0.75);">
-                      Reply directly to this email to respond to the sender (if they provided an email).
+                    <td style="padding-top:10px;font-size:11px;color:rgba(148,163,184,0.75);text-align:left;">
+                      You can reply directly to this email to respond to the sender (if they provided an email).
                     </td>
                   </tr>
                 </table>
@@ -282,14 +294,15 @@ export async function POST(req: NextRequest) {
         <html lang="en">
           <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
           <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
-            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;mso-table-lspace:0pt;mso-table-rspace:0pt;">
               <tr>
                 <td align="center">
                   <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                    style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
+                    style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                     ${LOGO_ROW}
                     <tr>
-                      <td>
+                      <td style="text-align:left;">
+                        <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
                         <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your message</h1>
                         <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
                           Hi ${escapeHtml(senderName || 'there')},<br/>

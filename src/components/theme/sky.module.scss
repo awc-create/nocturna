@@ -1,5 +1,5 @@
 /* =====================================================
-   NOCTURNA SKY — FUN, DEEP, CINEMATIC
+   NOCTURNA SKY — DEEP, CINEMATIC, CLEAN
    ===================================================== */
 
 /* PAGE-HEIGHT GRADIENT */
@@ -20,17 +20,6 @@
     #081d3f 72%,
     #050915 100%
   );
-}
-
-/* STARS — ALWAYS VISIBLE */
-.starCanvas {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  opacity: 0.9;
-  mix-blend-mode: screen;
 }
 
 /* ATMOSPHERIC BLUE GLOW */

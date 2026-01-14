@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { transporter, escapeHtml, BOOKING_URL, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const JOIN_FROM = process.env.JOIN_FROM_EMAIL || 'Nocturna Artists <jobs@nocturnagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
@@ -17,6 +20,14 @@ const LOGO_ROW = EMAIL_LOGO_URL
      </tr>`
   : '';
 
+// ✅ Keep values clean + single-line (no random newlines)
+function oneLine(v: string) {
+  return v
+    .replace(/\r?\n+/g, ' · ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export async function POST(req: NextRequest) {
   try {
     if (!transporter || !INTERNAL_EMAIL) {
@@ -25,8 +36,8 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    const fullName = String(formData.get('full_name') ?? '').trim();
-    const email = String(formData.get('email') ?? '').trim();
+    const fullName = oneLine(String(formData.get('full_name') ?? ''));
+    const email = oneLine(String(formData.get('email') ?? ''));
 
     if (!fullName || !email) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
@@ -34,28 +45,33 @@ export async function POST(req: NextRequest) {
 
     const entries: { key: string; value: string }[] = [];
     for (const [key, value] of formData.entries()) {
-      if (typeof value === 'string' && value.trim() !== '') {
-        entries.push({ key, value: value.trim() });
-      }
+      if (value instanceof File) continue;
+      const v = oneLine(String(value));
+      if (!v) continue;
+      entries.push({ key, value: v });
     }
 
     const subject = `New artist application from ${fullName}`;
 
-    const textLines: string[] = ['New artist application', ''];
-    for (const row of entries) textLines.push(`${row.key}: ${row.value}`);
-    const textBody = textLines.join('\n');
+    const textBody = [
+      'New artist application',
+      '',
+      ...entries.map((r) => `${r.key}: ${r.value}`),
+    ].join('\n');
 
+    // ✅ Tight, clean, always-left table rows (matches Enquire feel)
     const rowsHtml = entries
       .map(
-        (row) => `
-        <tr>
-          <td style="padding:4px 0;color:rgba(148,163,184,0.95);vertical-align:top;width:160px;">
-            ${escapeHtml(row.key)}
-          </td>
-          <td style="padding:4px 0;color:#f9fafb;white-space:pre-wrap;">
-            ${escapeHtml(row.value)}
-          </td>
-        </tr>`
+        (r) => `
+          <tr>
+            <td valign="top" style="padding:4px 0;color:rgba(148,163,184,0.95);width:160px;line-height:16px;mso-line-height-rule:exactly;text-align:left;">
+              ${escapeHtml(r.key)}
+            </td>
+            <td valign="top" style="padding:4px 0;color:#f9fafb;font-weight:600;line-height:16px;mso-line-height-rule:exactly;text-align:left;white-space:normal;word-break:break-word;overflow-wrap:anywhere;">
+              ${escapeHtml(r.value)}
+            </td>
+          </tr>
+        `
       )
       .join('');
 
@@ -64,34 +80,33 @@ export async function POST(req: NextRequest) {
       <html lang="en">
         <head><meta charSet="utf-8" /><title>${escapeHtml(subject)}</title></head>
         <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;mso-table-lspace:0pt;mso-table-rspace:0pt;">
             <tr>
               <td align="center">
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:720px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
+                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                   ${LOGO_ROW}
                   <tr>
-                    <td style="padding-bottom:12px;">
+                    <td style="padding-bottom:12px;text-align:left;">
                       <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Artists</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">New artist application</h1>
-                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
-                        ${escapeHtml(fullName)} has applied to join the roster.
-                      </p>
+                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">Someone has submitted the join form on the website.</p>
                     </td>
                   </tr>
 
                   <tr>
-                    <td style="padding-top:10px;">
+                    <td style="padding-top:10px;padding-bottom:10px;text-align:left;">
                       <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;font-size:13px;">
+                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                         <tr>
-                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
+                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);text-align:left;">
                             Application details
                           </td>
                         </tr>
                         <tr>
-                          <td style="padding:10px 14px 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;">
+                          <td align="left" style="padding:10px 14px 10px;text-align:left;">
+                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                              style="border-collapse:collapse;font-size:13px;line-height:16px;text-align:left;table-layout:fixed;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                               ${rowsHtml}
                             </table>
                           </td>
@@ -101,7 +116,7 @@ export async function POST(req: NextRequest) {
                   </tr>
 
                   <tr>
-                    <td style="padding-top:10px;font-size:11px;color:rgba(148,163,184,0.75);">
+                    <td style="padding-top:10px;font-size:11px;color:rgba(148,163,184,0.75);text-align:left;">
                       You can reply directly to this email to contact the applicant.
                     </td>
                   </tr>
@@ -124,7 +139,7 @@ export async function POST(req: NextRequest) {
       html: htmlBody,
     });
 
-    // ✅ Auto-reply
+    // ✅ Auto-reply (same visual language as Enquire)
     const thanksSubject = 'Thanks for your interest in joining Nocturna';
 
     const thanksText = [
@@ -146,14 +161,15 @@ export async function POST(req: NextRequest) {
       <html lang="en">
         <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
         <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;mso-table-lspace:0pt;mso-table-rspace:0pt;">
             <tr>
               <td align="center">
                 <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
+                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;mso-table-lspace:0pt;mso-table-rspace:0pt;">
                   ${LOGO_ROW}
                   <tr>
-                    <td>
+                    <td style="text-align:left;">
+                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Artists</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your interest</h1>
                       <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
                         Hi ${escapeHtml(fullName || 'there')},<br/>
@@ -170,14 +186,14 @@ export async function POST(req: NextRequest) {
                                If we’ve already invited you to book an intro chat, you can choose a time here:
                              </p>
                              <p style="margin:10px 0 0;">
-                               <a href="${BOOKING_URL}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#facc6b;color:#020617;font-weight:600;font-size:13px;text-decoration:none;">
+                               <a href="${BOOKING_URL}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#facc6b;color:#020617;font-weight:700;font-size:13px;text-decoration:none;">
                                  Book an intro chat
                                </a>
                              </p>`
                           : ''
                       }
 
-                      <p style="margin:18px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
+                      <p style="margin:18px 0 0;font-size:13px;color:rgba(209,213,219,0.95);">
                         — The Nocturna team
                       </p>
                     </td>

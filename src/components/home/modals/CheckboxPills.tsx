@@ -1,31 +1,23 @@
-// src/components/home/modals/CheckboxPills.tsx
 'use client';
 
 import styles from './CheckboxPills.module.scss';
 
 type Props = {
   name: string;
-  value: string; // stored as "opt1,opt2"
+  value: string[]; // ✅ real array now
   options: string[];
   required?: boolean;
-  onChange: (value: string) => void;
+  onChange: (value: string[]) => void; // ✅ array output
 };
 
-function parseCsv(v: string) {
-  return v
-    .split(',')
-    .map((x) => x.trim())
-    .filter(Boolean);
-}
-
 export default function CheckboxPills({ name, value, options, required = false, onChange }: Props) {
-  const selected = new Set(parseCsv(value));
+  const selected = new Set(value ?? []);
 
   const toggle = (opt: string) => {
     const next = new Set(selected);
     if (next.has(opt)) next.delete(opt);
     else next.add(opt);
-    onChange(Array.from(next).join(','));
+    onChange(Array.from(next));
   };
 
   const selectedCount = selected.size;
