@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://nocturnaagency.com';
+  const base = 'https://essentiaagency.co.uk';
 
   const paths = ['/', '/about', '/services', '/clients', '/enquire', '/join', '/contact'];
 

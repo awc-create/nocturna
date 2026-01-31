@@ -68,11 +68,11 @@ type JoinConfig = {
 
 const FALLBACK: JoinConfig = {
   eyebrow: 'For artists & collectives',
-  title: 'Join the Nocturna roster.',
+  title: 'Join the Essentia roster.',
   lead: 'DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.',
   buttonLabel: 'Open application form',
 
-  modalKicker: 'Join Nocturna',
+  modalKicker: 'Join Essentia',
   modalTitle: 'Tell us about your sound.',
   modalLead: 'Share links, socials and a short intro — we’ll review and get back if there’s a fit.',
   submitLabel: 'Apply to join',
@@ -392,7 +392,7 @@ export default function JoinSettings() {
               <input
                 value={config.recipientEmail ?? ''}
                 onChange={onConfigText('recipientEmail')}
-                placeholder="roster@nocturna.com"
+                placeholder="roster@Essentia.com"
               />
             </label>
 

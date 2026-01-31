@@ -28,9 +28,9 @@ type AboutData = {
 };
 
 const FALLBACK: AboutData = {
-  eyebrow: 'ABOUT NOCTURNA',
+  eyebrow: 'ABOUT Essentia',
   title: 'Bringing nightlife to life.',
-  lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
+  lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Essentia delivers sound that fits the room — and the brand.',
   bullets: [
     'Curation over chaos — the right artist for the right room.',
     'Reliable bookings, clear comms, zero hidden costs.',

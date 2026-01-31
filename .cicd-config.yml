@@ -1,10 +1,10 @@
 project_type: node
-slug: nocturnaagency
+slug: Essentiaagency
 port: 3000
 
 domains:
-  prod: nocturnaagency.com
-  admin: admin.nocturnaagency.com
+  prod: essentiaagency.co.uk
+  admin: admin.essentiaagency.co.uk
 
 deploy_targets:
   main-hetz: hetzner

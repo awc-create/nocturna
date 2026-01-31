@@ -6,7 +6,7 @@
 */
 -- AlterTable
 ALTER TABLE "HomeContact" DROP COLUMN "description",
-ADD COLUMN     "contactEmail" TEXT NOT NULL DEFAULT 'info@nocturna.com',
+ADD COLUMN     "contactEmail" TEXT NOT NULL DEFAULT 'info@Essentia.com',
 ADD COLUMN     "contactPhone" TEXT,
 ADD COLUMN     "socialLinks" JSONB NOT NULL DEFAULT '[]';
 

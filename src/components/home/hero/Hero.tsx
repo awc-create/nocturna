@@ -29,7 +29,7 @@ const FALLBACK: HeroConfig = {
   posterSrc: null,
   title: 'Bringing nightlife to life.',
   description:
-    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
+    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Essentia delivers sound that fits the room — and the brand.',
   ctaText: 'ENQUIRE NOW',
   // ⬇️ now scrolls down the home page
   ctaHref: '#enquire',
@@ -88,7 +88,7 @@ export default function Hero() {
       <Head>
         {cfg.posterSrc ? <link rel="preload" href={cfg.posterSrc} as="image" /> : null}
         {hasVideo ? <link rel="preload" href={cfg.videoSrc!} as="video" /> : null}
-        <link rel="preload" href="/assets/NOCTURNA_W.png" as="image" />
+        <link rel="preload" href="/assets/Essentia_W.png" as="image" />
       </Head>
 
       <header className={styles.hero} role="banner" aria-label="Homepage hero">
@@ -137,12 +137,12 @@ export default function Hero() {
         />
 
         <div className={styles.content}>
-          <h1 className={styles.kicker} aria-label="Welcome to Nocturna">
+          <h1 className={styles.kicker} aria-label="Welcome to Essentia">
             <span className={styles.badge}>WELCOME TO</span>
             <span className={styles.wordmark}>
               <Image
-                src="/assets/NOCTURNA_W.png"
-                alt="Nocturna"
+                src="/assets/Essentia_W.png"
+                alt="Essentia"
                 fill
                 priority
                 sizes="(max-width: 900px) 90vw, 980px"

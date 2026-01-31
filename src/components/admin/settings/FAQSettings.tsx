@@ -44,7 +44,7 @@ const FALLBACK_ITEMS: FaqItem[] = [
   {
     id: 'artists-1',
     category: 'For artists',
-    question: 'How do I join the Nocturna roster?',
+    question: 'How do I join the Essentia roster?',
     answer:
       'Use the “Join the roster” form on the homepage to share your links, current venues and a short intro. We review every application carefully and will be in touch if there is a suitable fit.',
     ctaType: 'join',
@@ -100,7 +100,7 @@ const FALLBACK_ITEMS: FaqItem[] = [
 const FALLBACK: FaqConfig = {
   eyebrow: 'Help centre',
   title: 'Frequently asked questions.',
-  lead: 'A quick guide for venues, events and artists working with Nocturna. If you can’t find what you’re looking for, just get in touch.',
+  lead: 'A quick guide for venues, events and artists working with Essentia. If you can’t find what you’re looking for, just get in touch.',
   items: FALLBACK_ITEMS,
 };
 

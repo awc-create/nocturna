@@ -60,7 +60,7 @@ export default function SignInClient() {
               type="email"
               value={email}
               autoComplete="email"
-              placeholder="admin@nocturna.com"
+              placeholder="admin@Essentia.com"
               onChange={(e) => setEmail(e.target.value)}
               required
             />

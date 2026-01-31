@@ -386,7 +386,7 @@ export default function EnquireSettings() {
               <input
                 value={config.recipientEmail ?? ''}
                 onChange={onConfigText('recipientEmail')}
-                placeholder="bookings@nocturna.com"
+                placeholder="bookings@Essentia.com"
               />
             </label>
 

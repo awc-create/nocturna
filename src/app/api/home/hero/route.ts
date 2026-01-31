@@ -13,7 +13,7 @@ const DEFAULTS = {
   posterSrc: null as string | null,
   title: 'Bringing nightlife to life.',
   description:
-    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
+    'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Essentia delivers sound that fits the room — and the brand.',
   ctaText: 'ENQUIRE NOW',
   ctaHref: '#enquire', // ⬅ scroll to enquire section on home
   overlayDarkness: 0.5,

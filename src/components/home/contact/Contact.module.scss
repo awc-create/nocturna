@@ -1,121 +1,49 @@
 /* =========================
-   CONTACT — Hero + Button CTA
+   CONTACT — Match Join section
    ========================= */
 
 .section {
-  --ink: #ffffff;
+  --ink: #fff;
   --muted: rgba(255, 255, 255, 0.65);
   --accent: #e7d7a7;
 
-  position: relative;
+  padding: clamp(80px, 12vw, 140px) 16px;
+  text-align: center;
   color: var(--ink);
   background: transparent;
-  text-align: center;
-  padding: clamp(80px, 12vw, 160px) 16px;
 }
 
 .inner {
-  max-width: 1160px;
+  max-width: 800px;
   margin: 0 auto;
   display: grid;
+  gap: 18px;
   place-items: center;
-  gap: 22px;
 }
 
 .kicker {
-  font-size: 0.9rem;
   text-transform: uppercase;
+  font-size: 0.8rem;
   letter-spacing: 0.2em;
   color: var(--muted);
 }
 
-/* =========================
-   HERO (NOT CLICKABLE)
-   ========================= */
-
-.hero {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
+.title {
+  font-size: clamp(26px, 4vw, 48px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.labelWrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
+.lead {
+  color: var(--muted);
+  max-width: 580px;
+  margin: 0 auto;
+  font-size: 0.95rem;
+  line-height: 1.7;
 }
 
-/* Keep the pulse always (no hover states here) */
-.ctaLabel {
-  font-size: clamp(40px, 6vw, 80px);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  position: relative;
-  z-index: 2;
-
-  animation: goldBeat 2.8s ease-out infinite;
-}
-
-/* Underline (idle subtle) */
-.ctaRail {
-  position: absolute;
-  bottom: -12px;
-  left: 0;
-  right: 58px;
-  height: 2px;
-  border-radius: 999px;
-
-  background: linear-gradient(
-    90deg,
-    rgba(231, 215, 167, 0),
-    rgba(231, 215, 167, 0.9),
-    rgba(231, 215, 167, 0)
-  );
-
-  opacity: 0.25;
-  transform: scaleX(0.45);
-  transform-origin: left;
-}
-
-/* Orb — synced beat */
-.orbWrap {
-  position: relative;
-  width: 54px;
-  height: 54px;
-  margin-left: 18px;
-}
-
-.orb {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-
-  background: radial-gradient(circle at 30% 30%, #fffbe8, #f3dca0 45%, #b8924a 100%);
-  box-shadow:
-    0 0 36px rgba(231, 215, 167, 0.7),
-    0 0 120px rgba(231, 215, 167, 0.4);
-
-  transform: translateX(2px) scale(0.9);
-  animation: orbBeat 2.8s ease-out infinite;
-}
-
-/* Sub label */
-.ctaSub {
-  font-size: 0.78rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.85);
-}
-
-/* =========================
-   REAL CTA BUTTON (like Enquire/Join)
-   ========================= */
-
-.ctaBtn {
-  margin-top: 4px;
+.cta {
+  margin-top: 8px;
   align-self: center;
   justify-self: center;
 
@@ -138,146 +66,55 @@
   transition:
     transform 0.12s ease,
     filter 0.18s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
-.ctaBtn:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
-}
-
-.ctaBtn:focus-visible {
-  outline: 2px solid #e7d7a7;
-  outline-offset: 2px;
-}
-
-/* =========================
-   Contact Details + Socials
-   ========================= */
-
+/* Icons row (email/phone) */
 .details {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 1rem;
-
-  p {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  a:hover {
-    color: var(--accent);
-  }
+  justify-content: center;
+  gap: 14px;
+  margin-top: 10px;
 }
 
-.socials {
-  display: flex;
+.iconOnly {
+  color: var(--muted);
+  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-top: 14px;
+  transition: color 0.25s ease, transform 0.25s ease;
 
-  a {
-    color: var(--muted);
-    font-size: 1.25rem;
-    transition: color 0.25s ease, transform 0.25s ease;
-  }
-
-  a:hover {
+  &:hover {
     color: var(--accent);
     transform: translateY(-2px);
   }
 }
 
-/* =========================
-   Keyframes — DJ gold beat
-   ========================= */
+/* Socials row */
+.socials {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
 
-@keyframes goldBeat {
-  0%,
-  40%,
-  100% {
-    color: var(--ink);
-    text-shadow:
-      0 0 0px rgba(231, 215, 167, 0),
-      0 0 0px rgba(231, 215, 167, 0);
-  }
+  a {
+    color: var(--muted);
+    font-size: 1.25rem;
+    transition: color 0.25s ease, transform 0.25s ease;
 
-  16% {
-    color: #fffef7;
-    text-shadow:
-      0 0 18px rgba(231, 215, 167, 0.6),
-      0 0 32px rgba(231, 215, 167, 0.35);
-  }
-
-  24% {
-    color: #fdfaf0;
-    text-shadow:
-      0 0 10px rgba(231, 215, 167, 0.35),
-      0 0 20px rgba(231, 215, 167, 0.2);
-  }
-}
-
-@keyframes orbBeat {
-  0%,
-  40%,
-  100% {
-    transform: translateX(2px) scale(0.9);
-    box-shadow:
-      0 0 36px rgba(231, 215, 167, 0.6),
-      0 0 120px rgba(231, 215, 167, 0.35);
-  }
-
-  16% {
-    transform: translateX(3px) scale(0.98);
-    box-shadow:
-      0 0 52px rgba(231, 215, 167, 0.9),
-      0 0 160px rgba(231, 215, 167, 0.55);
-  }
-
-  24% {
-    transform: translateX(3px) scale(0.94);
-    box-shadow:
-      0 0 44px rgba(231, 215, 167, 0.7),
-      0 0 140px rgba(231, 215, 167, 0.45);
-  }
-}
-
-/* =========================
-   Mobile Adjustments
-   ========================= */
-
-@media (max-width: 640px) {
-  .orbWrap {
-    width: 42px;
-    height: 42px;
-    margin-left: 12px;
-  }
-
-  .orb {
-    width: 30px;
-    height: 30px;
-  }
-
-  .ctaLabel {
-    font-size: clamp(28px, 7vw, 38px);
-  }
-
-  .ctaRail {
-    bottom: -6px;
-    right: 46px;
-  }
-
-  /* make the hero feel less “dull” on mobile */
-  .ctaSub {
-    color: rgba(226, 232, 240, 0.92);
+    &:hover {
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
   }
 }

@@ -70,19 +70,19 @@ const Footer: React.FC = () => {
           <span className={styles.socialLabel}>Follow</span>
           <div className={styles.socialIcons}>
             <a
-              href="https://www.instagram.com/nocturna_artist_agency"
+              href="https://www.instagram.com/Essentia_artist_agency"
               target="_blank"
               rel="noreferrer"
-              aria-label="Nocturna Instagram"
+              aria-label="Essentia Instagram"
             >
               <FaInstagram />
             </a>
 
             <a
-              href="https://www.tiktok.com/@nocturna_artist_agency"
+              href="https://www.tiktok.com/@Essentia_artist_agency"
               target="_blank"
               rel="noreferrer"
-              aria-label="Nocturna TikTok"
+              aria-label="Essentia TikTok"
             >
               <FaTiktok />
             </a>
@@ -91,7 +91,7 @@ const Footer: React.FC = () => {
 
         {/* Copy */}
         <p className={styles.copy}>
-          &copy; {new Date().getFullYear()} Nocturna. All rights reserved.
+          &copy; {new Date().getFullYear()} Essentia. All rights reserved.
         </p>
 
         {/* Creator credit */}

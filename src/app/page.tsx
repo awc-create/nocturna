@@ -1,6 +1,24 @@
 // src/app/page.tsx
+import type { Metadata } from 'next';
 import HomeClient from './HomeClient';
 import { headers } from 'next/headers';
+
+export const metadata: Metadata = {
+  title:
+    'ESSENTIA | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
+  description:
+    'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. ESSENTIA also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
+  alternates: { canonical: 'https://essentiaagency.co.uk/' },
+  openGraph: {
+    title:
+      'ESSENTIA | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
+    description:
+      'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. ESSENTIA also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
+    url: 'https://essentiaagency.co.uk/',
+    siteName: 'ESSENTIA',
+    type: 'website',
+  },
+};
 
 type ClientLogo = {
   name: string;

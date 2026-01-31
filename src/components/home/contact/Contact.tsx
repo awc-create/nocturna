@@ -42,7 +42,7 @@ const FALLBACK: ContactConfig = {
   title: 'Get in touch',
   lead: 'General enquiries',
   buttonLabel: 'Open contact form',
-  contactEmail: 'info@nocturna.com',
+  contactEmail: 'info@Essentia.com',
   contactPhone: null,
   socialLinks: [],
 };
@@ -69,12 +69,7 @@ function iconFor(p: SocialPlatform) {
 }
 
 function labelFor(p: SocialPlatform) {
-  switch (p) {
-    case 'x':
-      return 'X';
-    default:
-      return p[0].toUpperCase() + p.slice(1);
-  }
+  return p === 'x' ? 'X' : p[0].toUpperCase() + p.slice(1);
 }
 
 export default function Contact() {
@@ -94,62 +89,52 @@ export default function Contact() {
     })();
   }, []);
 
-  const titleText = cfg.title?.toUpperCase?.() ? cfg.title.toUpperCase() : cfg.title;
-
   return (
     <>
       <section className={styles.section} id="contact" aria-labelledby="contact-heading">
         <div className={styles.inner}>
           <p className={styles.kicker}>{cfg.eyebrow}</p>
 
-          {/* ✅ NOT a button anymore (keeps the hero look, removes “clickable headline” feel) */}
-          <div className={styles.hero} aria-hidden="false">
-            <div className={styles.labelWrap}>
-              <h2 id="contact-heading" className={styles.ctaLabel}>
-                {titleText}
-              </h2>
-              <span className={styles.ctaRail} aria-hidden="true" />
-              <span className={styles.orbWrap} aria-hidden="true">
-                <span className={styles.orb} />
-              </span>
-            </div>
+          <h2 id="contact-heading" className={styles.title}>
+            {cfg.title}
+          </h2>
 
-            <p className={styles.ctaSub}>{cfg.lead}</p>
-          </div>
+          <p className={styles.lead}>{cfg.lead}</p>
 
-          {/* ✅ Real CTA button (same pattern as Enquire/Join) */}
           <button
             type="button"
-            className={styles.ctaBtn}
+            className={styles.cta}
             onClick={openContact}
             aria-label={cfg.buttonLabel || 'Open contact form'}
           >
             {cfg.buttonLabel || 'Open contact form'}
           </button>
 
-          <div className={styles.details}>
-            {cfg.contactEmail ? (
-              <a
-                href={`mailto:${cfg.contactEmail}`}
-                className={styles.iconOnly}
-                aria-label="Email us"
-                title={cfg.contactEmail}
-              >
-                <FaEnvelope />
-              </a>
-            ) : null}
+          {(cfg.contactEmail || cfg.contactPhone) && (
+            <div className={styles.details}>
+              {cfg.contactEmail ? (
+                <a
+                  href={`mailto:${cfg.contactEmail}`}
+                  className={styles.iconOnly}
+                  aria-label="Email us"
+                  title={cfg.contactEmail}
+                >
+                  <FaEnvelope />
+                </a>
+              ) : null}
 
-            {cfg.contactPhone ? (
-              <a
-                href={`tel:${cfg.contactPhone}`}
-                className={styles.iconOnly}
-                aria-label="Call us"
-                title={cfg.contactPhone}
-              >
-                <FaPhone />
-              </a>
-            ) : null}
-          </div>
+              {cfg.contactPhone ? (
+                <a
+                  href={`tel:${cfg.contactPhone}`}
+                  className={styles.iconOnly}
+                  aria-label="Call us"
+                  title={cfg.contactPhone}
+                >
+                  <FaPhone />
+                </a>
+              ) : null}
+            </div>
+          )}
 
           {cfg.socialLinks?.length ? (
             <div className={styles.socials}>
@@ -160,6 +145,7 @@ export default function Contact() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={labelFor(s.platform)}
+                  title={labelFor(s.platform)}
                 >
                   {iconFor(s.platform)}
                 </a>

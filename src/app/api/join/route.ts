@@ -5,14 +5,14 @@ import { transporter, escapeHtml, BOOKING_URL, INTERNAL_EMAIL, EMAIL_LOGO_URL } 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const JOIN_FROM = process.env.JOIN_FROM_EMAIL || 'Nocturna Artists <jobs@nocturnagency.com>';
+const JOIN_FROM = process.env.JOIN_FROM_EMAIL || 'Essentia Artists <jobs@Essentiagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
   ? `<tr>
        <td style="padding-bottom:18px;" align="center">
          <img
            src="${EMAIL_LOGO_URL}"
-           alt="Nocturna"
+           alt="Essentia"
            width="160"
            style="display:block;width:160px;max-width:60%;height:auto;margin:0 auto;opacity:0.96;"
          />
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
                   ${LOGO_ROW}
                   <tr>
                     <td style="padding-bottom:12px;text-align:left;">
-                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Artists</div>
+                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Essentia · Artists</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">New artist application</h1>
                       <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">Someone has submitted the join form on the website.</p>
                     </td>
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
     });
 
     // ✅ Auto-reply (same visual language as Enquire)
-    const thanksSubject = 'Thanks for your interest in joining Nocturna';
+    const thanksSubject = 'Thanks for your interest in joining Essentia';
 
     const thanksText = [
       `Hi ${fullName || 'there'},`,
@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
       BOOKING_URL ? 'If you’ve been invited to book an intro chat, you can use this link:' : '',
       BOOKING_URL ? BOOKING_URL : '',
       '',
-      '— The Nocturna team',
+      '— The Essentia team',
     ]
       .filter(Boolean)
       .join('\n');
@@ -169,11 +169,11 @@ export async function POST(req: NextRequest) {
                   ${LOGO_ROW}
                   <tr>
                     <td style="text-align:left;">
-                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Artists</div>
+                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Essentia · Artists</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your interest</h1>
                       <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
                         Hi ${escapeHtml(fullName || 'there')},<br/>
-                        Thanks for taking the time to apply to join the Nocturna roster.
+                        Thanks for taking the time to apply to join the Essentia roster.
                       </p>
 
                       <p style="margin:12px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
                       }
 
                       <p style="margin:18px 0 0;font-size:13px;color:rgba(209,213,219,0.95);">
-                        — The Nocturna team
+                        — The Essentia team
                       </p>
                     </td>
                   </tr>

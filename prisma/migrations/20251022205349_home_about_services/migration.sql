@@ -41,7 +41,7 @@ DROP TABLE "public"."HomeTestimonial";
 CREATE TABLE "HomeAbout" (
     "id" TEXT NOT NULL,
     "key" TEXT NOT NULL DEFAULT 'about',
-    "eyebrow" TEXT NOT NULL DEFAULT 'ABOUT NOCTURNA',
+    "eyebrow" TEXT NOT NULL DEFAULT 'ABOUT Essentia',
     "title" TEXT NOT NULL,
     "lead" TEXT NOT NULL,
     "bullets" TEXT[],

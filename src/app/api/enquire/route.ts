@@ -1,19 +1,19 @@
 // src/app/api/enquire/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { transporter, escapeHtml, BOOKING_URL, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
+import { transporter, escapeHtml, INTERNAL_EMAIL, EMAIL_LOGO_URL } from '@/lib/mailer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ENQUIRE_FROM =
-  process.env.ENQUIRE_FROM_EMAIL || 'Nocturna Enquiries <enquire@nocturnagency.com>';
+  process.env.ENQUIRE_FROM_EMAIL || 'Essentia Enquiries <enquire@Essentiagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
   ? `<tr>
        <td style="padding-bottom:18px;" align="center">
          <img
            src="${EMAIL_LOGO_URL}"
-           alt="Nocturna"
+           alt="Essentia"
            width="160"
            style="display:block;width:160px;max-width:60%;height:auto;margin:0 auto;opacity:0.96;"
          />
@@ -42,12 +42,10 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
-    // ✅ Support your modal field names
     const name = pickFirst(formData, ['contact_name', 'name', 'full_name']);
     const email = pickFirst(formData, ['email']);
     const message = pickFirst(formData, ['message']);
 
-    // ✅ Match your modal: require name+email+message only
     if (!name || !email || !message) {
       return NextResponse.json(
         { error: 'Missing required fields (name, email, message).' },
@@ -57,17 +55,15 @@ export async function POST(req: NextRequest) {
 
     const subject = `New venue / event enquiry from ${name}`;
 
-    // ✅ Capture ALL posted fields (so you keep enq_type, venue, budget, dates, etc.)
-    // NOTE: this includes phone if it's posted; no need to store a separate `phone` variable.
     const rows: Array<{ key: string; value: string }> = [];
     for (const [k, v] of formData.entries()) {
-      if (v instanceof File) continue; // (no file support here yet)
+      if (v instanceof File) continue;
       const s = String(v).trim();
       if (!s) continue;
       rows.push({ key: k, value: s });
     }
 
-    const textBody = ['New Nocturna enquiry', '', ...rows.map((r) => `${r.key}: ${r.value}`)].join(
+    const textBody = ['New Essentia enquiry', '', ...rows.map((r) => `${r.key}: ${r.value}`)].join(
       '\n'
     );
 
@@ -75,78 +71,95 @@ export async function POST(req: NextRequest) {
       .map(
         (r) => `
           <tr>
-            <td style="padding:4px 0;color:rgba(148,163,184,0.95);width:130px;">${escapeHtml(
-              r.key
-            )}</td>
-            <td style="padding:4px 0;color:#f9fafb;font-weight:500;white-space:pre-wrap;">${escapeHtml(
-              r.value
-            )}</td>
+            <td style="padding:4px 0;color:rgba(148,163,184,0.95);width:130px;">
+              ${escapeHtml(r.key)}
+            </td>
+            <td style="padding:4px 0;color:#f9fafb;font-weight:500;white-space:pre-wrap;">
+              ${escapeHtml(r.value)}
+            </td>
           </tr>
         `
       )
       .join('');
 
     const htmlBody = `
-      <!doctype html>
-      <html lang="en">
-        <head><meta charSet="utf-8" /><title>${escapeHtml(subject)}</title></head>
-        <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
-            <tr>
-              <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
-                  ${LOGO_ROW}
-                  <tr>
-                    <td style="padding-bottom:12px;">
-                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Enquiry</div>
-                      <h1 style="margin:0;font-size:22px;line-height:1.3;">New venue / event enquiry</h1>
-                      <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">Someone has submitted the enquiry form on the website.</p>
-                    </td>
-                  </tr>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charSet="utf-8" />
+  <title>${escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+          style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;color:#e5e7eb;">
+          
+          ${LOGO_ROW}
 
-                  <tr>
-                    <td style="padding-top:10px;padding-bottom:10px;">
-                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                        style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;">
-                        <tr>
-                          <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
-                            Enquiry details
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:10px 14px 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;font-size:13px;">
-                              ${rowsHtml}
-                            </table>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td style="padding:6px 14px 12px;">
-                            <div style="font-size:12px;color:rgba(148,163,184,0.95);margin-bottom:4px;">Message</div>
-                            <div style="white-space:pre-wrap;font-size:13px;line-height:1.5;color:#e5e7eb;background:rgba(15,23,42,0.9);border-radius:10px;padding:10px 11px;border:1px solid rgba(55,65,81,0.9);">
-                              ${escapeHtml(message)}
-                            </div>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
+          <tr>
+            <td style="padding-bottom:12px;">
+              <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">
+                Essentia · Enquiry
+              </div>
+              <h1 style="margin:0;font-size:22px;line-height:1.3;">
+                New venue / event enquiry
+              </h1>
+              <p style="margin:8px 0 0;font-size:14px;line-height:1.5;color:rgba(209,213,219,0.9);">
+                Someone has submitted the enquiry form on the website.
+              </p>
+            </td>
+          </tr>
 
-                  <tr>
-                    <td style="padding-top:10px;font-size:11px;color:rgba(148,163,184,0.75);">
-                      You can reply directly to this email to contact the enquirer.
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
+          <tr>
+            <td style="padding-top:10px;padding-bottom:10px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                style="border-collapse:collapse;background:radial-gradient(circle at top left,#020617,#030712);border-radius:14px;border:1px solid rgba(55,65,81,0.9);overflow:hidden;">
+                
+                <tr>
+                  <td style="padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.18em;color:rgba(249,250,251,0.75);border-bottom:1px solid rgba(55,65,81,0.9);">
+                    Enquiry details
+                  </td>
+                </tr>
 
-    // ✅ Internal notification
+                <tr>
+                  <td style="padding:10px 14px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="font-size:13px;">
+                      ${rowsHtml}
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:6px 14px 12px;">
+                    <div style="font-size:12px;color:rgba(148,163,184,0.95);margin-bottom:4px;">
+                      Message
+                    </div>
+                    <div style="white-space:pre-wrap;font-size:13px;line-height:1.5;color:#e5e7eb;background:rgba(15,23,42,0.9);border-radius:10px;padding:10px 11px;border:1px solid rgba(55,65,81,0.9);">
+                      ${escapeHtml(message)}
+                    </div>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-top:10px;font-size:11px;color:rgba(148,163,184,0.75);">
+              You can reply directly to this email to contact the enquirer.
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
     await transporter.sendMail({
       from: ENQUIRE_FROM,
       to: INTERNAL_EMAIL,
@@ -156,71 +169,65 @@ export async function POST(req: NextRequest) {
       html: htmlBody,
     });
 
-    // ✅ Auto-reply
-    const thanksSubject = 'Thanks for your enquiry – Nocturna';
+    const thanksSubject = 'Thanks for your enquiry – Essentia';
 
     const thanksText = [
       `Hi ${name || 'there'},`,
       '',
-      'Thanks for reaching out about your venue or event.',
-      "We've received your details and will review them shortly.",
+      'We’ve received your enquiry about your venue or event and we’ll be in touch shortly.',
       '',
-      BOOKING_URL ? 'If you’d like to jump straight into a call, you can choose a time here:' : '',
-      BOOKING_URL ? BOOKING_URL : '',
+      'We’ll review your details and get back to you as soon as possible.',
       '',
-      '— The Nocturna team',
-    ]
-      .filter(Boolean)
-      .join('\n');
+      '— The Essentia team',
+    ].join('\n');
 
     const thanksHtml = `
-      <!doctype html>
-      <html lang="en">
-        <head><meta charSet="utf-8" /><title>${escapeHtml(thanksSubject)}</title></head>
-        <body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#020617;padding:24px 0;">
-            <tr>
-              <td align="center">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                  style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
-                  ${LOGO_ROW}
-                  <tr>
-                    <td>
-                      <h1 style="margin:0;font-size:22px;line-height:1.3;">Thank you for your enquiry</h1>
-                      <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
-                        Hi ${escapeHtml(name || 'there')},<br/>
-                        We’ve received your enquiry about your venue or event and we’ll be in touch shortly.
-                      </p>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charSet="utf-8" />
+  <title>${escapeHtml(thanksSubject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#020617;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e5e7eb;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+          style="max-width:640px;background:#020617;border-radius:18px;border:1px solid rgba(148,163,184,0.5);box-shadow:0 24px 60px rgba(15,23,42,0.9);padding:24px 26px 28px;">
+          
+          ${LOGO_ROW}
 
-                      ${
-                        BOOKING_URL
-                          ? `<p style="margin:14px 0 0;font-size:14px;color:rgba(209,213,219,0.95);">
-                               If you’d like to jump straight into a call, you can choose a time that suits you here:
-                             </p>
-                             <p style="margin:10px 0 0;">
-                               <a href="${BOOKING_URL}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#facc6b;color:#020617;font-weight:600;font-size:13px;text-decoration:none;">
-                                 Book a call with Nocturna
-                               </a>
-                             </p>`
-                          : ''
-                      }
+          <tr>
+            <td>
+              <h1 style="margin:0;font-size:22px;line-height:1.3;">
+                Thank you for your enquiry
+              </h1>
 
-                      <p style="margin:18px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
-                        We’ll review your details and get back to you as soon as possible.
-                      </p>
+              <p style="margin:10px 0 4px;font-size:14px;line-height:1.4;color:rgba(209,213,219,0.95);">
+                Hi ${escapeHtml(name || 'there')},
+              </p>
 
-                      <p style="margin:14px 0 0;font-size:13px;color:rgba(209,213,219,0.95);">
-                        — The Nocturna team
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `;
+              <p style="margin:0;font-size:14px;line-height:1.6;color:rgba(209,213,219,0.9);">
+                We’ve received your enquiry about your venue or event and we’ll be in touch shortly.
+              </p>
+
+              <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:rgba(148,163,184,0.95);">
+                We’ll review your details and get back to you as soon as possible.
+              </p>
+
+              <p style="margin:14px 0 0;font-size:13px;color:rgba(209,213,219,0.95);">
+                — The Essentia team
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
     await transporter.sendMail({
       from: ENQUIRE_FROM,

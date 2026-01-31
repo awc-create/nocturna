@@ -14,7 +14,7 @@ type JoinConfig = {
 
 const FALLBACK: JoinConfig = {
   eyebrow: 'For artists',
-  title: 'Join the Nocturna roster.',
+  title: 'Join the Essentia roster.',
   lead: 'We work with DJs and musicians who care about atmosphere, not just tracklists.',
   buttonLabel: 'Apply to join',
 };
