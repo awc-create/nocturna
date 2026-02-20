@@ -54,6 +54,10 @@ export type EnquireConfig = {
   lead: string;
   buttonLabel: string;
 
+  // ✅ secondary CTA (editable)
+  consultCallLabel: string; // allow ""
+  consultCallUrl: string; // allow ""
+
   // modal
   modalKicker: string;
   modalTitle: string;
@@ -91,6 +95,10 @@ const DEFAULT_CONFIG: EnquireConfig = {
   title: 'Enquire about DJs and live music.',
   lead: 'We curate DJs and musicians for restaurants, bars and event spaces — matching artists to your brand, guest profile and schedule.',
   buttonLabel: 'Open enquiry form',
+
+  // ✅ defaults (still editable)
+  consultCallLabel: 'Book consultant call',
+  consultCallUrl: 'https://calendar.app.google/hdvYediQuWn4wDQH6',
 
   modalKicker: 'Enquire Now',
   modalTitle: 'Tell us about your venue or event.',
@@ -211,11 +219,25 @@ function sanitizeConfig(body: unknown): EnquireConfig {
 
   const recipientEmail = sanitizeStr(b.recipientEmail);
 
+  // ✅ allow clearing these: store "" and hide on frontend
+  const consultCallLabel =
+    typeof b.consultCallLabel === 'string'
+      ? sanitizeStr(b.consultCallLabel)
+      : DEFAULT_CONFIG.consultCallLabel;
+
+  const consultCallUrl =
+    typeof b.consultCallUrl === 'string'
+      ? sanitizeStr(b.consultCallUrl)
+      : DEFAULT_CONFIG.consultCallUrl;
+
   return {
     eyebrow: sanitizeStr(b.eyebrow) || DEFAULT_CONFIG.eyebrow,
     title: sanitizeStr(b.title) || DEFAULT_CONFIG.title,
     lead: sanitizeStr(b.lead) || DEFAULT_CONFIG.lead,
     buttonLabel: sanitizeStr(b.buttonLabel) || DEFAULT_CONFIG.buttonLabel,
+
+    consultCallLabel, // can be ""
+    consultCallUrl, // can be ""
 
     modalKicker: sanitizeStr(b.modalKicker) || DEFAULT_CONFIG.modalKicker,
     modalTitle: sanitizeStr(b.modalTitle) || DEFAULT_CONFIG.modalTitle,
@@ -224,7 +246,6 @@ function sanitizeConfig(body: unknown): EnquireConfig {
     successMessage: sanitizeStr(b.successMessage) || DEFAULT_CONFIG.successMessage,
 
     recipientEmail: recipientEmail || null,
-
     fields: fields.length ? fields : DEFAULT_FIELDS,
   };
 }
@@ -251,6 +272,10 @@ export async function GET() {
       title: row.title || DEFAULT_CONFIG.title,
       lead: row.lead || DEFAULT_CONFIG.lead,
       buttonLabel: row.buttonLabel || DEFAULT_CONFIG.buttonLabel,
+
+      // ✅ empty string allowed (hide)
+      consultCallLabel: (row.consultCallLabel ?? DEFAULT_CONFIG.consultCallLabel).trim(),
+      consultCallUrl: (row.consultCallUrl ?? DEFAULT_CONFIG.consultCallUrl).trim(),
 
       modalKicker: row.modalKicker || DEFAULT_CONFIG.modalKicker,
       modalTitle: row.modalTitle || DEFAULT_CONFIG.modalTitle,
@@ -285,6 +310,10 @@ export async function POST(req: Request) {
         lead: data.lead,
         buttonLabel: data.buttonLabel,
 
+        // ✅ NEW
+        consultCallLabel: data.consultCallLabel,
+        consultCallUrl: data.consultCallUrl,
+
         modalKicker: data.modalKicker,
         modalTitle: data.modalTitle,
         modalLead: data.modalLead,
@@ -299,6 +328,10 @@ export async function POST(req: Request) {
         title: data.title,
         lead: data.lead,
         buttonLabel: data.buttonLabel,
+
+        // ✅ NEW
+        consultCallLabel: data.consultCallLabel,
+        consultCallUrl: data.consultCallUrl,
 
         modalKicker: data.modalKicker,
         modalTitle: data.modalTitle,

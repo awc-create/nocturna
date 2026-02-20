@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   title: 'Clients | Trusted by Venues, Brands & Corporate and Private Clients',
   description:
     'Trusted by hospitality venues, brands, corporate and private clients for consistent, brand-fit DJ and live music curation.',
-  alternates: { canonical: 'https://essentiaagency.co.uk/clients' },
+  alternates: { canonical: 'https://nocturnaagency.co.uk/clients' },
   openGraph: {
     title: 'Clients | Trusted by Venues, Brands & Corporate and Private Clients',
     description:
       'Trusted by hospitality venues, brands, corporate and private clients for consistent, brand-fit DJ and live music curation.',
-    url: 'https://essentiaagency.co.uk/clients',
+    url: 'https://nocturnaagency.co.uk/clients',
     siteName: 'ESSENTIA',
     type: 'website',
   },
