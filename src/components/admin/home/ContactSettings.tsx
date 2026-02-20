@@ -524,7 +524,7 @@ export default function ContactSettings() {
                 <input
                   value={config.contactEmail ?? ''}
                   onChange={setText('contactEmail')}
-                  placeholder="info@Essentia.com"
+                  placeholder="info@Nocturna.com"
                 />
                 <button
                   type="button"
@@ -572,7 +572,7 @@ export default function ContactSettings() {
                 <input
                   value={config.recipientEmail ?? ''}
                   onChange={(e) => setConfig((p) => ({ ...p, recipientEmail: e.target.value }))}
-                  placeholder="bookings@Essentia.com"
+                  placeholder="bookings@Nocturna.com"
                 />
                 <button
                   type="button"

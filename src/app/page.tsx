@@ -5,17 +5,17 @@ import { headers } from 'next/headers';
 
 export const metadata: Metadata = {
   title:
-    'ESSENTIA | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
+    'Nocturna | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
   description:
-    'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. ESSENTIA also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
+    'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. Nocturna also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
   alternates: { canonical: 'https://nocturnaagency.co.uk/' },
   openGraph: {
     title:
-      'ESSENTIA | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
+      'Nocturna | Curated DJs & Live Music for Hospitality Venues, Brands & Events in Birmingham',
     description:
-      'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. ESSENTIA also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
+      'Curated DJs and live musicians for restaurants, bars and premium hospitality venues in Birmingham. Nocturna also delivers atmosphere-first music programming for brand launches and corporate events — always tailored to the room.',
     url: 'https://nocturnaagency.co.uk/',
-    siteName: 'ESSENTIA',
+    siteName: 'Nocturna',
     type: 'website',
   },
 };

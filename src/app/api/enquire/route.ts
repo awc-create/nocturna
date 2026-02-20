@@ -6,14 +6,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const ENQUIRE_FROM =
-  process.env.ENQUIRE_FROM_EMAIL || 'Essentia Enquiries <enquire@Essentiagency.com>';
+  process.env.ENQUIRE_FROM_EMAIL || 'Nocturna Enquiries <enquire@Nocturnagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
   ? `<tr>
        <td style="padding-bottom:18px;" align="center">
          <img
            src="${EMAIL_LOGO_URL}"
-           alt="Essentia"
+           alt="Nocturna"
            width="160"
            style="display:block;width:160px;max-width:60%;height:auto;margin:0 auto;opacity:0.96;"
          />
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       rows.push({ key: k, value: s });
     }
 
-    const textBody = ['New Essentia enquiry', '', ...rows.map((r) => `${r.key}: ${r.value}`)].join(
+    const textBody = ['New Nocturna enquiry', '', ...rows.map((r) => `${r.key}: ${r.value}`)].join(
       '\n'
     );
 
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
           <tr>
             <td style="padding-bottom:12px;">
               <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">
-                Essentia · Enquiry
+                Nocturna · Enquiry
               </div>
               <h1 style="margin:0;font-size:22px;line-height:1.3;">
                 New venue / event enquiry
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
       html: htmlBody,
     });
 
-    const thanksSubject = 'Thanks for your enquiry – Essentia';
+    const thanksSubject = 'Thanks for your enquiry – Nocturna';
 
     const thanksText = [
       `Hi ${name || 'there'},`,
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
       '',
       'We’ll review your details and get back to you as soon as possible.',
       '',
-      '— The Essentia team',
+      '— The Nocturna team',
     ].join('\n');
 
     const thanksHtml = `
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
               </p>
 
               <p style="margin:14px 0 0;font-size:13px;color:rgba(209,213,219,0.95);">
-                — The Essentia team
+                — The Nocturna team
               </p>
             </td>
           </tr>

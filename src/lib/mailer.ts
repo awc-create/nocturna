@@ -52,7 +52,7 @@ export function escapeHtml(input: string): string {
 export const BOOKING_URL =
   process.env.BOOKING_URL || process.env.NEXT_PUBLIC_GOOGLE_BOOKING_URL || '';
 
-export const INTERNAL_EMAIL = process.env.Essentia_INTERNAL_EMAIL || SMTP_USER || '';
+export const INTERNAL_EMAIL = process.env.Nocturna_INTERNAL_EMAIL || SMTP_USER || '';
 
 // ✅ Email logo absolute URL (must be public https URL)
 export const EMAIL_LOGO_URL = process.env.EMAIL_LOGO_URL || '';

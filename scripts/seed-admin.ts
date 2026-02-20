@@ -5,7 +5,7 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const email = (process.env.SEED_ADMIN_EMAIL || 'admin@Essentia.com').toLowerCase();
+  const email = (process.env.SEED_ADMIN_EMAIL || 'admin@Nocturna.com').toLowerCase();
   const password = process.env.SEED_ADMIN_PASSWORD || 'supersecurepassword';
   const passwordHash = await hash(password, 12);
 

@@ -39,7 +39,7 @@ model HeroHome {
 model HomeAbout {
   id             String   @id @default(cuid())
   key            String   @unique @default("about")
-  eyebrow        String   @default("ABOUT Essentia")
+  eyebrow        String   @default("ABOUT Nocturna")
   title          String
   lead           String
   bullets        String[]
@@ -101,12 +101,12 @@ model HomeJoin {
 
   // Section copy
   eyebrow        String   @default("For artists & collectives")
-  title          String   @default("Join the Essentia roster.")
+  title          String   @default("Join the Nocturna roster.")
   lead           String   @default("DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.")
   buttonLabel    String   @default("Open application form")
 
   // Modal copy
-  modalKicker    String   @default("Join Essentia")
+  modalKicker    String   @default("Join Nocturna")
   modalTitle     String   @default("Tell us about your sound.")
   modalLead      String   @default("Share links, socials and a short intro — we’ll review and get back if there’s a fit.")
   submitLabel    String   @default("Apply to join") // ✅ ADD
@@ -133,7 +133,7 @@ model HomeContact {
   buttonLabel    String   @default("Open contact form")
 
   // Public contact details (editable)
-  contactEmail   String   @default("info@Essentia.com") // ✅ ADD
+  contactEmail   String   @default("info@Nocturna.com") // ✅ ADD
   contactPhone   String?                                 // ✅ ADD
 
   // Socials (editable, extensible)
@@ -171,7 +171,7 @@ model FaqPage {
   key       String   @unique @default("faq")
   eyebrow   String   @default("Help centre")
   title     String   @default("Frequently asked questions.")
-  lead      String   @default("A quick guide for venues, events and artists working with Essentia. If you can’t find what you’re looking for, just get in touch.")
+  lead      String   @default("A quick guide for venues, events and artists working with Nocturna. If you can’t find what you’re looking for, just get in touch.")
   items     Json     @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

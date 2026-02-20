@@ -42,7 +42,7 @@ const FALLBACK: ContactConfig = {
   title: 'Get in touch',
   lead: 'General enquiries',
   buttonLabel: 'Open contact form',
-  contactEmail: 'info@Essentia.com',
+  contactEmail: 'info@Nocturna.com',
   contactPhone: null,
   socialLinks: [],
 };

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       'Trusted by hospitality venues, brands, corporate and private clients for consistent, brand-fit DJ and live music curation.',
     url: 'https://nocturnaagency.co.uk/clients',
-    siteName: 'ESSENTIA',
+    siteName: 'Nocturna',
     type: 'website',
   },
 };

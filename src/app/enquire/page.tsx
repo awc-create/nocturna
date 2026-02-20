@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       'Enquire about DJs or live musicians for your venue, brand launch, corporate event or private function. Tell us your vibe, schedule and space — we’ll match the right artists.',
     url: 'https://nocturnaagency.co.uk/enquire',
-    siteName: 'ESSENTIA',
+    siteName: 'Nocturna',
     type: 'website',
   },
 };

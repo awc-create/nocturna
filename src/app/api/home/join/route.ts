@@ -102,11 +102,11 @@ const DEFAULT_FIELDS: FormField[] = [
 
 const DEFAULT_CONFIG: JoinConfig = {
   eyebrow: 'For artists & collectives',
-  title: 'Join the Essentia roster.',
+  title: 'Join the Nocturna roster.',
   lead: 'DJs, musicians and live acts who care about atmosphere, consistency and good hospitality.',
   buttonLabel: 'Open application form',
 
-  modalKicker: 'Join Essentia',
+  modalKicker: 'Join Nocturna',
   modalTitle: 'Tell us about your sound.',
   modalLead: 'Share links, socials and a short intro — we’ll review and get back if there’s a fit.',
   submitLabel: 'Apply to join',

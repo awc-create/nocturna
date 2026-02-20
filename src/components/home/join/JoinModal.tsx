@@ -25,7 +25,7 @@ type JoinConfig = {
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
 const FALLBACK: JoinConfig = {
-  modalKicker: 'Join Essentia',
+  modalKicker: 'Join Nocturna',
   modalTitle: 'Tell us about your sound.',
   modalLead:
     'Tell us who you are, what you play, and where you’re currently performing. We’ll review every application carefully.',

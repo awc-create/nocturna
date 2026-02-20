@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import ComingSoonClient from './ComingSoonClient';
 
 export const metadata = {
-  title: 'Coming Soon | ESSENTIA',
+  title: 'Coming Soon | Nocturna',
   description: 'We’re finishing the site. If you have access, enter the password.',
 };
 

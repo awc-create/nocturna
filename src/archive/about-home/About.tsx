@@ -22,9 +22,9 @@ type AboutData = {
 };
 
 const FALLBACK: AboutData = {
-  eyebrow: 'ABOUT Essentia',
+  eyebrow: 'ABOUT Nocturna',
   title: 'Bringing nightlife to life.',
-  lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Essentia delivers sound that fits the room — and the brand.',
+  lead: 'We’re a curated collective of DJs and musicians crafting atmosphere-first experiences for venues and events. From soulful acoustics to floor-filling sets, Nocturna delivers sound that fits the room — and the brand.',
   bullets: [
     'Curation over chaos — the right artist for the right room.',
     'Reliable bookings, clear comms, zero hidden costs.',
@@ -41,7 +41,7 @@ const FALLBACK: AboutData = {
   ],
   // ↓ Use your own video link(s); YT/Vimeo or MP4 both work.
   videoUrl: 'https://youtu.be/dQw4w9WgXcQ',
-  // videoPoster: '/media/Essentia-about-poster.jpg',
+  // videoPoster: '/media/Nocturna-about-poster.jpg',
   videoCaption: '1-min overview',
 };
 
@@ -174,7 +174,7 @@ export default function About() {
                   </svg>
                 </span>
                 <span className={styles.videoLabel}>
-                  Watch: Inside Essentia {data.videoCaption ? <em>{data.videoCaption}</em> : null}
+                  Watch: Inside Nocturna {data.videoCaption ? <em>{data.videoCaption}</em> : null}
                 </span>
               </button>
             ) : null}

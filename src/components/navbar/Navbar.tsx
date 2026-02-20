@@ -358,7 +358,7 @@ export default function Navbar() {
     <div className={styles.centerStack}>
       <div className={styles.logoLayer} aria-hidden={hover}>
         <Link href="/" className={styles.logoLink} aria-label="Home">
-          <Image src="/assets/A_W.png" alt="Essentia" width={34} height={48} priority />
+          <Image src="/assets/A_W.png" alt="Nocturna" width={34} height={48} priority />
         </Link>
       </div>
 
@@ -433,7 +433,7 @@ export default function Navbar() {
         <div className={styles.mobileInner}>
           <div className={styles.mobileHeader}>
             <Link href="/" className={styles.mobileLogo} onClick={closeMenu} aria-label="Home">
-              <Image src="/assets/A_W.png" alt="Essentia" width={28} height={40} />
+              <Image src="/assets/A_W.png" alt="Nocturna" width={28} height={40} />
             </Link>
             <button
               type="button"
@@ -481,7 +481,7 @@ export default function Navbar() {
         <div className={styles.secondaryInner}>
           <Link href="/" className={styles.secondaryBrand} aria-label="Back to home">
             <span className={styles.secondaryLogo}>
-              <Image src="/assets/Essentia_W.png" alt="Essentia" width={120} height={28} priority />
+              <Image src="/assets/Nocturna_W.png" alt="Nocturna" width={120} height={28} priority />
             </span>
           </Link>
 

@@ -12,8 +12,8 @@ npx prisma generate
 Default connection (auto-generated):
 
 ```
-DATABASE_URL="postgresql://admin:admin@localhost:6432/Essentia?pgbouncer=true&connection_limit=1&connect_timeout=5"
-DIRECT_DATABASE_URL="postgresql://admin:admin@localhost:5432/Essentia?connect_timeout=5"
+DATABASE_URL="postgresql://admin:admin@localhost:6432/Nocturna?pgbouncer=true&connection_limit=1&connect_timeout=5"
+DIRECT_DATABASE_URL="postgresql://admin:admin@localhost:5432/Nocturna?connect_timeout=5"
 ```
 
 

@@ -19,7 +19,7 @@ type AboutData = {
 };
 
 const FALLBACK: AboutData = {
-  eyebrow: 'ABOUT Essentia',
+  eyebrow: 'ABOUT Nocturna',
   title: 'Bringing nightlife to life.',
   lead: 'A curated collective of DJs and musicians crafting atmosphere-first experiences — from soulful acoustics to floor-filling sets. We deliver sound that fits the room, the guests, and the brand.',
   quickFacts: [
@@ -299,7 +299,7 @@ export default function About() {
         >
           <span className={styles.bigLinkLabel}>
             <span className={styles.underline}>
-              {valuesOpen ? 'Hide values' : 'More about Essentia'}
+              {valuesOpen ? 'Hide values' : 'More about Nocturna'}
             </span>
             <span className={styles.subnote}>Ethos &amp; values</span>
           </span>

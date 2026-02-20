@@ -10,14 +10,14 @@ export default function CookiePolicyPage() {
     <div className={styles.wrapper}>
       <h1>Cookie Policy</h1>
       <p>
-        We use cookies to personalize content and analyze traffic. Some cookies are essential for
+        We use cookies to personalize content and analyze traffic. Some cookies are Nocturnal for
         functionality.
       </p>
 
       <h2>Types of Cookies</h2>
       <ul>
         <li>
-          <strong>Essential:</strong> Required for site to work
+          <strong>Nocturnal:</strong> Required for site to work
         </li>
         <li>
           <strong>Analytics:</strong> Help us understand how visitors use our site

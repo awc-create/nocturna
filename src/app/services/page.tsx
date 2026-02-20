@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     description:
       'Professional DJs and live musicians curated for hospitality venues, corporate events and private functions. Sound that fits the room.',
     url: 'https://nocturnaagency.co.uk/services',
-    siteName: 'ESSENTIA',
+    siteName: 'Nocturna',
     type: 'website',
   },
 };

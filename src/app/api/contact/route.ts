@@ -9,14 +9,14 @@ export const dynamic = 'force-dynamic';
 const KEY = 'contact';
 
 const CONTACT_FROM =
-  process.env.CONTACT_FROM_EMAIL || 'Essentia Contact <contact@Essentiagency.com>';
+  process.env.CONTACT_FROM_EMAIL || 'Nocturna Contact <contact@Nocturnagency.com>';
 
 const LOGO_ROW = EMAIL_LOGO_URL
   ? `<tr>
        <td style="padding-bottom:18px;" align="center">
          <img
            src="${EMAIL_LOGO_URL}"
-           alt="Essentia"
+           alt="Nocturna"
            width="160"
            style="display:block;width:160px;max-width:60%;height:auto;margin:0 auto;opacity:0.96;"
          />
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
                   ${LOGO_ROW}
                   <tr>
                     <td style="padding-bottom:12px;text-align:left;">
-                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Essentia · Contact</div>
+                      <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
                       <h1 style="margin:0;font-size:22px;line-height:1.3;">New contact message</h1>
                       <p style="margin:8px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">Someone has submitted the contact form on the website.</p>
                     </td>
@@ -279,14 +279,14 @@ export async function POST(req: NextRequest) {
 
     // Auto-reply (only if user provided email)
     if (senderEmail) {
-      const thanksSubject = 'Thanks — we got your message (Essentia)';
+      const thanksSubject = 'Thanks — we got your message (Nocturna)';
       const thanksText = [
         `Hi ${senderName || 'there'},`,
         '',
         'Thanks for reaching out.',
         'We’ve received your message and will get back to you shortly.',
         '',
-        '— The Essentia team',
+        '— The Nocturna team',
       ].join('\n');
 
       const thanksHtml = `
@@ -302,14 +302,14 @@ export async function POST(req: NextRequest) {
                     ${LOGO_ROW}
                     <tr>
                       <td style="text-align:left;">
-                        <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Essentia · Contact</div>
+                        <div style="font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(148,163,184,0.9);margin-bottom:4px;">Nocturna · Contact</div>
                         <h1 style="margin:0;font-size:22px;line-height:1.3;">Thanks for your message</h1>
                         <p style="margin:10px 0 0;font-size:14px;color:rgba(209,213,219,0.9);">
                           Hi ${escapeHtml(senderName || 'there')},<br/>
                           We’ve received your message and will get back to you shortly.
                         </p>
                         <p style="margin:16px 0 0;font-size:13px;color:rgba(148,163,184,0.95);">
-                          — The Essentia team
+                          — The Nocturna team
                         </p>
                       </td>
                     </tr>

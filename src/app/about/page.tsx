@@ -2,16 +2,16 @@ import type { Metadata } from 'next';
 import Home from '../page';
 
 export const metadata: Metadata = {
-  title: 'About ESSENTIA | DJ & Live Music Curation for Hospitality & Events',
+  title: 'About Nocturna | DJ & Live Music Curation for Hospitality & Events',
   description:
-    'Learn about ESSENTIA — specialists in curated DJs and live music for hospitality venues, brands, corporate functions and private events.',
+    'Learn about Nocturna — specialists in curated DJs and live music for hospitality venues, brands, corporate functions and private events.',
   alternates: { canonical: 'https://nocturnaagency.co.uk/about' },
   openGraph: {
-    title: 'About ESSENTIA | DJ & Live Music Curation for Hospitality & Events',
+    title: 'About Nocturna | DJ & Live Music Curation for Hospitality & Events',
     description:
-      'Learn about ESSENTIA — specialists in curated DJs and live music for hospitality venues, brands, corporate functions and private events.',
+      'Learn about Nocturna — specialists in curated DJs and live music for hospitality venues, brands, corporate functions and private events.',
     url: 'https://nocturnaagency.co.uk/about',
-    siteName: 'ESSENTIA',
+    siteName: 'Nocturna',
     type: 'website',
   },
 };
